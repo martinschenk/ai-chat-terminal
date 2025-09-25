@@ -128,9 +128,8 @@ ai_chat_function() {
         fi
 
         # Direct question mode - show answer immediately
-        echo -e "\n${DIM}╭─────────────────────────────────────────────────────╮${RESET}"
-        echo -e "${DIM}│ ${CYAN}/config${RESET}${DIM} settings │ ${YELLOW}ESC${RESET}${DIM} or ${YELLOW}exit${RESET}${DIM} to quit │ ${SESSION_STATUS} ${DIM}│${RESET}"
-        echo -e "${DIM}╰─────────────────────────────────────────────────────╯${RESET}\n"
+        echo -e "\n${CYAN}/config${RESET} = settings ${DIM}|${RESET} ${YELLOW}ESC${RESET}/${YELLOW}exit${RESET} = quit ${SESSION_STATUS}"
+        echo -e "${DIM}─────────────────────────────────────────────────────${RESET}\n"
 
         echo -e "${BLUE}👤 ${LANG_LABEL_YOU}:${RESET} $*\n"
         echo -e "${GREEN}🤖 ${LANG_LABEL_AI}:${RESET}"
@@ -144,9 +143,8 @@ ai_chat_function() {
 
     # Instant chat mode (just 'q' entered)
     clear
-    echo -e "${DIM}╭─────────────────────────────────────────────────────╮${RESET}"
-    echo -e "${DIM}│ ${CYAN}/config${RESET}${DIM} settings │ ${YELLOW}ESC${RESET}${DIM} or ${YELLOW}exit${RESET}${DIM} to quit │ ${SESSION_STATUS} ${DIM}│${RESET}"
-    echo -e "${DIM}╰─────────────────────────────────────────────────────╯${RESET}\n"
+    echo -e "${CYAN}/config${RESET} = settings ${DIM}|${RESET} ${YELLOW}ESC${RESET}/${YELLOW}exit${RESET} = quit ${SESSION_STATUS}"
+    echo -e "${DIM}─────────────────────────────────────────────────────${RESET}\n"
 
     chat_loop
 }
@@ -185,8 +183,8 @@ chat_loop() {
 
         # Read input - with or without ESC support
         local INPUT=""
-        if [[ "$ENABLE_ESC" == "true" ]]; then
-            # Read char by char for ESC detection
+        if [[ "$ENABLE_ESC" == "true" ]] && [[ -t 0 ]]; then
+            # Read char by char for ESC detection (only in interactive terminal)
             while IFS= read -r -s -k 1 char; do
                 if [[ $char == $'\e' ]]; then
                     # ESC pressed
@@ -222,17 +220,15 @@ chat_loop() {
                 show_config_menu
                 # After config, show header again
                 clear
-                echo -e "${DIM}╭─────────────────────────────────────────────────────╮${RESET}"
-                echo -e "${DIM}│ ${CYAN}/config${RESET}${DIM} settings │ ${YELLOW}ESC${RESET}${DIM} or ${YELLOW}exit${RESET}${DIM} to quit │         ${DIM}│${RESET}"
-                echo -e "${DIM}╰─────────────────────────────────────────────────────╯${RESET}\n"
+                echo -e "${CYAN}/config${RESET} = settings ${DIM}|${RESET} ${YELLOW}ESC${RESET}/${YELLOW}exit${RESET} = quit"
+                echo -e "${DIM}─────────────────────────────────────────────────────${RESET}\n"
                 continue
                 ;;
 
             clear|cls)
                 clear
-                echo -e "${DIM}╭─────────────────────────────────────────────────────╮${RESET}"
-                echo -e "${DIM}│ ${CYAN}/config${RESET}${DIM} settings │ ${YELLOW}ESC${RESET}${DIM} or ${YELLOW}exit${RESET}${DIM} to quit │         ${DIM}│${RESET}"
-                echo -e "${DIM}╰─────────────────────────────────────────────────────╯${RESET}\n"
+                echo -e "${CYAN}/config${RESET} = settings ${DIM}|${RESET} ${YELLOW}ESC${RESET}/${YELLOW}exit${RESET} = quit"
+                echo -e "${DIM}─────────────────────────────────────────────────────${RESET}\n"
                 continue
                 ;;
 
