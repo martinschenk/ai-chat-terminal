@@ -131,7 +131,7 @@ echo "  • .env exists: $(test -f "$CONFIG_DIR/.env" && echo YES || echo NO)"
 echo "  • .env non-empty: $(test -s "$CONFIG_DIR/.env" && echo YES || echo NO)"
 echo "  • .env corrupted: $(grep -q "Update shell configuration" "$CONFIG_DIR/.env" 2>/dev/null && echo YES || echo NO)"
 
-if true; then  # FORCE SETUP TO ALWAYS RUN FOR DEBUGGING
+if [[ ! -f "$CONFIG_DIR/.env" ]] || [[ ! -s "$CONFIG_DIR/.env" ]] || grep -q "Update shell configuration" "$CONFIG_DIR/.env" 2>/dev/null; then
     echo -e "${GREEN}DEBUG: Running first-time setup!${RESET}"
     echo -e "\n${CYAN}${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
     echo -e "${CYAN}${BOLD}        🚀 First-Time Setup${RESET}"
