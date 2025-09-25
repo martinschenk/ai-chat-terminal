@@ -92,14 +92,41 @@ ai "Translate this to Spanish"
 
 ### Quick Install (Recommended)
 ```bash
+# Step 1: Install AI Chat Terminal
 curl -sL https://raw.githubusercontent.com/martinschenk/ai-chat-terminal/main/install.sh | bash
+
+# Step 2: Configure your setup
+ai
 ```
 
 ### Manual Install
 ```bash
+# Step 1: Download and install
 git clone https://github.com/martinschenk/ai-chat-terminal.git
 cd ai-chat-terminal
 bash install.sh
+
+# Step 2: Configure your setup
+ai
+```
+
+### What happens during installation:
+- ✅ Downloads AI Chat Terminal files
+- ✅ Sets up shell integration (`ai` command)
+- ✅ Installs language support (19 languages)
+- ✅ Prepares configuration system
+
+### What happens during setup:
+- 🌍 Language selection
+- 🔑 OpenAI API key configuration
+- 🌐 Optional Perplexity API key (web search)
+- 🤖 AI model selection
+- 🚀 Ready to chat!
+
+### Reconfigure Anytime
+```bash
+ai setup        # Run setup again
+ai /config      # Quick settings menu
 ```
 
 ## 🔑 API Keys

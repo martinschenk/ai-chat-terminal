@@ -32,6 +32,12 @@ load_env() {
 
 # Main chat function
 ai_chat_function() {
+    # Check for setup commands
+    if [[ "$1" == "setup" ]] || [[ "$1" == "--setup" ]]; then
+        first_run_setup
+        return
+    fi
+
     # Load environment variables from .env
     load_env
 
@@ -165,109 +171,14 @@ first_run_setup() {
     mkdir -p "$CONFIG_DIR"
 
     clear
-    echo -e "\033[1;36m🚀 AI Chat Terminal Setup\033[0m"
-    echo -e "\033[1;36m========================\033[0m\n"
+    echo -e "\033[1;36m\033[1m👋 Welcome to AI Chat Terminal!\033[0m"
+    echo -e "\033[1;36m================================\033[0m\n"
+    echo -e "\033[0;37mLet's get you set up with your personal AI assistant.\033[0m"
+    echo -e "\033[0;37mThis will only take a minute...\033[0m\n"
 
-    # Step 1: OpenAI API Key
-    echo -e "\033[1;33mStep 1: OpenAI API Key (Required)\033[0m"
-    echo "• Powers the main AI chat functionality"
-    echo "• Get your key at: https://platform.openai.com/api-keys"
-    echo ""
-
-    local openai_key=""
-    while [[ -z "$openai_key" ]]; do
-        echo -n "Enter your OpenAI API key: "
-        read -r openai_key
-        if [[ -z "$openai_key" ]]; then
-            echo -e "\033[0;31m⚠ OpenAI API key is required!\033[0m"
-        fi
-    done
-
-    # Step 2: Perplexity API Key (Optional)
-    echo -e "\n\033[1;33mStep 2: Perplexity API Key (Optional)\033[0m"
-    echo "• Enables real-time web search"
-    echo "• Get current news, weather, stock prices"
-    echo "• Get your key at: https://www.perplexity.ai/settings/api"
-    echo "• Free tier available!"
-    echo ""
-    echo -n "Enter Perplexity key (or press Enter to skip): "
-    read -r perplexity_key
-
-    if [[ ! -z "$perplexity_key" ]]; then
-        echo -e "\033[0;32m✓ Web search enabled!\033[0m"
-    else
-        echo -e "\033[2mWeb search skipped (can add later in /config)\033[0m"
-    fi
-
-    # Step 3: Select OpenAI Model
-    echo -e "\n\033[1;33mStep 3: Select Default OpenAI Model\033[0m"
-    echo ""
-    echo "  [1] gpt-4o-mini   - Fast, cheap, good for most tasks"
-    echo "  [2] gpt-4o       ⭐ RECOMMENDED - Best overall performance"
-    echo "  [3] gpt-4        - Powerful, standard model"
-    echo "  [4] gpt-4-turbo  - Fast, good quality"
-    echo "  [5] gpt-3.5-turbo - Basic, very cheap"
-    echo ""
-    echo -n "Select [1-5] (default: 2): "
-    read -r model_choice
-
-    case "$model_choice" in
-        1) openai_model="gpt-4o-mini" ;;
-        3) openai_model="gpt-4" ;;
-        4) openai_model="gpt-4-turbo" ;;
-        5) openai_model="gpt-3.5-turbo" ;;
-        *) openai_model="gpt-4o" ;;  # Default
-    esac
-
-    # Step 4: Select Perplexity Model (if API key provided)
-    local perplexity_model="pplx-7b-online"
-    if [[ ! -z "$perplexity_key" ]]; then
-        echo -e "\n\033[1;33mStep 4: Select Default Perplexity Model\033[0m"
-        echo ""
-        echo "  [1] pplx-7b-online  ⭐ RECOMMENDED - Fast, cheap"
-        echo "  [2] pplx-70b-online - More powerful, slower"
-        echo "  [3] sonar-small-online - Very fast"
-        echo "  [4] sonar-medium-online - Balanced"
-        echo ""
-        echo -n "Select [1-4] (default: 1): "
-        read -r pplx_choice
-
-        case "$pplx_choice" in
-            2) perplexity_model="pplx-70b-online" ;;
-            3) perplexity_model="sonar-small-online" ;;
-            4) perplexity_model="sonar-medium-online" ;;
-            *) perplexity_model="pplx-7b-online" ;;
-        esac
-    fi
-
-    # Step 5: Choose Command
-    echo -e "\n\033[1;33mStep 5: Choose Command to Start AI Chat\033[0m"
-    echo ""
-    echo "  [1] ai   ⭐ RECOMMENDED - Clear and memorable"
-    echo "  [2] ask  - Natural for questions"
-    echo "  [3] q    - Quick single letter"
-    echo "  [4] ??   - Double question mark"
-    echo "  [5] chat - Descriptive"
-    echo "  [6] Custom - Enter your own"
-    echo ""
-    echo -n "Select [1-6] (default: 1): "
-    read -r cmd_choice
-
-    local command_char="ai"
-    case "$cmd_choice" in
-        2) command_char="ask" ;;
-        3) command_char="q" ;;
-        4) command_char="??" ;;
-        5) command_char="chat" ;;
-        6)
-            echo -n "Enter custom command: "
-            read -r command_char
-            ;;
-        *) command_char="ai" ;;
-    esac
-
-    # Step 6: Language Selection
-    echo -e "\n\033[1;33mStep 6: Select Language\033[0m"
+    # Step 1: Language Selection
+    echo -e "\033[1;33mStep 1/4: Select Your Language\033[0m"
+    echo "────────────────────────────────────"
     echo ""
     echo "  [1] 🇬🇧 English (default)"
     echo "  [2] 🇩🇪 Deutsch"
@@ -280,16 +191,91 @@ first_run_setup() {
     echo -n "Select [1-7] (default: 1): "
     read -r lang_choice
 
-    local selected_lang="en"
+    local language="en"
     case "$lang_choice" in
-        2) handle_german_selection ;;
-        3) selected_lang="fr" ;;
-        4) selected_lang="it" ;;
-        5) handle_spanish_selection ;;
-        6) selected_lang="zh" ;;
-        7) selected_lang="hi" ;;
-        *) selected_lang="en" ;;
+        2) language="de" ;;
+        3) language="fr" ;;
+        4) language="it" ;;
+        5) language="es" ;;
+        6) language="zh" ;;
+        7) language="hi" ;;
+        *) language="en" ;;
     esac
+    echo -e "\033[0;32m✓ Language set to: $language\033[0m\n"
+
+    # Step 2: OpenAI API Key
+    echo -e "\033[1;33mStep 2/4: OpenAI API Key (Required)\033[0m"
+    echo "────────────────────────────────────"
+    echo -e "\033[0;37m• Powers your AI chat conversations\033[0m"
+    echo -e "\033[0;37m• Costs: ~\$0.01-0.10 per conversation\033[0m"
+    echo -e "\033[0;37m• Minimum \$5 credit needed to start\033[0m"
+    echo ""
+    echo -e "\033[1mHow to get your API key:\033[0m"
+    echo -e "1. Visit: \033[0;36mhttps://platform.openai.com/api-keys\033[0m"
+    echo -e "2. Create account + add \$5 credit"
+    echo -e "3. Generate new API key"
+    echo ""
+
+    local openai_key=""
+    while [[ -z "$openai_key" ]]; do
+        echo -n "Enter your OpenAI API key: "
+        read -r openai_key
+        if [[ -z "$openai_key" ]]; then
+            echo -e "\033[0;31m⚠ API key is required to continue!\033[0m"
+            echo -e "\033[2mPress Ctrl+C to cancel setup\033[0m"
+        elif [[ ${#openai_key} -lt 20 ]]; then
+            echo -e "\033[0;31m⚠ That doesn't look like a valid API key\033[0m"
+            openai_key=""
+        fi
+    done
+    echo -e "\033[0;32m✓ OpenAI API key configured\033[0m\n"
+
+    # Step 3: Perplexity API Key (Optional)
+    echo -e "\033[1;33mStep 3/4: Perplexity API Key (Optional)\033[0m"
+    echo "────────────────────────────────────"
+    echo -e "\033[0;37m• Enables real-time web search\033[0m"
+    echo -e "\033[0;37m• Get current news, weather, stock prices\033[0m"
+    echo -e "\033[0;37m• Free tier available!\033[0m"
+    echo ""
+    echo -e "Get your key at: \033[0;36mhttps://www.perplexity.ai/settings/api\033[0m"
+    echo ""
+    echo -n "Enter Perplexity key (or press Enter to skip): "
+    read -r perplexity_key
+
+    if [[ ! -z "$perplexity_key" ]]; then
+        echo -e "\033[0;32m✓ Web search enabled!\033[0m\n"
+    else
+        echo -e "\033[2m⊘ Web search skipped (can add later via /config)\033[0m\n"
+    fi
+
+    # Step 4: Select OpenAI Model
+    echo -e "\033[1;33mStep 4/4: Select AI Model\033[0m"
+    echo "────────────────────────────────────"
+    echo ""
+    echo -e "  [1] gpt-4o-mini   - \033[0;32mFast & cheap\033[0m (\$0.15/1M tokens)"
+    echo -e "  [2] gpt-4o       \033[0;32m⭐ RECOMMENDED\033[0m - Best performance (\$2.50/1M tokens)"
+    echo -e "  [3] gpt-4        - Classic powerful model (\$30/1M tokens)"
+    echo -e "  [4] gpt-4-turbo  - Fast, good quality (\$10/1M tokens)"
+    echo -e "  [5] gpt-3.5-turbo - \033[0;33m💰 CHEAPEST\033[0m (\$0.50/1M tokens)"
+    echo ""
+    echo -n "Select [1-5] (default: 2): "
+    read -r model_choice
+
+    local openai_model="gpt-4o"
+    case "$model_choice" in
+        1) openai_model="gpt-4o-mini" ;;
+        3) openai_model="gpt-4" ;;
+        4) openai_model="gpt-4-turbo" ;;
+        5) openai_model="gpt-3.5-turbo" ;;
+        *) openai_model="gpt-4o" ;;  # Default
+    esac
+    echo -e "\033[0;32m✓ Model selected: $openai_model\033[0m\n"
+
+    # Set Perplexity model (default)
+    local perplexity_model="pplx-7b-online"
+    local command_char="ai"
+    # Create configuration files
+    echo -e "\033[0;34mSaving configuration...\033[0m"
 
     # Save .env file
     cat > "$ENV_FILE" << EOF
@@ -311,34 +297,51 @@ EOF
     cat > "$CONFIG_FILE" << EOF
 # AI Chat Terminal User Configuration
 AI_CHAT_COMMAND="$command_char"
-AI_CHAT_LANGUAGE="$selected_lang"
+AI_CHAT_LANGUAGE="$language"
 AI_CHAT_TIMEOUT="600"
 AI_CHAT_ESC_EXIT="true"
 EOF
 
-    # Update shell configuration
-    update_shell_config "$command_char"
+    # Configure Shell-GPT
+    mkdir -p ~/.config/shell_gpt
+    cat > ~/.config/shell_gpt/.sgptrc << EOF
+DEFAULT_MODEL=$openai_model
+CHAT_CACHE_LENGTH=20
+CHAT_CACHE_PATH=/tmp/chat_cache
+REQUEST_TIMEOUT=60
+DEFAULT_COLOR=green
+# Note: OPENAI_API_KEY is loaded from ~/.aichat/.env for security
+EOF
 
     # Success message
     clear
-    echo -e "\033[1;32m✅ Setup Complete!\033[0m\n"
-    echo -e "\033[1;36mAvailable Features:\033[0m"
-    echo "  ✓ AI chat with $openai_model"
+    echo -e "\033[1;32m\033[1m🎉 Setup Complete!\033[0m"
+    echo -e "\033[1;32m==================\033[0m\n"
+
+    echo -e "\033[0;37mYour AI Chat Terminal is ready to use!\033[0m"
+    echo ""
+    echo -e "\033[1mConfiguration:\033[0m"
+    echo -e "  • Language: \033[0;36m$language\033[0m"
+    echo -e "  • AI Model: \033[0;36m$openai_model\033[0m"
     if [[ ! -z "$perplexity_key" ]]; then
-        echo "  ✓ Web search enabled (Perplexity)"
+        echo -e "  • Web Search: \033[0;32m✓ Enabled\033[0m"
+    else
+        echo -e "  • Web Search: \033[2m⊘ Disabled\033[0m"
     fi
-    echo "  ✓ Memory retention (2 minutes)"
-    echo "  ✓ 19 language variants"
+    echo -e "  • Command: \033[0;36m$command_char\033[0m"
     echo ""
-    echo -e "\033[1;33mTry these commands:\033[0m"
-    echo "  $command_char Hello!"
-    echo "  $command_char What's the weather?"
-    echo "  $command_char /config"
+
+    echo -e "\033[1mTry it out:\033[0m"
+    echo -e "  \033[0;32m$command_char\033[0m Hello!"
+    echo -e "  \033[0;32m$command_char\033[0m What's the weather?"
+    if [[ ! -z "$perplexity_key" ]]; then
+        echo -e "  \033[0;32m$command_char\033[0m What's in the news?"
+    fi
+    echo -e "  \033[0;32m$command_char\033[0m /config  \033[2m(to modify settings)\033[0m"
     echo ""
-    echo -e "\033[2mRestart your terminal or run: source ~/.zshrc\033[0m"
-    echo ""
-    echo "Press Enter to continue..."
-    read -r
+
+    echo -e "\033[2mStarting your first chat session...\033[0m"
+    sleep 2
 }
 
 # Helper functions for language selection

@@ -125,344 +125,62 @@ if ! command -v jq &> /dev/null; then
     fi
 fi
 
-# First-time setup
-echo -e "${YELLOW}DEBUG: Checking setup conditions...${RESET}"
-echo "  • .env exists: $(test -f "$CONFIG_DIR/.env" && echo YES || echo NO)"
-echo "  • .env non-empty: $(test -s "$CONFIG_DIR/.env" && echo YES || echo NO)"
-echo "  • .env corrupted: $(grep -q "Update shell configuration" "$CONFIG_DIR/.env" 2>/dev/null && echo YES || echo NO)"
+# Skip interactive setup - will be handled by first run of 'ai' command
+echo -e "${BLUE}Setting up shell integration...${RESET}"
 
-if [[ ! -f "$CONFIG_DIR/.env" ]] || [[ ! -s "$CONFIG_DIR/.env" ]] || grep -q "Update shell configuration" "$CONFIG_DIR/.env" 2>/dev/null; then
-    echo -e "${GREEN}DEBUG: Running first-time setup!${RESET}"
-    echo -e "\n${CYAN}${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
-    echo -e "${CYAN}${BOLD}        🚀 First-Time Setup${RESET}"
-    echo -e "${CYAN}${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}\n"
+# Create basic config structure for shell integration
+update_shell_config() {
+    local command_name="${1:-ai}"
 
-    # Step 1: Language Selection (FIRST!)
-    echo -e "${YELLOW}Step 1/6: Select Your Language${RESET}"
-    echo "────────────────────────────────────"
-    echo ""
-    echo "  [1] 🇬🇧 English (default)"
-    echo "  [2] 🇩🇪 Deutsch"
-    echo "  [3] 🇫🇷 Français"
-    echo "  [4] 🇮🇹 Italiano"
-    echo "  [5] 🇪🇸 Español"
-    echo "  [6] 🇨🇳 中文 (Mandarin)"
-    echo "  [7] 🇮🇳 हिन्दी (Hindi)"
-    echo ""
-    echo -n "Select [1-7] (default: 1): "
-    read -r LANG_CHOICE
+    # Shell configuration files to update
+    local shell_configs=("$HOME/.zshrc" "$HOME/.bashrc")
 
-    LANGUAGE="en"
-    case "$LANG_CHOICE" in
-        2)
-            echo -e "\n${YELLOW}Möchten Sie einen Dialekt?${RESET}"
-            echo "  [1] Hochdeutsch (Standard)"
-            echo "  [2] Schwäbisch"
-            echo "  [3] Bayerisch"
-            echo "  [4] Sächsisch"
-            echo -n "Auswahl [1-4]: "
-            read -r DIALECT
-            case "$DIALECT" in
-                2) LANGUAGE="de-schwaebisch" ;;
-                3) LANGUAGE="de-bayerisch" ;;
-                4) LANGUAGE="de-saechsisch" ;;
-                *) LANGUAGE="de" ;;
-            esac
-            ;;
-        3) LANGUAGE="fr" ;;
-        4) LANGUAGE="it" ;;
-        5)
-            echo -e "\n${YELLOW}¿Qué variante prefieres?${RESET}"
-            echo "  [1] 🇪🇸 Español (Estándar)"
-            echo "  [2] 🇲🇽 Mexicano"
-            echo "  [3] 🇦🇷 Argentino"
-            echo "  [4] 🇨🇴 Colombiano"
-            echo "  [5] 🇻🇪 Venezolano"
-            echo "  [6] 🇨🇱 Chileno"
-            echo "  [7] 🇪🇸 Andaluz"
-            echo "  [8] Català"
-            echo "  [9] Euskera"
-            echo "  [10] Galego"
-            echo -n "Selección [1-10]: "
-            read -r VARIANT
-            case "$VARIANT" in
-                2) LANGUAGE="es-mexicano" ;;
-                3) LANGUAGE="es-argentino" ;;
-                4) LANGUAGE="es-colombiano" ;;
-                5) LANGUAGE="es-venezolano" ;;
-                6) LANGUAGE="es-chileno" ;;
-                7) LANGUAGE="es-andaluz" ;;
-                8) LANGUAGE="ca" ;;
-                9) LANGUAGE="eu" ;;
-                10) LANGUAGE="gl" ;;
-                *) LANGUAGE="es" ;;
-            esac
-            ;;
-        6) LANGUAGE="zh" ;;
-        7) LANGUAGE="hi" ;;
-        *) LANGUAGE="en" ;;
-    esac
-    echo -e "${GREEN}✓ Language: $LANGUAGE${RESET}\n"
+    for config_file in "${shell_configs[@]}"; do
+        if [[ -f "$config_file" ]]; then
+            # Remove any existing AI Chat Terminal entries
+            grep -v "# AI Chat Terminal" "$config_file" > "$config_file.tmp" && mv "$config_file.tmp" "$config_file"
+            grep -v "source.*aichat.zsh" "$config_file" > "$config_file.tmp" && mv "$config_file.tmp" "$config_file"
+            grep -v "alias.*ai.*ai_chat_function" "$config_file" > "$config_file.tmp" && mv "$config_file.tmp" "$config_file"
 
-    # Load language strings for the rest of the installer
-    # (We'll use English as fallback for installer messages, but could enhance this)
+            # Add new configuration
+            echo "" >> "$config_file"
+            echo "# AI Chat Terminal" >> "$config_file"
+            echo "source $INSTALL_DIR/aichat.zsh" >> "$config_file"
+            echo "alias $command_name='ai_chat_function'" >> "$config_file"
 
-    # Step 2: OpenAI API Key
-    echo -e "${YELLOW}Step 2/6: OpenAI API Key${RESET} ${RED}(Required)${RESET}"
-    echo "────────────────────────────────────"
-    echo ""
-    echo -e "${BOLD}How to get your API key:${RESET}"
-    echo -e "1. Create account at: ${CYAN}https://platform.openai.com${RESET}"
-    echo "2. Add \$5+ credit to your account"
-    echo -e "3. Generate API key at: ${CYAN}https://platform.openai.com/api-keys${RESET}"
-    echo ""
-
-    OPENAI_KEY=""
-    while [[ -z "$OPENAI_KEY" ]]; do
-        echo -n "Enter your OpenAI API key: "
-        read -r OPENAI_KEY
-        if [[ -z "$OPENAI_KEY" ]]; then
-            echo -e "${RED}⚠ OpenAI API key is required for the app to work!${RESET}"
+            echo -e "  ${GREEN}✓${RESET} Updated $config_file"
         fi
     done
-    echo -e "${GREEN}✓ OpenAI API configured${RESET}\n"
+}
 
-    # Step 3: Perplexity API Key
-    echo -e "${YELLOW}Step 3/6: Perplexity API Key${RESET} ${GREEN}(Optional - For Web Search)${RESET}"
-    echo "────────────────────────────────────"
-    echo ""
-    echo -e "Get your key at: ${CYAN}https://www.perplexity.ai/settings/api${RESET}"
-    echo "• Enables real-time web search (news, weather, stocks)"
-    echo ""
-    echo -n "Enter Perplexity key (or press Enter to skip): "
-    read -r PERPLEXITY_KEY
+# Setup shell integration with default 'ai' command
+update_shell_config "ai"
 
-    if [[ ! -z "$PERPLEXITY_KEY" ]]; then
-        echo -e "${GREEN}✓ Web search enabled!${RESET}\n"
-    else
-        echo -e "${YELLOW}⊘ Web search skipped (can add later via /config)${RESET}\n"
-    fi
-
-    # Step 4: OpenAI Model Selection
-    echo -e "${YELLOW}Step 4/6: Select Default OpenAI Model${RESET}"
-    echo "────────────────────────────────────"
-    echo ""
-    echo -e "  [1] gpt-4o-mini   - ${GREEN}Fast & cheap${RESET} (\$0.15/1M tokens)"
-    echo -e "  [2] gpt-4o       ${GREEN}⭐ RECOMMENDED${RESET} - Best performance (\$2.50/1M tokens)"
-    echo "  [3] gpt-4        - Classic powerful model (\$30/1M tokens)"
-    echo "  [4] gpt-4-turbo  - Fast, good quality (\$10/1M tokens)"
-    echo -e "  [5] gpt-3.5-turbo - ${YELLOW}💰 CHEAPEST${RESET} - Basic but good (\$0.50/1M tokens)"
-    echo ""
-    echo -e "${CYAN}Tip: Start with gpt-4o for best experience, or gpt-3.5-turbo to save money${RESET}"
-    echo -n "Select [1-5] (default: 2): "
-    read -r MODEL_CHOICE
-
-    case "$MODEL_CHOICE" in
-        1) OPENAI_MODEL="gpt-4o-mini" ;;
-        3) OPENAI_MODEL="gpt-4" ;;
-        4) OPENAI_MODEL="gpt-4-turbo" ;;
-        5) OPENAI_MODEL="gpt-3.5-turbo" ;;
-        *) OPENAI_MODEL="gpt-4o" ;;
-    esac
-    echo -e "${GREEN}✓ Model selected: $OPENAI_MODEL${RESET}\n"
-
-    # Step 5: Perplexity Model (if API key provided)
-    PERPLEXITY_MODEL="pplx-7b-online"
-    if [[ ! -z "$PERPLEXITY_KEY" ]]; then
-        echo -e "${YELLOW}Step 5/6: Select Default Perplexity Model${RESET}"
-        echo "────────────────────────────────────"
-        echo ""
-        echo -e "  [1] pplx-7b-online  ${GREEN}⭐ RECOMMENDED${RESET} - Fast, efficient"
-        echo "  [2] pplx-70b-online - More powerful, slower"
-        echo "  [3] sonar-small-online - Ultra-fast"
-        echo "  [4] sonar-medium-online - Balanced"
-        echo ""
-        echo -n "Select [1-4] (default: 1): "
-        read -r PPLX_CHOICE
-
-        case "$PPLX_CHOICE" in
-            2) PERPLEXITY_MODEL="pplx-70b-online" ;;
-            3) PERPLEXITY_MODEL="sonar-small-online" ;;
-            4) PERPLEXITY_MODEL="sonar-medium-online" ;;
-            *) PERPLEXITY_MODEL="pplx-7b-online" ;;
-        esac
-        echo -e "${GREEN}✓ Perplexity model: $PERPLEXITY_MODEL${RESET}\n"
-
-        # Adjust step numbering
-        FINAL_STEP="6/6"
-    else
-        FINAL_STEP="5/6"
-    fi
-
-    # Function to check if command is available
-    check_command_available() {
-        local cmd="$1"
-        # Check if command exists or alias exists
-        if command -v "$cmd" &>/dev/null 2>&1 || alias "$cmd" &>/dev/null 2>&1; then
-            return 1  # Command exists
-        fi
-        return 0  # Command is free
-    }
-
-    # Step 6: Command Selection with conflict detection
-    echo -e "${YELLOW}Step ${FINAL_STEP}: Choose Command to Start AI Chat${RESET}"
-    echo "────────────────────────────────────"
-    echo "This is the command you'll type to start chatting."
-    echo ""
-
-    # Check for conflicts and adjust recommendations
-    if check_command_available "ai"; then
-        echo -e "  [1] ai   ${GREEN}⭐ RECOMMENDED${RESET} - Clear and memorable"
-        DEFAULT_CHOICE="1"
-        DEFAULT_CMD="ai"
-    else
-        echo -e "  [1] ai   ${RED}⚠ IN USE${RESET} - Already taken on your system"
-        DEFAULT_CHOICE="7"
-        DEFAULT_CMD="aic"
-    fi
-
-    echo "  [2] ask  - Natural for questions"
-    echo "  [3] q    - Quick single letter"
-    echo "  [4] ??   - Double question mark"
-    echo "  [5] chat - Descriptive"
-    echo "  [6] Custom - Choose your own"
-
-    # Add aic option if ai is taken
-    if ! check_command_available "ai"; then
-        echo -e "  [7] aic  ${GREEN}⭐ RECOMMENDED${RESET} - AI Chat (since 'ai' is taken)"
-    fi
-
-    echo ""
-    echo -n "Select [1-7] (default: $DEFAULT_CHOICE): "
-    read -r CMD_CHOICE
-
-    case "$CMD_CHOICE" in
-        1)
-            if check_command_available "ai"; then
-                COMMAND="ai"
-            else
-                echo -e "${YELLOW}⚠ 'ai' is already in use. Using 'aic' instead.${RESET}"
-                COMMAND="aic"
-            fi
-            ;;
-        2) COMMAND="ask" ;;
-        3) COMMAND="q" ;;
-        4) COMMAND="??" ;;
-        5) COMMAND="chat" ;;
-        6)
-            echo -n "Enter custom command: "
-            read -r COMMAND
-            # Check if custom command is available
-            if ! check_command_available "$COMMAND"; then
-                echo -e "${YELLOW}⚠ Warning: '$COMMAND' may already be in use${RESET}"
-                echo -n "Continue anyway? (y/N): "
-                read -r confirm
-                if [[ "$confirm" != "y" ]] && [[ "$confirm" != "Y" ]]; then
-                    echo "Using 'aic' instead."
-                    COMMAND="aic"
-                fi
-            fi
-            ;;
-        7) COMMAND="aic" ;;
-        *) COMMAND="$DEFAULT_CMD" ;;
-    esac
-    echo -e "${GREEN}✓ Command set: $COMMAND${RESET}\n"
-
-    # Create .env file
-    cat > "$CONFIG_DIR/.env" << EOF
-# AI Chat Terminal Configuration
-# Generated: $(date)
-
-# API Keys
-OPENAI_API_KEY="$OPENAI_KEY"
-PERPLEXITY_API_KEY="$PERPLEXITY_KEY"
-
-# Default Models
-DEFAULT_OPENAI_MODEL="$OPENAI_MODEL"
-DEFAULT_PERPLEXITY_MODEL="$PERPLEXITY_MODEL"
-EOF
-
-    chmod 600 "$CONFIG_DIR/.env"
-
-    # Create config file (with improved timeout)
-    cat > "$CONFIG_DIR/config" << EOF
-# AI Chat Terminal User Configuration
-AI_CHAT_COMMAND="$COMMAND"
-AI_CHAT_LANGUAGE="$LANGUAGE"
-AI_CHAT_TIMEOUT="600"
-AI_CHAT_ESC_EXIT="true"
-EOF
-
-    # Configure sgpt (API key loaded from ~/.aichat/.env)
-    mkdir -p ~/.config/shell_gpt
-    cat > ~/.config/shell_gpt/.sgptrc << EOF
-DEFAULT_MODEL=$OPENAI_MODEL
-CHAT_CACHE_LENGTH=20
-CHAT_CACHE_PATH=/tmp/chat_cache
-REQUEST_TIMEOUT=60
-DEFAULT_COLOR=green
-# Note: OPENAI_API_KEY is loaded from ~/.aichat/.env for security
-EOF
-
-else
-    echo -e "${RED}DEBUG: Setup was skipped! Using existing configuration.${RESET}"
-    echo "  • COMMAND will be: ${COMMAND:-NOT SET}"
-    echo "  • INSTALL_DIR: $INSTALL_DIR"
-fi
-
-# Update shell configuration
-echo -e "\n${BLUE}Updating shell configuration...${RESET}"
-echo -e "${YELLOW}DEBUG: COMMAND variable is: '${COMMAND:-NOT SET}'${RESET}"
-
-SHELL_CONFIGS=("$HOME/.zshrc" "$HOME/.bashrc" "$HOME/.profile")
-COMMAND="${COMMAND:-ai}"
-echo -e "${YELLOW}DEBUG: COMMAND after fallback is: '$COMMAND'${RESET}"
-
-for CONFIG in "${SHELL_CONFIGS[@]}"; do
-    if [[ -f "$CONFIG" ]]; then
-        # Remove old entries
-        grep -v "source.*shell-scripts" "$CONFIG" > "$CONFIG.tmp" && mv "$CONFIG.tmp" "$CONFIG" 2>/dev/null || true
-        grep -v "alias.*ai_chat_function" "$CONFIG" > "$CONFIG.tmp" && mv "$CONFIG.tmp" "$CONFIG" 2>/dev/null || true
-
-        # Add new entry
-        echo "" >> "$CONFIG"
-        echo "# AI Chat Terminal" >> "$CONFIG"
-        echo "source $INSTALL_DIR/aichat.zsh" >> "$CONFIG"
-        echo "alias $COMMAND='ai_chat_function'" >> "$CONFIG"
-
-        echo -e "  ${GREEN}✓${RESET} Updated $(basename $CONFIG)"
-    fi
-done
-
-# Success message
-clear
-echo -e "${GREEN}${BOLD}"
-echo "╔═══════════════════════════════════════╗"
-echo "║                                       ║"
-echo "║      ✅ Installation Complete!        ║"
-echo "║                                       ║"
-echo "╚═══════════════════════════════════════╝"
-echo -e "${RESET}\n"
-
-echo -e "${CYAN}Available Features:${RESET}"
-echo "  ✓ AI chat with ${OPENAI_MODEL:-gpt-4o}"
-if [[ ! -z "$PERPLEXITY_KEY" ]]; then
-    echo "  ✓ Web search enabled (Perplexity)"
-fi
-echo "  ✓ Session memory (10 minutes)"
-echo "  ✓ 19 language variants"
-echo "  ✓ Configuration menu (/config)"
+# Installation complete message
+echo -e "\n${CYAN}${BOLD}╔═══════════════════════════════════════╗${RESET}"
+echo -e "${CYAN}${BOLD}║                                       ║${RESET}"
+echo -e "${CYAN}${BOLD}║      ✅ Installation Complete!        ║${RESET}"
+echo -e "${CYAN}${BOLD}║                                       ║${RESET}"
+echo -e "${CYAN}${BOLD}╚═══════════════════════════════════════╝${RESET}\n"
+echo -e "${CYAN}What's installed:${RESET}"
+echo "  ✓ AI Chat Terminal files"
+echo "  ✓ Shell integration (ai command)"
+echo "  ✓ 19 language support"
+echo "  ✓ Configuration system"
 echo ""
 
-echo -e "${YELLOW}Try these commands:${RESET}"
-echo "  $COMMAND Hello!"
-echo "  $COMMAND What's the weather?"
-echo "  $COMMAND /config"
+echo -e "${BOLD}${YELLOW}⚡ Next Step: Configure your AI Chat Terminal${RESET}"
 echo ""
-
-echo -e "${BOLD}Next step:${RESET}"
-echo "  Restart your terminal or run:"
+echo -e "Run this command to start the interactive setup:"
+echo -e "  ${GREEN}ai${RESET}"
+echo ""
+echo "The setup will guide you through:"
+echo "• Language selection"
+echo "• OpenAI API key configuration"
+echo "• Optional Perplexity API key (for web search)"
+echo "• AI model selection"
+echo ""
+echo -e "${CYAN}Tip: You can also run ${BOLD}ai setup${RESET}${CYAN} anytime to reconfigure${RESET}"
+echo ""
+echo "Restart your terminal first:"
 echo -e "  ${CYAN}source ~/.zshrc${RESET}"
-echo ""
-
-echo "Enjoy your AI Chat Terminal! 🚀"
