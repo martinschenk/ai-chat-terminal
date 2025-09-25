@@ -283,7 +283,8 @@ uninstall_terminal() {
         echo ""
         echo "${LANG_UNINSTALL_ANYKEY}"
         read -n1 -r
-        exit 0
+        echo ""
+        echo -e "${GREEN}Uninstall completed. Please restart your terminal or run: source ~/.zshrc${RESET}"
     else
         echo -e "${GREEN}Cancelled.${RESET}"
         sleep 2
