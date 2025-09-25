@@ -212,9 +212,9 @@ if true; then  # FORCE SETUP TO ALWAYS RUN FOR DEBUGGING
     echo "────────────────────────────────────"
     echo ""
     echo -e "${BOLD}How to get your API key:${RESET}"
-    echo "1. Create account at: ${CYAN}https://platform.openai.com${RESET}"
+    echo -e "1. Create account at: ${CYAN}https://platform.openai.com${RESET}"
     echo "2. Add \$5+ credit to your account"
-    echo "3. Generate API key at: ${CYAN}https://platform.openai.com/api-keys${RESET}"
+    echo -e "3. Generate API key at: ${CYAN}https://platform.openai.com/api-keys${RESET}"
     echo ""
 
     OPENAI_KEY=""
@@ -231,7 +231,7 @@ if true; then  # FORCE SETUP TO ALWAYS RUN FOR DEBUGGING
     echo -e "${YELLOW}Step 3/6: Perplexity API Key${RESET} ${GREEN}(Optional - For Web Search)${RESET}"
     echo "────────────────────────────────────"
     echo ""
-    echo "Get your key at: ${CYAN}https://www.perplexity.ai/settings/api${RESET}"
+    echo -e "Get your key at: ${CYAN}https://www.perplexity.ai/settings/api${RESET}"
     echo "• Enables real-time web search (news, weather, stocks)"
     echo ""
     echo -n "Enter Perplexity key (or press Enter to skip): "
@@ -247,11 +247,11 @@ if true; then  # FORCE SETUP TO ALWAYS RUN FOR DEBUGGING
     echo -e "${YELLOW}Step 4/6: Select Default OpenAI Model${RESET}"
     echo "────────────────────────────────────"
     echo ""
-    echo "  [1] gpt-4o-mini   - ${GREEN}Fast & cheap${RESET} (\$0.15/1M tokens)"
-    echo "  [2] gpt-4o       ${GREEN}⭐ RECOMMENDED${RESET} - Best performance (\$2.50/1M tokens)"
+    echo -e "  [1] gpt-4o-mini   - ${GREEN}Fast & cheap${RESET} (\$0.15/1M tokens)"
+    echo -e "  [2] gpt-4o       ${GREEN}⭐ RECOMMENDED${RESET} - Best performance (\$2.50/1M tokens)"
     echo "  [3] gpt-4        - Classic powerful model (\$30/1M tokens)"
     echo "  [4] gpt-4-turbo  - Fast, good quality (\$10/1M tokens)"
-    echo "  [5] gpt-3.5-turbo - ${YELLOW}💰 CHEAPEST${RESET} - Basic but good (\$0.50/1M tokens)"
+    echo -e "  [5] gpt-3.5-turbo - ${YELLOW}💰 CHEAPEST${RESET} - Basic but good (\$0.50/1M tokens)"
     echo ""
     echo -e "${CYAN}Tip: Start with gpt-4o for best experience, or gpt-3.5-turbo to save money${RESET}"
     echo -n "Select [1-5] (default: 2): "
@@ -272,7 +272,7 @@ if true; then  # FORCE SETUP TO ALWAYS RUN FOR DEBUGGING
         echo -e "${YELLOW}Step 5/6: Select Default Perplexity Model${RESET}"
         echo "────────────────────────────────────"
         echo ""
-        echo "  [1] pplx-7b-online  ${GREEN}⭐ RECOMMENDED${RESET} - Fast, efficient"
+        echo -e "  [1] pplx-7b-online  ${GREEN}⭐ RECOMMENDED${RESET} - Fast, efficient"
         echo "  [2] pplx-70b-online - More powerful, slower"
         echo "  [3] sonar-small-online - Ultra-fast"
         echo "  [4] sonar-medium-online - Balanced"
@@ -312,11 +312,11 @@ if true; then  # FORCE SETUP TO ALWAYS RUN FOR DEBUGGING
 
     # Check for conflicts and adjust recommendations
     if check_command_available "ai"; then
-        echo "  [1] ai   ${GREEN}⭐ RECOMMENDED${RESET} - Clear and memorable"
+        echo -e "  [1] ai   ${GREEN}⭐ RECOMMENDED${RESET} - Clear and memorable"
         DEFAULT_CHOICE="1"
         DEFAULT_CMD="ai"
     else
-        echo "  [1] ai   ${RED}⚠ IN USE${RESET} - Already taken on your system"
+        echo -e "  [1] ai   ${RED}⚠ IN USE${RESET} - Already taken on your system"
         DEFAULT_CHOICE="7"
         DEFAULT_CMD="aic"
     fi
@@ -329,7 +329,7 @@ if true; then  # FORCE SETUP TO ALWAYS RUN FOR DEBUGGING
 
     # Add aic option if ai is taken
     if ! check_command_available "ai"; then
-        echo "  [7] aic  ${GREEN}⭐ RECOMMENDED${RESET} - AI Chat (since 'ai' is taken)"
+        echo -e "  [7] aic  ${GREEN}⭐ RECOMMENDED${RESET} - AI Chat (since 'ai' is taken)"
     fi
 
     echo ""
