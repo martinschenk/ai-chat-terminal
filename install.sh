@@ -126,7 +126,13 @@ if ! command -v jq &> /dev/null; then
 fi
 
 # First-time setup
+echo -e "${YELLOW}DEBUG: Checking setup conditions...${RESET}"
+echo "  • .env exists: $(test -f "$CONFIG_DIR/.env" && echo YES || echo NO)"
+echo "  • .env non-empty: $(test -s "$CONFIG_DIR/.env" && echo YES || echo NO)"
+echo "  • .env corrupted: $(grep -q "Update shell configuration" "$CONFIG_DIR/.env" 2>/dev/null && echo YES || echo NO)"
+
 if [[ ! -f "$CONFIG_DIR/.env" ]] || [[ ! -s "$CONFIG_DIR/.env" ]] || grep -q "Update shell configuration" "$CONFIG_DIR/.env" 2>/dev/null; then
+    echo -e "${GREEN}DEBUG: Running first-time setup!${RESET}"
     echo -e "\n${CYAN}${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
     echo -e "${CYAN}${BOLD}        🚀 First-Time Setup${RESET}"
     echo -e "${CYAN}${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}\n"
@@ -414,6 +420,10 @@ DEFAULT_COLOR=green
 # Note: OPENAI_API_KEY is loaded from ~/.aichat/.env for security
 EOF
 
+else
+    echo -e "${RED}DEBUG: Setup was skipped! Using existing configuration.${RESET}"
+    echo "  • COMMAND will be: ${COMMAND:-NOT SET}"
+    echo "  • INSTALL_DIR: $INSTALL_DIR"
 fi
 
 # Update shell configuration
