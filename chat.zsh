@@ -189,13 +189,19 @@ ai_chat_function() {
         local TIME_DIFF=$((CURRENT_TIME - LAST_TIME))
 
         if [[ $TIME_DIFF -gt $TIMEOUT_SECONDS ]]; then
+            # Clear all possible chat cache locations
             rm -f "/tmp/chat_cache/${CHAT_NAME}.json" 2>/dev/null
+            rm -f "/tmp/shell_gpt/chat_cache/${CHAT_NAME}.json" 2>/dev/null
+            rm -f "$HOME/.cache/shell_gpt/chat_cache/${CHAT_NAME}.json" 2>/dev/null
             SESSION_STATUS=""
         else
             SESSION_STATUS="${DIM}[${LANG_HEADER_CONTINUE} ${TIME_DIFF}${LANG_STATUS_SECONDS}]${RESET}"
         fi
     else
+        # Clear all possible chat cache locations
         rm -f "/tmp/chat_cache/${CHAT_NAME}.json" 2>/dev/null
+        rm -f "/tmp/shell_gpt/chat_cache/${CHAT_NAME}.json" 2>/dev/null
+        rm -f "$HOME/.cache/shell_gpt/chat_cache/${CHAT_NAME}.json" 2>/dev/null
     fi
 
     # Update timestamp
@@ -260,7 +266,11 @@ ai_chat_function() {
                 ;;
         esac
 
-        sgpt --chat "$CHAT_NAME" "${DIALECT_PROMPT}$*"
+        if [[ -n "$DIALECT_PROMPT" ]]; then
+            sgpt --chat "$CHAT_NAME" "${DIALECT_PROMPT}$*"
+        else
+            sgpt --chat "$CHAT_NAME" "$*"
+        fi
         echo -e "\n${DIM}─────────────────────────────────────────────────────${RESET}\n"
 
         # Continue in chat mode
@@ -440,7 +450,13 @@ chat_loop() {
                 ;;
         esac
 
-        sgpt --chat "$CHAT_NAME" "${DIALECT_PROMPT}$INPUT"
+        # Use sgpt with proper chat session
+        if [[ -n "$DIALECT_PROMPT" ]]; then
+            # With dialect, we need to prepend the system message
+            sgpt --chat "$CHAT_NAME" "${DIALECT_PROMPT}$INPUT"
+        else
+            sgpt --chat "$CHAT_NAME" "$INPUT"
+        fi
         echo -e "${DIM}─────────────────────────────────────────────────────${RESET}\n"
     done
 }
