@@ -144,7 +144,7 @@ ai_chat_function() {
 
     # Instant chat mode (just 'q' entered)
     clear
-    echo -e "${CYAN}config${RESET} = settings ${DIM}|${RESET} ${YELLOW}ESC${RESET}/${YELLOW}exit${RESET} = quit ${SESSION_STATUS}"
+    echo -e "${CYAN}/config${RESET} = settings ${DIM}|${RESET} ${YELLOW}ESC${RESET}/${YELLOW}exit${RESET} = quit ${SESSION_STATUS}"
     echo -e "${DIM}─────────────────────────────────────────────────────${RESET}\n"
 
     chat_loop
@@ -249,14 +249,14 @@ chat_loop() {
                 show_config_menu
                 # After config, show header again
                 clear
-                echo -e "${CYAN}config${RESET} = settings ${DIM}|${RESET} ${YELLOW}ESC${RESET}/${YELLOW}exit${RESET} = quit"
+                echo -e "${CYAN}/config${RESET} = settings ${DIM}|${RESET} ${YELLOW}ESC${RESET}/${YELLOW}exit${RESET} = quit"
                 echo -e "${DIM}─────────────────────────────────────────────────────${RESET}\n"
                 continue
                 ;;
 
             clear|cls)
                 clear
-                echo -e "${CYAN}config${RESET} = settings ${DIM}|${RESET} ${YELLOW}ESC${RESET}/${YELLOW}exit${RESET} = quit"
+                echo -e "${CYAN}/config${RESET} = settings ${DIM}|${RESET} ${YELLOW}ESC${RESET}/${YELLOW}exit${RESET} = quit"
                 echo -e "${DIM}─────────────────────────────────────────────────────${RESET}\n"
                 continue
                 ;;
