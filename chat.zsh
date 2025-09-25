@@ -189,19 +189,13 @@ ai_chat_function() {
         local TIME_DIFF=$((CURRENT_TIME - LAST_TIME))
 
         if [[ $TIME_DIFF -gt $TIMEOUT_SECONDS ]]; then
-            # Clear all possible chat cache locations
             rm -f "/tmp/chat_cache/${CHAT_NAME}.json" 2>/dev/null
-            rm -f "/tmp/shell_gpt/chat_cache/${CHAT_NAME}.json" 2>/dev/null
-            rm -f "$HOME/.cache/shell_gpt/chat_cache/${CHAT_NAME}.json" 2>/dev/null
             SESSION_STATUS=""
         else
             SESSION_STATUS="${DIM}[${LANG_HEADER_CONTINUE} ${TIME_DIFF}${LANG_STATUS_SECONDS}]${RESET}"
         fi
     else
-        # Clear all possible chat cache locations
         rm -f "/tmp/chat_cache/${CHAT_NAME}.json" 2>/dev/null
-        rm -f "/tmp/shell_gpt/chat_cache/${CHAT_NAME}.json" 2>/dev/null
-        rm -f "$HOME/.cache/shell_gpt/chat_cache/${CHAT_NAME}.json" 2>/dev/null
     fi
 
     # Update timestamp
@@ -266,11 +260,7 @@ ai_chat_function() {
                 ;;
         esac
 
-        if [[ -n "$DIALECT_PROMPT" ]]; then
-            sgpt --chat "$CHAT_NAME" "${DIALECT_PROMPT}$*"
-        else
-            sgpt --chat "$CHAT_NAME" "$*"
-        fi
+        sgpt --chat "$CHAT_NAME" "${DIALECT_PROMPT}$*"
         echo -e "\n${DIM}─────────────────────────────────────────────────────${RESET}\n"
 
         # Continue in chat mode
@@ -450,13 +440,7 @@ chat_loop() {
                 ;;
         esac
 
-        # Use sgpt with proper chat session
-        if [[ -n "$DIALECT_PROMPT" ]]; then
-            # With dialect, we need to prepend the system message
-            sgpt --chat "$CHAT_NAME" "${DIALECT_PROMPT}$INPUT"
-        else
-            sgpt --chat "$CHAT_NAME" "$INPUT"
-        fi
+        sgpt --chat "$CHAT_NAME" "${DIALECT_PROMPT}$INPUT"
         echo -e "${DIM}─────────────────────────────────────────────────────${RESET}\n"
     done
 }
@@ -493,8 +477,9 @@ show_config_menu() {
         LANG_CONFIG_OPT4="Toggle ESC key exit"
         LANG_CONFIG_OPT5="Change AI model"
         LANG_CONFIG_OPT6="Back to chat"
+        LANG_CONFIG_OPT7="Clear chat cache"
         LANG_CONFIG_OPT9="Uninstall completely"
-        LANG_CONFIG_SELECT="Select [1-6,9]:"
+        LANG_CONFIG_SELECT="Select [1-7,9]:"
         LANG_CONFIG_ENTER_CMD="Enter new command (current: "
         LANG_CONFIG_ENTER_LANG="Enter code:"
         LANG_CONFIG_ENTER_TIMEOUT="Timeout in seconds (current: "
@@ -529,6 +514,7 @@ show_config_menu() {
     echo -e "${PURPLE}║${RESET}  ${GREEN}[4]${RESET} ${LANG_CONFIG_OPT4}            ${PURPLE}║${RESET}"
     echo -e "${PURPLE}║${RESET}  ${GREEN}[5]${RESET} ${LANG_CONFIG_OPT5}                 ${PURPLE}║${RESET}"
     echo -e "${PURPLE}║${RESET}  ${GREEN}[6]${RESET} ${LANG_CONFIG_OPT6}                   ${PURPLE}║${RESET}"
+    echo -e "${PURPLE}║${RESET}  ${GREEN}[7]${RESET} 🧹 ${LANG_CONFIG_OPT7}              ${PURPLE}║${RESET}"
     echo -e "${PURPLE}║${RESET}                                       ${PURPLE}║${RESET}"
     echo -e "${PURPLE}║${RESET}  ${RED}[9]${RESET} 🗑️  ${LANG_CONFIG_OPT9}        ${PURPLE}║${RESET}"
     echo -e "${PURPLE}╚═══════════════════════════════════════╝${RESET}"
@@ -645,16 +631,27 @@ show_config_menu() {
 
         5)
             echo -e "${CYAN}AI Models:${RESET}"
-            echo "  1) gpt-4o-mini (fast)"
-            echo "  2) gpt-4o (powerful)"
-            echo "  3) gpt-3.5-turbo"
-            echo -ne "${CYAN}Select [1-3]: ${RESET}"
+            echo "  1) gpt-4o-mini (fast, cheap, good for dialects)"
+            echo "  2) gpt-4o (best for dialects! 🌍)"
+            echo "  3) gpt-4 (powerful, standard)"
+            echo "  4) gpt-4-turbo (fast)"
+            echo "  5) gpt-3.5-turbo (basic, cheap)"
+
+            # Show dialect recommendation if using dialect
+            if [[ "$LANGUAGE" == *"-"* ]]; then
+                echo ""
+                echo -e "${YELLOW}💡 Tip: For dialects, GPT-4o works best!${RESET}"
+            fi
+
+            echo -ne "${CYAN}Select [1-5]: ${RESET}"
             read -r model_choice
 
             case $model_choice in
                 1) model="gpt-4o-mini" ;;
                 2) model="gpt-4o" ;;
-                3) model="gpt-3.5-turbo" ;;
+                3) model="gpt-4" ;;
+                4) model="gpt-4-turbo" ;;
+                5) model="gpt-3.5-turbo" ;;
                 *) model="" ;;
             esac
 
@@ -667,6 +664,48 @@ show_config_menu() {
                 echo -e "${GREEN}✅ Model: $model${RESET}"
                 sleep 2
             fi
+            ;;
+
+        7)
+            # Clear chat cache
+            echo -e "${YELLOW}Clearing chat cache...${RESET}"
+
+            # Clear sgpt chat sessions
+            local cache_cleared=false
+
+            # Clear from temp directory (main cache location)
+            if [[ -d "/var/folders" ]]; then
+                find /var/folders -name "*_chat" -type f 2>/dev/null | while read cache_file; do
+                    if [[ -w "$cache_file" ]]; then
+                        rm -f "$cache_file" 2>/dev/null && cache_cleared=true
+                        echo -e "  ${GREEN}✓${RESET} Cleared: $(basename $cache_file)"
+                    fi
+                done
+            fi
+
+            # Clear from ~/.config/shell_gpt/chat_sessions if exists
+            if [[ -d "$HOME/.config/shell_gpt/chat_sessions" ]]; then
+                find "$HOME/.config/shell_gpt/chat_sessions" -type f -name "*" ! -name ".gitkeep" -delete 2>/dev/null
+                cache_cleared=true
+            fi
+
+            # Clear sgpt's cached chats (alternative location)
+            local sgpt_cache_dir="$HOME/.cache/sgpt"
+            if [[ -d "$sgpt_cache_dir" ]]; then
+                rm -rf "$sgpt_cache_dir"/* 2>/dev/null && cache_cleared=true
+            fi
+
+            # Clear our session timestamp
+            if [[ -f "$SESSION_FILE" ]]; then
+                rm -f "$SESSION_FILE" 2>/dev/null && cache_cleared=true
+            fi
+
+            if [[ "$cache_cleared" == "true" ]]; then
+                echo -e "\n${GREEN}✅ Chat cache cleared successfully!${RESET}"
+            else
+                echo -e "\n${YELLOW}No cache files found or already clear.${RESET}"
+            fi
+            sleep 2
             ;;
 
         9)
