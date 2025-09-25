@@ -403,15 +403,15 @@ AI_CHAT_TIMEOUT="600"
 AI_CHAT_ESC_EXIT="true"
 EOF
 
-    # Configure sgpt
+    # Configure sgpt (API key loaded from ~/.aichat/.env)
     mkdir -p ~/.config/shell_gpt
     cat > ~/.config/shell_gpt/.sgptrc << EOF
 DEFAULT_MODEL=$OPENAI_MODEL
-OPENAI_API_KEY=$OPENAI_KEY
 CHAT_CACHE_LENGTH=20
 CHAT_CACHE_PATH=/tmp/chat_cache
 REQUEST_TIMEOUT=60
 DEFAULT_COLOR=green
+# Note: OPENAI_API_KEY is loaded from ~/.aichat/.env for security
 EOF
 
 fi
