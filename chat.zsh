@@ -110,8 +110,11 @@ ai_chat_function() {
                 echo "  [5] 🇻🇪 Venezolano (Pana, épale)"
                 echo "  [6] 🇨🇱 Chileno (Po, wena)"
                 echo "  [7] 🇪🇸 Andaluz (Quillo)"
+                echo "  [8] 🏴 Català (Bon dia!)"
+                echo "  [9] 🏴 Euskera (Kaixo!)"
+                echo "  [10] 🏴 Galego (Ola!)"
                 echo ""
-                echo -n "Selección [1-7]: "
+                echo -n "Selección [1-10]: "
                 read -r spanish_choice
                 case "$spanish_choice" in
                     2) selected_lang="es-mexicano" ;;
@@ -120,6 +123,9 @@ ai_chat_function() {
                     5) selected_lang="es-venezolano" ;;
                     6) selected_lang="es-chileno" ;;
                     7) selected_lang="es-andaluz" ;;
+                    8) selected_lang="ca" ;;
+                    9) selected_lang="eu" ;;
+                    10) selected_lang="gl" ;;
                     *) selected_lang="es" ;;
                 esac
                 ;;
@@ -256,6 +262,15 @@ ai_chat_function() {
                 ;;
             es-venezolano)
                 DIALECT_PROMPT="[SYSTEM: Responde en español venezolano] "
+                ;;
+            ca)
+                DIALECT_PROMPT="[SYSTEM: Respon en català] "
+                ;;
+            eu)
+                DIALECT_PROMPT="[SYSTEM: Erantzun euskeraz] "
+                ;;
+            gl)
+                DIALECT_PROMPT="[SYSTEM: Responde en galego] "
                 ;;
             zh)
                 DIALECT_PROMPT="[SYSTEM: 请用中文回答] "
@@ -437,6 +452,15 @@ chat_loop() {
             es-venezolano)
                 DIALECT_PROMPT="[SYSTEM: Responde en español venezolano usando expresiones como 'pana', 'épale', 'chamo', 'fino', 'arrecho', etc.] "
                 ;;
+            ca)
+                DIALECT_PROMPT="[SYSTEM: Respon en català utilitzant expressions catalanes com 'déu n'hi do', 'collons', 'oi', 'va', 'bon dia', etc.] "
+                ;;
+            eu)
+                DIALECT_PROMPT="[SYSTEM: Erantzun euskeraz, euskal esamoldeak erabiliz: 'kaixo', 'agur', 'eskerrik asko', 'bai', 'ez', 'aupa', etc.] "
+                ;;
+            gl)
+                DIALECT_PROMPT="[SYSTEM: Responde en galego usando expresións galegas como 'ola', 'bo día', 'grazas', 'moitas', 'carallo', etc.] "
+                ;;
             zh)
                 DIALECT_PROMPT="[SYSTEM: 请用中文回答] "
                 ;;
@@ -590,7 +614,10 @@ show_config_menu() {
                 echo "  [5] 🇻🇪 Venezolano"
                 echo "  [6] 🇨🇱 Chileno"
                 echo "  [7] 🇪🇸 Andaluz"
-                echo -n "Selección [1-7]: "
+                echo "  [8] 🏴 Català"
+                echo "  [9] 🏴 Euskera"
+                echo "  [10] 🏴 Galego"
+                echo -n "Selección [1-10]: "
                 read -r variant
                 case "$variant" in
                     2) new_lang="es-mexicano" ;;
@@ -599,11 +626,14 @@ show_config_menu() {
                     5) new_lang="es-venezolano" ;;
                     6) new_lang="es-chileno" ;;
                     7) new_lang="es-andaluz" ;;
+                    8) new_lang="ca" ;;
+                    9) new_lang="eu" ;;
+                    10) new_lang="gl" ;;
                     *) new_lang="es" ;;
                 esac
             fi
 
-            if [[ "$new_lang" == "en" ]] || [[ "$new_lang" == "de" ]] || [[ "$new_lang" == "de-"* ]] || [[ "$new_lang" == "fr" ]] || [[ "$new_lang" == "it" ]] || [[ "$new_lang" == "es" ]] || [[ "$new_lang" == "es-"* ]] || [[ "$new_lang" == "zh" ]] || [[ "$new_lang" == "hi" ]]; then
+            if [[ "$new_lang" == "en" ]] || [[ "$new_lang" == "de" ]] || [[ "$new_lang" == "de-"* ]] || [[ "$new_lang" == "fr" ]] || [[ "$new_lang" == "it" ]] || [[ "$new_lang" == "es" ]] || [[ "$new_lang" == "es-"* ]] || [[ "$new_lang" == "ca" ]] || [[ "$new_lang" == "eu" ]] || [[ "$new_lang" == "gl" ]] || [[ "$new_lang" == "zh" ]] || [[ "$new_lang" == "hi" ]]; then
                 echo "AI_CHAT_COMMAND=\"$COMMAND_CHAR\"" > "$CONFIG_FILE"
                 echo "AI_CHAT_LANGUAGE=\"$new_lang\"" >> "$CONFIG_FILE"
                 echo "AI_CHAT_TIMEOUT=\"$TIMEOUT\"" >> "$CONFIG_FILE"
@@ -686,6 +716,27 @@ show_config_menu() {
                     echo "  3) gpt-4         💪 शक्तिशाली | मानक | मध्यम मूल्य"
                     echo "  4) gpt-4-turbo   ⚡ बहुत तेज़ | अच्छा | मध्यम मूल्य"
                     echo "  5) gpt-3.5-turbo 💵 बहुत सस्ता | बुनियादी | सरल कार्य"
+                    ;;
+                ca)
+                    echo "  1) gpt-4o-mini   💰 Barat | ⚡ Ràpid | Bo per dialectes"
+                    echo "  2) gpt-4o        💎 Premium | 🌍 MILLOR per dialectes! | Més car"
+                    echo "  3) gpt-4         💪 Potent | Estàndard | Preu mitjà"
+                    echo "  4) gpt-4-turbo   ⚡ Molt ràpid | Bo | Preu mitjà"
+                    echo "  5) gpt-3.5-turbo 💵 Molt barat | Bàsic | Tasques simples"
+                    ;;
+                eu)
+                    echo "  1) gpt-4o-mini   💰 Merkea | ⚡ Azkarra | Dialektoetarako ona"
+                    echo "  2) gpt-4o        💎 Premium | 🌍 Dialektoetarako ONENA! | Garestiagoa"
+                    echo "  3) gpt-4         💪 Indartsua | Estandarra | Prezio ertaina"
+                    echo "  4) gpt-4-turbo   ⚡ Oso azkarra | Ona | Prezio ertaina"
+                    echo "  5) gpt-3.5-turbo 💵 Oso merkea | Oinarrizkoa | Zeregin sinpleak"
+                    ;;
+                gl)
+                    echo "  1) gpt-4o-mini   💰 Barato | ⚡ Rápido | Bo para dialectos"
+                    echo "  2) gpt-4o        💎 Premium | 🌍 MELLOR para dialectos! | Máis caro"
+                    echo "  3) gpt-4         💪 Potente | Estándar | Prezo medio"
+                    echo "  4) gpt-4-turbo   ⚡ Moi rápido | Bo | Prezo medio"
+                    echo "  5) gpt-3.5-turbo 💵 Moi barato | Básico | Tarefas simples"
                     ;;
                 *)
                     echo "  1) gpt-4o-mini   💰 Cheap | ⚡ Fast | Good for dialects"

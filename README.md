@@ -2,9 +2,9 @@
 
 **Instant AI chat in your terminal with memory.** No menus, no hassle - just type and chat!
 
-![Version](https://img.shields.io/badge/version-3.7.0-blue)
+![Version](https://img.shields.io/badge/version-3.8.0-blue)
 ![Memory](https://img.shields.io/badge/memory-2%20minutes-red)
-![Languages](https://img.shields.io/badge/languages-16%20Total-orange)
+![Languages](https://img.shields.io/badge/languages-19%20Total-orange)
 ![OS](https://img.shields.io/badge/OS-macOS%20|%20Linux-green)
 
 ## 🚀 Super Easy Installation - Just Copy & Paste!
@@ -68,7 +68,7 @@ q What's my name?
 - **⚡ Instant** - No menus, starts immediately
 - **🎮 Game-Style Config** - Type `/config` in chat for settings
 - **🚪 Quick Exit** - Press `ESC` or type `exit`
-- **🌍 Multi-Language** - 16 variants total (with regional dialects!)
+- **🌍 Multi-Language** - 19 variants total (with regional dialects!)
 - **🤖 Smart Model Selection** - Detailed model descriptions with price & performance info
 - **🧹 Cache Management** - Clear chat history with option 7 in config
 - **📱 Simple** - One command does everything
@@ -176,7 +176,7 @@ Super simple - just 3 files:
 ai-chat-terminal/
 ├── chat.zsh          # Main chat function
 ├── install.sh        # Smart installer
-└── languages/        # Language packs (15 total!)
+└── languages/        # Language packs (19 total!)
     ├── en.conf       # English
     ├── de.conf       # German (Hochdeutsch)
     ├── de-schwaebisch.conf  # Schwäbisch
@@ -188,8 +188,12 @@ ai-chat-terminal/
     ├── es-mexicano.conf     # Mexican Spanish
     ├── es-argentino.conf    # Argentinian Spanish
     ├── es-colombiano.conf   # Colombian Spanish
+    ├── es-venezolano.conf   # Venezuelan Spanish
     ├── es-chileno.conf      # Chilean Spanish
     ├── es-andaluz.conf      # Andalusian Spanish
+    ├── ca.conf       # Catalan
+    ├── eu.conf       # Basque (Euskera)
+    ├── gl.conf       # Galician
     ├── zh.conf       # Chinese (Mandarin)
     └── hi.conf       # Hindi
 ```
@@ -201,7 +205,10 @@ ai-chat-terminal/
 - 🇩🇪 German (de) - with 3 dialects!
 - 🇫🇷 French (fr)
 - 🇮🇹 Italian (it)
-- 🇪🇸 Spanish (es) - with 5 regional variants!
+- 🇪🇸 Spanish (es) - with 6 regional variants!
+- Catalan (ca) - Bon dia!
+- Basque/Euskera (eu) - Kaixo!
+- Galician (gl) - Ola!
 - 🇨🇳 Chinese Mandarin (zh)
 - 🇮🇳 Hindi (hi)
 
@@ -210,10 +217,11 @@ ai-chat-terminal/
 - Bayerisch - Bavarian style
 - Sächsisch - Saxon dialect
 
-**Spanish Variants (¡Órale!):**
+**Spanish & Regional Variants:**
 - 🇲🇽 Mexicano - ¡Órale, güey!
 - 🇦🇷 Argentino - Che, ¿cómo andás?
 - 🇨🇴 Colombiano - ¡Qué más, parce!
+- 🇻🇪 Venezolano - ¡Épale, pana!
 - 🇨🇱 Chileno - ¿Cachai po?
 - 🇪🇸 Andaluz - ¡Quillo, qué arte!
 
