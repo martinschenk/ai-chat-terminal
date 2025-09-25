@@ -1,149 +1,194 @@
 #!/bin/bash
+# AI Chat Terminal - Smart Universal Installer
+# Works with .zshrc, .bashrc, and .profile
 
-# AI Chat Terminal - Installation Script
-# Multi-language support with configurable command
+set -e
 
-set -e  # Exit on error
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+CYAN='\033[0;36m'
+RESET='\033[0m'
 
-echo "🤖 AI Chat Terminal Installer"
-echo "=============================="
+echo -e "${CYAN}"
+echo "     ___   ____    _____ _           _   "
+echo "    / _ \\ |_ _|   / ____| |         | |  "
+echo "   / /_\\ \\ | |   | |    | |__   __ _| |_ "
+echo "   |  _  | | |   | |    | '_ \\ / _\` | __|"
+echo "   | | | |_| |_  | |____| | | | (_| | |_ "
+echo "   \\_| |_/\\___/  \\_____|_| |_|\\__,_|\\__|"
+echo -e "${RESET}"
+echo -e "${CYAN}        Instant AI Chat Terminal${RESET}"
+echo -e "${CYAN}          One-Line Installation${RESET}"
 echo ""
 
-# Check for zsh
-if ! command -v zsh &> /dev/null; then
-    echo "❌ Error: zsh is required but not installed."
-    echo "   On macOS: zsh comes pre-installed"
-    echo "   On Linux: sudo apt install zsh"
+# Detect OS
+if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+    OS="Linux"
+elif [[ "$OSTYPE" == "darwin"* ]]; then
+    OS="macOS"
+else
+    echo -e "${RED}❌ Unsupported OS: $OSTYPE${RESET}"
+    echo "This tool requires macOS or Linux"
     exit 1
 fi
 
-# Check for Python
+echo -e "${GREEN}✅ Detected: $OS${RESET}"
+
+# Check Python
 if ! command -v python3 &> /dev/null; then
-    echo "❌ Error: Python 3 is required but not installed."
-    echo "   Visit: https://www.python.org/downloads/"
+    echo -e "${RED}❌ Python 3 required${RESET}"
+    echo "Install: https://www.python.org/downloads/"
     exit 1
 fi
 
-echo "✅ Prerequisites checked"
-echo ""
-
-# Install shell-gpt if not installed
+# Install shell-gpt if needed
 if ! command -v sgpt &> /dev/null; then
-    echo "📦 Installing Shell GPT..."
-    pip3 install shell-gpt || {
-        echo "❌ Failed to install shell-gpt"
-        echo "   Try: pip3 install --user shell-gpt"
+    echo -e "${YELLOW}📦 Installing Shell GPT...${RESET}"
+    pip3 install --user shell-gpt || pip install --user shell-gpt || {
+        echo -e "${RED}Failed to install. Try: pip3 install shell-gpt${RESET}"
         exit 1
     }
-    echo "✅ Shell GPT installed"
-else
-    echo "✅ Shell GPT already installed"
 fi
-
-echo ""
 
 # Setup directories
 INSTALL_DIR="$HOME/ai-chat-terminal"
 CONFIG_DIR="$HOME/.config/ai-chat"
 
-echo "📁 Setting up directories..."
-mkdir -p "$INSTALL_DIR/ai-chat/languages"
+echo -e "${CYAN}Setting up AI Chat...${RESET}"
+mkdir -p "$INSTALL_DIR/languages"
 mkdir -p "$CONFIG_DIR"
 
-# Copy files
-cp -r ai-chat/* "$INSTALL_DIR/ai-chat/" 2>/dev/null || true
+# Download files from GitHub
+BASE_URL="https://raw.githubusercontent.com/martinschenk/ai-chat-terminal/main"
 
-# Ask for preferences
+echo "Downloading files..."
+curl -sSL "$BASE_URL/chat.zsh" -o "$INSTALL_DIR/chat.zsh" 2>/dev/null || \
+    wget -q "$BASE_URL/chat.zsh" -O "$INSTALL_DIR/chat.zsh"
+
+# Download language files
+curl -sSL "$BASE_URL/languages/en.conf" -o "$INSTALL_DIR/languages/en.conf" 2>/dev/null || \
+    wget -q "$BASE_URL/languages/en.conf" -O "$INSTALL_DIR/languages/en.conf"
+
+curl -sSL "$BASE_URL/languages/de.conf" -o "$INSTALL_DIR/languages/de.conf" 2>/dev/null || \
+    wget -q "$BASE_URL/languages/de.conf" -O "$INSTALL_DIR/languages/de.conf"
+
+# Quick configuration
 echo ""
-echo "🎨 Configuration"
-echo "================"
-echo ""
+echo -e "${CYAN}⚙️  Quick Setup${RESET}"
+echo -e "${CYAN}═══════════════${RESET}"
 
 # Command character
-read -p "Enter command character (default: q): " cmd_char
+echo -ne "Command character [${GREEN}q${RESET}]: "
+read -r cmd_char
 cmd_char=${cmd_char:-q}
 
 # Language
-echo ""
-echo "Available languages:"
-echo "  en - English (default)"
-echo "  de - German"
-read -p "Select language [en]: " language
+echo -e "\nLanguages: ${GREEN}en${RESET}=English, ${GREEN}de${RESET}=German"
+echo -ne "Select language [${GREEN}en${RESET}]: "
+read -r language
 language=${language:-en}
 
-# Create user config
+# ESC key
+echo -ne "\nEnable ESC key to exit? [${GREEN}Y${RESET}/n]: "
+read -r esc_key
+if [[ "$esc_key" =~ ^[Nn]$ ]]; then
+    esc_exit="false"
+else
+    esc_exit="true"
+fi
+
+# Save configuration
 cat > "$CONFIG_DIR/config" << EOF
-# AI Chat Terminal Configuration
 AI_CHAT_COMMAND="$cmd_char"
 AI_CHAT_LANGUAGE="$language"
-AI_CHAT_TIMEOUT=120
+AI_CHAT_TIMEOUT="120"
+AI_CHAT_ESC_EXIT="$esc_exit"
 EOF
 
-echo "✅ Configuration saved"
+# Detect shell config file
+SHELL_CONFIG=""
+SHELL_NAME=""
 
-# Check for API key
-if [ -z "$OPENAI_API_KEY" ]; then
-    echo ""
-    echo "⚠️  No OpenAI API key found!"
-    echo ""
-    echo "To set your API key, add this to ~/.zshrc:"
-    echo ""
-    echo "   export OPENAI_API_KEY=\"sk-your-key-here\""
-    echo ""
-    echo "Get your key at: https://platform.openai.com/api-keys"
-    echo ""
-    read -p "Enter your OpenAI API key (or press Enter to skip): " api_key
-
-    if [ ! -z "$api_key" ]; then
-        echo "" >> ~/.zshrc
-        echo "# OpenAI API Key for AI Chat Terminal" >> ~/.zshrc
-        echo "export OPENAI_API_KEY=\"$api_key\"" >> ~/.zshrc
-        echo "✅ API key added to ~/.zshrc"
-    fi
+# Priority order: .zshrc > .bashrc > .profile
+if [[ -f "$HOME/.zshrc" ]] || [[ "$SHELL" == *"zsh"* ]]; then
+    SHELL_CONFIG="$HOME/.zshrc"
+    SHELL_NAME="zsh"
+elif [[ -f "$HOME/.bashrc" ]] || [[ "$SHELL" == *"bash"* ]]; then
+    SHELL_CONFIG="$HOME/.bashrc"
+    SHELL_NAME="bash"
 else
-    echo "✅ OpenAI API key found"
+    SHELL_CONFIG="$HOME/.profile"
+    SHELL_NAME="sh"
 fi
 
-# Add to zshrc if not already there
-if ! grep -q "ai_chat.zsh" ~/.zshrc 2>/dev/null; then
-    echo "" >> ~/.zshrc
-    echo "# AI Chat Terminal" >> ~/.zshrc
-    echo "source $INSTALL_DIR/ai-chat/config.sh" >> ~/.zshrc
-    echo "source $INSTALL_DIR/ai-chat/ai_chat.zsh" >> ~/.zshrc
-    echo "alias $cmd_char=\"noglob ai_chat_function\"" >> ~/.zshrc
-    echo "alias ai-chat-config=\"ai_chat_config\"" >> ~/.zshrc
-    echo "✅ Added to ~/.zshrc"
+echo -e "${GREEN}✅ Using: $SHELL_CONFIG${RESET}"
+
+# Remove old aliases if they exist
+sed -i.bak '/# AI Chat Terminal/d' "$SHELL_CONFIG" 2>/dev/null || true
+sed -i.bak '/ai_chat_function/d' "$SHELL_CONFIG" 2>/dev/null || true
+sed -i.bak '/alias.*ai_chat_function/d' "$SHELL_CONFIG" 2>/dev/null || true
+sed -i.bak "/alias $cmd_char=/d" "$SHELL_CONFIG" 2>/dev/null || true
+sed -i.bak "/alias q=/d" "$SHELL_CONFIG" 2>/dev/null || true
+sed -i.bak "/alias f=/d" "$SHELL_CONFIG" 2>/dev/null || true
+
+# Add new configuration
+echo "" >> "$SHELL_CONFIG"
+echo "# AI Chat Terminal" >> "$SHELL_CONFIG"
+echo "source $INSTALL_DIR/chat.zsh" >> "$SHELL_CONFIG"
+
+# Add appropriate alias based on shell
+if [[ "$SHELL_NAME" == "zsh" ]]; then
+    echo "alias $cmd_char='noglob ai_chat_function'" >> "$SHELL_CONFIG"
 else
-    echo "✅ Already configured in ~/.zshrc"
+    echo "alias $cmd_char='ai_chat_function'" >> "$SHELL_CONFIG"
 fi
 
-# Configure sgpt
+# Configure Shell GPT
 mkdir -p ~/.config/shell_gpt
-if [ ! -f ~/.config/shell_gpt/.sgptrc ]; then
+if [[ ! -f ~/.config/shell_gpt/.sgptrc ]]; then
     cat > ~/.config/shell_gpt/.sgptrc << 'EOF'
 CHAT_CACHE_PATH=/tmp/chat_cache
 CACHE_PATH=/tmp/cache
 CHAT_CACHE_LENGTH=100
-CACHE_LENGTH=100
 REQUEST_TIMEOUT=60
 DEFAULT_MODEL=gpt-4o-mini
 DEFAULT_COLOR=magenta
-ROLE_STORAGE_PATH=$HOME/.config/shell_gpt/roles
-DEFAULT_EXECUTE_SHELL_CMD=false
-DISABLE_STREAMING=false
-CODE_THEME=dracula
 EOF
-    echo "✅ Configured Shell GPT"
 fi
 
+# API Key check
 echo ""
-echo "🎉 Installation complete!"
+if [[ -z "$OPENAI_API_KEY" ]]; then
+    echo -e "${YELLOW}⚠️  OpenAI API Key needed${RESET}"
+    echo "Get one at: https://platform.openai.com/api-keys"
+    echo ""
+    echo -ne "Enter API key (or Enter to skip): "
+    read -r api_key
+
+    if [[ ! -z "$api_key" ]]; then
+        echo "" >> "$SHELL_CONFIG"
+        echo "export OPENAI_API_KEY=\"$api_key\"" >> "$SHELL_CONFIG"
+        echo -e "${GREEN}✅ API key saved${RESET}"
+    else
+        echo -e "${YELLOW}Add to $SHELL_CONFIG later:${RESET}"
+        echo "export OPENAI_API_KEY=\"your-key\""
+    fi
+else
+    echo -e "${GREEN}✅ API key found${RESET}"
+fi
+
+# Success!
 echo ""
-echo "To start using AI Chat Terminal:"
+echo -e "${GREEN}╔═══════════════════════════════════════╗${RESET}"
+echo -e "${GREEN}║     🎉 Installation Complete! 🎉      ║${RESET}"
+echo -e "${GREEN}╚═══════════════════════════════════════╝${RESET}"
 echo ""
-echo "  1. Reload your shell:    source ~/.zshrc"
-echo "  2. Quick mode:           $cmd_char What is the weather?"
-echo "  3. Interactive mode:     $cmd_char"
-echo "  4. Change settings:      ai-chat-config"
+echo -e "To start using:"
+echo -e "  1. Reload shell: ${CYAN}source $SHELL_CONFIG${RESET}"
+echo -e "  2. Start chat:   ${CYAN}$cmd_char${RESET}"
+echo -e "  3. Quick query:  ${CYAN}$cmd_char What is 2+2?${RESET}"
 echo ""
-echo "Enjoy! 🚀"
+echo -e "In chat: ${YELLOW}/config${RESET} for settings"
+echo ""
