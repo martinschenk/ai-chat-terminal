@@ -126,7 +126,7 @@ if ! command -v jq &> /dev/null; then
 fi
 
 # First-time setup
-if [[ ! -f "$CONFIG_DIR/.env" ]]; then
+if [[ ! -f "$CONFIG_DIR/.env" ]] || [[ ! -s "$CONFIG_DIR/.env" ]] || grep -q "Update shell configuration" "$CONFIG_DIR/.env" 2>/dev/null; then
     echo -e "\n${CYAN}${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
     echo -e "${CYAN}${BOLD}        🚀 First-Time Setup${RESET}"
     echo -e "${CYAN}${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}\n"
