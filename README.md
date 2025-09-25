@@ -12,7 +12,7 @@
 
 *Finally, an AI that knows what's happening RIGHT NOW - weather, news, stocks, and more!*
 
-[⚡ Quick Install](#-installation) • [✨ Features](#-features) • [🌍 19 Languages](#-languages) • [💰 Pricing](#-api-keys) • [🤝 Contributing](#-contributing)
+[⚡ Quick Install](#-installation) • [✨ Features](#-features) • [🌍 19 Languages](#-languages) • [🔧 Setup](#-api-keys) • [🤝 Contributing](#-contributing)
 
 </div>
 
@@ -29,14 +29,14 @@ According to current information:
 • Google's Gemini reached new benchmarks...
 • Microsoft integrated AI into Windows 12...
 
-$ ai "Current Bitcoin price?"
-🤖 AI ▶ Bitcoin is currently trading at $72,453 USD (↑ 3.2% today)
+$ ai "How to fix git merge conflicts?"
+🤖 AI ▶ Here's how to resolve git merge conflicts step by step...
 
-$ ai "Weather in San Francisco?"
-🤖 AI ▶ San Francisco: 68°F (20°C), partly cloudy with fog later
+$ ai "Best practices for Docker containers?"
+🤖 AI ▶ Key Docker container best practices include...
 ```
 
-## 🎯 Why 15,000+ Developers Choose AI Chat Terminal
+## 🎯 Why Choose AI Chat Terminal
 
 ### 🌟 It Just Works™
 ```bash
@@ -49,11 +49,11 @@ ai "How do I fix a git merge conflict?"
 
 ### 💡 Real-Time Web Search (Game Changer!)
 Unlike other terminal AI tools, we don't just use outdated training data:
-- **📰 Current News** - "What happened today in tech?"
-- **🌤️ Live Weather** - "Will it rain in Tokyo tomorrow?"
-- **📈 Stock Prices** - "Tesla stock price right now?"
-- **⚽ Sports Scores** - "Who won the Champions League match?"
-- **🔬 Latest Research** - "Recent breakthroughs in quantum computing?"
+- **📰 Tech News** - "What's new in React 18?"
+- **🔍 API Status** - "Is GitHub API down right now?"
+- **📊 Performance** - "Latest Node.js benchmarks?"
+- **🚀 Releases** - "What's new in TypeScript 5.0?"
+- **🔧 Tools** - "Best VS Code extensions for Python?"
 
 ### 🧠 Smart Memory System
 - Remembers context for 10 minutes
@@ -351,7 +351,9 @@ Special thanks to our amazing contributors:
 
 ### 📊 Project Stats
 
-![Alt](https://repobeats.axiom.co/api/embed/YOUR_EMBED_CODE.svg "Repobeats analytics image")
+[![GitHub Stats](https://img.shields.io/github/stars/martinschenk/ai-chat-terminal?style=for-the-badge&logo=github)](https://github.com/martinschenk/ai-chat-terminal)
+[![Last Commit](https://img.shields.io/github/last-commit/martinschenk/ai-chat-terminal?style=for-the-badge)](https://github.com/martinschenk/ai-chat-terminal/commits/main)
+[![Issues](https://img.shields.io/github/issues/martinschenk/ai-chat-terminal?style=for-the-badge)](https://github.com/martinschenk/ai-chat-terminal/issues)
 
 ---
 
@@ -364,6 +366,8 @@ Special thanks to our amazing contributors:
 <br>
 
 **Built with ❤️ by developers, for developers**
+
+*Powered by [Shell-GPT](https://github.com/TheR1D/shell_gpt) - Special thanks to TheR1D for the amazing foundation!*
 
 [Report Bug](https://github.com/martinschenk/ai-chat-terminal/issues) • [Request Feature](https://github.com/martinschenk/ai-chat-terminal/issues) • [Join Discord](https://discord.gg/ai-chat-terminal)
 

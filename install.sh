@@ -207,8 +207,9 @@ if [[ ! -f "$CONFIG_DIR/.env" ]]; then
     echo ""
     echo -e "${CYAN}ℹ️  About OpenAI API:${RESET}"
     echo "• ${GREEN}Pay-per-use${RESET} - No monthly subscription!"
-    echo "• Start with just ${YELLOW}\$5-10 credit${RESET}"
+    echo "• Start with just ${YELLOW}\$5 credit${RESET} (required minimum)"
     echo "• Average cost: ${GREEN}\$0.01-0.10 per conversation${RESET}"
+    echo "• ${BOLD}gpt-3.5-turbo${RESET} is cheapest option (10x cheaper than GPT-4)"
     echo "• One-time \$5 credit lasts weeks for casual use"
     echo ""
     echo -e "${BOLD}How to get your API key:${RESET}"
@@ -260,9 +261,9 @@ if [[ ! -f "$CONFIG_DIR/.env" ]]; then
     echo "  [2] gpt-4o       ${GREEN}⭐ RECOMMENDED${RESET} - Best performance (\$2.50/1M tokens)"
     echo "  [3] gpt-4        - Classic powerful model (\$30/1M tokens)"
     echo "  [4] gpt-4-turbo  - Fast, good quality (\$10/1M tokens)"
-    echo "  [5] gpt-3.5-turbo - Basic, very cheap (\$0.50/1M tokens)"
+    echo "  [5] gpt-3.5-turbo - ${YELLOW}💰 CHEAPEST${RESET} - Basic but good (\$0.50/1M tokens)"
     echo ""
-    echo -e "${CYAN}Tip: Start with gpt-4o for best experience${RESET}"
+    echo -e "${CYAN}Tip: Start with gpt-4o for best experience, or gpt-3.5-turbo to save money${RESET}"
     echo -n "Select [1-5] (default: 2): "
     read -r MODEL_CHOICE
 
