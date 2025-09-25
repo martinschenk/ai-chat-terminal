@@ -2,7 +2,7 @@
 
 **Instant AI chat in your terminal with memory.** No menus, no hassle - just type and chat!
 
-![Version](https://img.shields.io/badge/version-3.5.0-blue)
+![Version](https://img.shields.io/badge/version-3.6.0-blue)
 ![Memory](https://img.shields.io/badge/memory-2%20minutes-red)
 ![Languages](https://img.shields.io/badge/languages-16%20Total-orange)
 ![OS](https://img.shields.io/badge/OS-macOS%20|%20Linux-green)
@@ -69,6 +69,7 @@ q What's my name?
 - **🎮 Game-Style Config** - Type `/config` in chat for settings
 - **🚪 Quick Exit** - Press `ESC` or type `exit`
 - **🌍 Multi-Language** - 15 variants total (with regional dialects!)
+- **🧹 Cache Management** - Clear chat history with option 7 in config
 - **📱 Simple** - One command does everything
 
 ## 🎮 In-Chat Commands
@@ -102,6 +103,9 @@ Type `/config` while in chat to see this menu:
 ║  [4] Toggle ESC key exit             ║
 ║  [5] Change AI model                 ║
 ║  [6] Back to chat                    ║
+║  [7] 🧹 Clear chat cache             ║
+║                                       ║
+║  [9] 🗑️  Uninstall completely        ║
 ╚═══════════════════════════════════════╝
 ```
 
