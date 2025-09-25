@@ -98,17 +98,17 @@ ai_chat_function() {
 
     # Main menu
     echo -e "${BOLD}${PURPLE}╔══════════════════════════════════════════════╗${RESET}"
-    echo -e "${BOLD}${PURPLE}║${RESET}     🎮 ${BOLD}${CYAN}MAIN MENU${RESET}                           ${PURPLE}║${RESET}"
-    echo -e "${BOLD}${PURPLE}║${RESET}     ${SESSION_STATUS}                    ${PURPLE}║${RESET}"
+    echo -e "${BOLD}${PURPLE}║${RESET}     🎮 ${BOLD}${CYAN}MAIN MENU${RESET}                             ${PURPLE}║${RESET}"
+    echo -e "${BOLD}${PURPLE}║${RESET}     ${SESSION_STATUS}                      ${PURPLE}║${RESET}"
     echo -e "${BOLD}${PURPLE}╠══════════════════════════════════════════════╣${RESET}"
     echo -e "${BOLD}${PURPLE}║${RESET}                                              ${PURPLE}║${RESET}"
     echo -e "${BOLD}${PURPLE}║${RESET}  ${GREEN}[1]${RESET} 💬 Start Chat                          ${PURPLE}║${RESET}"
     echo -e "${BOLD}${PURPLE}║${RESET}  ${GREEN}[2]${RESET} ⚙️  Settings                            ${PURPLE}║${RESET}"
-    echo -e "${BOLD}${PURPLE}║${RESET}  ${GREEN}[3]${RESET} 🌍 Language: ${YELLOW}$LANGUAGE${RESET}                        ${PURPLE}║${RESET}"
+    echo -e "${BOLD}${PURPLE}║${RESET}  ${GREEN}[3]${RESET} 🌍 Language: ${YELLOW}$(printf '%-2s' $LANGUAGE)${RESET}                      ${PURPLE}║${RESET}"
     echo -e "${BOLD}${PURPLE}║${RESET}  ${GREEN}[4]${RESET} 📖 Help                                ${PURPLE}║${RESET}"
     echo -e "${BOLD}${PURPLE}║${RESET}  ${GREEN}[5]${RESET} 🚪 Exit                                ${PURPLE}║${RESET}"
     echo -e "${BOLD}${PURPLE}║${RESET}                                              ${PURPLE}║${RESET}"
-    echo -e "${BOLD}${PURPLE}║${RESET}  ${DIM}Command: ${COMMAND_CHAR} | Timeout: ${TIMEOUT_SECONDS}s${RESET}            ${PURPLE}║${RESET}"
+    echo -e "${BOLD}${PURPLE}║${RESET}  ${DIM}Command: ${COMMAND_CHAR} | Timeout: $(printf '%-3s' ${TIMEOUT_SECONDS}s)${RESET}          ${PURPLE}║${RESET}"
     echo -e "${BOLD}${PURPLE}║${RESET}                                              ${PURPLE}║${RESET}"
     echo -e "${BOLD}${PURPLE}╚══════════════════════════════════════════════╝${RESET}"
     echo ""
@@ -122,12 +122,12 @@ ai_chat_function() {
             # Start chat
             clear
             echo -e "${BOLD}${PURPLE}╭═══════════════════════════════════════════╮${RESET}"
-            echo -e "${BOLD}${PURPLE}║${RESET}     🤖 ${BOLD}${CYAN}${LANG_HEADER_TITLE}${RESET}             ${PURPLE}║${RESET}"
-            echo -e "${BOLD}${PURPLE}║${RESET}     ${SESSION_STATUS}                    ${PURPLE}║${RESET}"
+            echo -e "${BOLD}${PURPLE}║${RESET}     🤖 ${BOLD}${CYAN}${LANG_HEADER_TITLE}${RESET}               ${PURPLE}║${RESET}"
+            echo -e "${BOLD}${PURPLE}║${RESET}     ${SESSION_STATUS}                      ${PURPLE}║${RESET}"
             echo -e "${BOLD}${PURPLE}╠═══════════════════════════════════════════╣${RESET}"
-            echo -e "${BOLD}${PURPLE}║${RESET}  ${YELLOW}[Ctrl+C]${RESET} ${LANG_INST_EXIT}                   ${PURPLE}║${RESET}"
+            echo -e "${BOLD}${PURPLE}║${RESET}  ${YELLOW}[Ctrl+C]${RESET} ${LANG_INST_EXIT}                     ${PURPLE}║${RESET}"
             echo -e "${BOLD}${PURPLE}║${RESET}  ${YELLOW}/menu${RESET} return to menu                    ${PURPLE}║${RESET}"
-            echo -e "${BOLD}${PURPLE}║${RESET}  ${YELLOW}exit/quit/bye${RESET} ${LANG_INST_LEAVE}            ${PURPLE}║${RESET}"
+            echo -e "${BOLD}${PURPLE}║${RESET}  ${YELLOW}exit/quit/bye${RESET} ${LANG_INST_LEAVE}              ${PURPLE}║${RESET}"
             echo -e "${BOLD}${PURPLE}╰═══════════════════════════════════════════╯${RESET}\n"
 
             # Interactive chat loop
