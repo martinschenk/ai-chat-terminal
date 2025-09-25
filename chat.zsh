@@ -1,8 +1,56 @@
 #!/usr/bin/env zsh
 # AI Chat Terminal - Ultra Simple Version
+# Version: 3.1.0
 # Instant chat with memory and inline configuration
 
 ai_chat_function() {
+    # Check for API key first
+    if [[ -z "$OPENAI_API_KEY" ]]; then
+        echo ""
+        echo -e "\033[1;33m⚠️  No OpenAI API Key found!\033[0m"
+        echo ""
+        echo -e "\033[0;36mTo use this chat, you need an API key from OpenAI.\033[0m"
+        echo ""
+        echo -e "\033[1mHow to get your API key:\033[0m"
+        echo -e "  1. Go to: \033[0;34mhttps://platform.openai.com/api-keys\033[0m"
+        echo -e "  2. Sign up or log in"
+        echo -e "  3. Click 'Create new secret key'"
+        echo -e "  4. Copy the key (starts with sk-...)"
+        echo ""
+        echo -e "\033[1mHow to set it:\033[0m"
+        echo -e "  Add this to your ~/.zshrc or ~/.bashrc:"
+        echo -e "  \033[0;32mexport OPENAI_API_KEY=\"sk-your-key-here\"\033[0m"
+        echo ""
+        echo -e "  Then reload:"
+        echo -e "  \033[0;32msource ~/.zshrc\033[0m"
+        echo ""
+        echo -ne "\033[0;36mEnter your API key now (or press Enter to exit): \033[0m"
+        read -r api_key
+
+        if [[ ! -z "$api_key" ]]; then
+            export OPENAI_API_KEY="$api_key"
+
+            # Detect shell config
+            local SHELL_CONFIG=""
+            if [[ -f "$HOME/.zshrc" ]]; then
+                SHELL_CONFIG="$HOME/.zshrc"
+            elif [[ -f "$HOME/.bashrc" ]]; then
+                SHELL_CONFIG="$HOME/.bashrc"
+            else
+                SHELL_CONFIG="$HOME/.profile"
+            fi
+
+            echo "" >> "$SHELL_CONFIG"
+            echo "export OPENAI_API_KEY=\"$api_key\"" >> "$SHELL_CONFIG"
+            echo -e "\033[0;32m✅ API key saved to $SHELL_CONFIG\033[0m"
+            echo -e "\033[0;32m✅ You can now start chatting!\033[0m"
+            echo ""
+            sleep 2
+        else
+            echo -e "\033[0;31mExiting. Please set your API key and try again.\033[0m"
+            return 1
+        fi
+    fi
     # Load configuration
     local CONFIG_DIR="$HOME/.config/ai-chat"
     local CONFIG_FILE="$CONFIG_DIR/config"
@@ -241,10 +289,12 @@ show_config_menu() {
     echo -e "${PURPLE}║${RESET}  ${GREEN}[4]${RESET} Toggle ESC key exit             ${PURPLE}║${RESET}"
     echo -e "${PURPLE}║${RESET}  ${GREEN}[5]${RESET} Change AI model                 ${PURPLE}║${RESET}"
     echo -e "${PURPLE}║${RESET}  ${GREEN}[6]${RESET} Back to chat                    ${PURPLE}║${RESET}"
+    echo -e "${PURPLE}║${RESET}                                       ${PURPLE}║${RESET}"
+    echo -e "${PURPLE}║${RESET}  ${RED}[9]${RESET} 🗑️  Uninstall completely         ${PURPLE}║${RESET}"
     echo -e "${PURPLE}╚═══════════════════════════════════════╝${RESET}"
     echo ""
 
-    echo -ne "${CYAN}Select [1-6]: ${RESET}"
+    echo -ne "${CYAN}Select [1-6,9]: ${RESET}"
     read -r choice
 
     case $choice in
@@ -328,6 +378,69 @@ show_config_menu() {
                 fi
                 echo -e "${GREEN}✅ Model: $model${RESET}"
                 sleep 2
+            fi
+            ;;
+
+        9)
+            # Uninstaller
+            clear
+            echo -e "${RED}${BOLD}⚠️  UNINSTALL AI CHAT TERMINAL${RESET}"
+            echo ""
+            echo "This will remove:"
+            echo "  • AI Chat Terminal from your shell config"
+            echo "  • Installation directory: ~/shell-scripts"
+            echo "  • Configuration: ~/.config/ai-chat"
+            echo ""
+            echo -e "${YELLOW}This action cannot be undone!${RESET}"
+            echo ""
+            echo "Type DELETE to confirm uninstallation:"
+            echo -n "> "
+            local confirm
+            read confirm
+
+            if [[ "$confirm" == "DELETE" ]]; then
+                echo ""
+                echo "Uninstalling AI Chat Terminal..."
+
+                # Remove from shell configs
+                local configs=("$HOME/.zshrc" "$HOME/.bashrc" "$HOME/.profile")
+                for config in "${configs[@]}"; do
+                    if [[ -f "$config" ]]; then
+                        # Remove source line
+                        grep -v "source.*shell-scripts/chat.zsh" "$config" > "$config.tmp" && mv "$config.tmp" "$config"
+                        # Remove alias line
+                        grep -v "alias ${COMMAND_CHAR}=" "$config" > "$config.tmp" && mv "$config.tmp" "$config"
+                        echo "  ✓ Cleaned $config"
+                    fi
+                done
+
+                # Remove directories
+                if [[ -d "$HOME/shell-scripts" ]]; then
+                    rm -rf "$HOME/shell-scripts"
+                    echo "  ✓ Removed ~/shell-scripts"
+                fi
+
+                if [[ -d "$HOME/.config/ai-chat" ]]; then
+                    rm -rf "$HOME/.config/ai-chat"
+                    echo "  ✓ Removed ~/.config/ai-chat"
+                fi
+
+                echo ""
+                echo -e "${GREEN}✓ AI Chat Terminal has been uninstalled${RESET}"
+                echo ""
+                echo "Please restart your terminal or run:"
+                echo "  source ~/.zshrc  (or ~/.bashrc)"
+                echo ""
+                echo "Goodbye! 👋"
+                echo ""
+                echo "Press any key to exit..."
+                read -k 1 -s
+                exit 0
+            else
+                echo ""
+                echo -e "${GREEN}✓ Uninstall cancelled${RESET}"
+                echo "Press any key to return to config..."
+                read -k 1 -s
             fi
             ;;
 
