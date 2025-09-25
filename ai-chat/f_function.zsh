@@ -114,5 +114,5 @@ f_function() {
     done
 }
 
-# Export the function
-export -f f_function
+# Function is automatically available in zsh
+# No export needed
