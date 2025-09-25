@@ -1,6 +1,6 @@
 #!/usr/bin/env zsh
 # AI Chat Terminal - Ultra Simple Version
-# Version: 3.3.0
+# Version: 3.4.0
 # Instant chat with memory and inline configuration
 
 ai_chat_function() {
@@ -99,7 +99,28 @@ ai_chat_function() {
                 ;;
             3) selected_lang="fr" ;;
             4) selected_lang="it" ;;
-            5) selected_lang="es" ;;
+            5)
+                # Spanish - ask for variant
+                echo ""
+                echo "¿Qué variante de español prefieres?"
+                echo "  [1] Español (Estándar)"
+                echo "  [2] 🇲🇽 Mexicano"
+                echo "  [3] 🇦🇷 Argentino (Che, vos)"
+                echo "  [4] 🇨🇴 Colombiano (Parce)"
+                echo "  [5] 🇨🇱 Chileno (Po, wena)"
+                echo "  [6] 🇪🇸 Andaluz (Quillo)"
+                echo ""
+                echo -n "Selección [1-6]: "
+                read -r spanish_choice
+                case "$spanish_choice" in
+                    2) selected_lang="es-mexicano" ;;
+                    3) selected_lang="es-argentino" ;;
+                    4) selected_lang="es-colombiano" ;;
+                    5) selected_lang="es-chileno" ;;
+                    6) selected_lang="es-andaluz" ;;
+                    *) selected_lang="es" ;;
+                esac
+                ;;
             6) selected_lang="zh" ;;
             7) selected_lang="hi" ;;
             *) selected_lang="en" ;;
@@ -453,7 +474,29 @@ show_config_menu() {
                 esac
             fi
 
-            if [[ "$new_lang" == "en" ]] || [[ "$new_lang" == "de" ]] || [[ "$new_lang" == "de-"* ]] || [[ "$new_lang" == "fr" ]] || [[ "$new_lang" == "it" ]] || [[ "$new_lang" == "es" ]] || [[ "$new_lang" == "zh" ]] || [[ "$new_lang" == "hi" ]]; then
+            # Handle Spanish variants
+            if [[ "$new_lang" == "es" ]]; then
+                echo ""
+                echo -e "${CYAN}Variante española:${RESET}"
+                echo "  [1] Español (Estándar)"
+                echo "  [2] 🇲🇽 Mexicano"
+                echo "  [3] 🇦🇷 Argentino"
+                echo "  [4] 🇨🇴 Colombiano"
+                echo "  [5] 🇨🇱 Chileno"
+                echo "  [6] 🇪🇸 Andaluz"
+                echo -n "Selección [1-6]: "
+                read -r variant
+                case "$variant" in
+                    2) new_lang="es-mexicano" ;;
+                    3) new_lang="es-argentino" ;;
+                    4) new_lang="es-colombiano" ;;
+                    5) new_lang="es-chileno" ;;
+                    6) new_lang="es-andaluz" ;;
+                    *) new_lang="es" ;;
+                esac
+            fi
+
+            if [[ "$new_lang" == "en" ]] || [[ "$new_lang" == "de" ]] || [[ "$new_lang" == "de-"* ]] || [[ "$new_lang" == "fr" ]] || [[ "$new_lang" == "it" ]] || [[ "$new_lang" == "es" ]] || [[ "$new_lang" == "es-"* ]] || [[ "$new_lang" == "zh" ]] || [[ "$new_lang" == "hi" ]]; then
                 echo "AI_CHAT_COMMAND=\"$COMMAND_CHAR\"" > "$CONFIG_FILE"
                 echo "AI_CHAT_LANGUAGE=\"$new_lang\"" >> "$CONFIG_FILE"
                 echo "AI_CHAT_TIMEOUT=\"$TIMEOUT\"" >> "$CONFIG_FILE"
