@@ -144,7 +144,7 @@ ai_chat_function() {
 
     # Instant chat mode (just 'q' entered)
     clear
-    echo -e "${CYAN}/config${RESET} = settings ${DIM}|${RESET} ${YELLOW}ESC${RESET}/${YELLOW}exit${RESET} = quit ${SESSION_STATUS}"
+    echo -e "${CYAN}config${RESET} = settings ${DIM}|${RESET} ${YELLOW}ESC${RESET}/${YELLOW}exit${RESET} = quit ${SESSION_STATUS}"
     echo -e "${DIM}─────────────────────────────────────────────────────${RESET}\n"
 
     chat_loop
@@ -199,14 +199,29 @@ chat_loop() {
         # Read input - with or without ESC support
         local INPUT=""
         if [[ "$ENABLE_ESC" == "true" ]] && [[ -t 0 ]]; then
-            # Read char by char for ESC detection (only in interactive terminal)
-            while IFS= read -r -s -k 1 char; do
+            # Try char-by-char reading with proper terminal handling
+            local OLD_STTY=$(stty -g 2>/dev/null)
+
+            # Set terminal to raw mode for proper char reading
+            stty raw -echo 2>/dev/null || {
+                # Fallback if stty fails
+                read -r INPUT
+                echo ""
+            }
+
+            # Read char by char
+            while true; do
+                char=$(dd bs=1 count=1 2>/dev/null)
+
                 if [[ $char == $'\e' ]]; then
                     # ESC pressed
+                    stty "$OLD_STTY" 2>/dev/null
                     echo -e "\n\n${YELLOW}👋 ${LANG_MSG_GOODBYE}${RESET}\n"
                     return
-                elif [[ $char == "" ]]; then
+                elif [[ $char == $'\r' ]] || [[ $char == $'\n' ]]; then
                     # Enter pressed
+                    stty "$OLD_STTY" 2>/dev/null
+                    echo
                     break
                 elif [[ $char == $'\177' ]] || [[ $char == $'\b' ]]; then
                     # Backspace
@@ -215,12 +230,11 @@ chat_loop() {
                         echo -ne "\b \b"
                     fi
                 else
-                    # Normal character
+                    # Normal character (including /)
                     INPUT="${INPUT}${char}"
                     echo -n "$char"
                 fi
             done
-            echo # New line after input
         else
             # Simple read without ESC
             read -r INPUT
@@ -231,18 +245,18 @@ chat_loop() {
 
         # Handle commands
         case "$INPUT" in
-            /config|/settings|/menu)
+            /config|/settings|/menu|config|settings|menu|cfg)
                 show_config_menu
                 # After config, show header again
                 clear
-                echo -e "${CYAN}/config${RESET} = settings ${DIM}|${RESET} ${YELLOW}ESC${RESET}/${YELLOW}exit${RESET} = quit"
+                echo -e "${CYAN}config${RESET} = settings ${DIM}|${RESET} ${YELLOW}ESC${RESET}/${YELLOW}exit${RESET} = quit"
                 echo -e "${DIM}─────────────────────────────────────────────────────${RESET}\n"
                 continue
                 ;;
 
             clear|cls)
                 clear
-                echo -e "${CYAN}/config${RESET} = settings ${DIM}|${RESET} ${YELLOW}ESC${RESET}/${YELLOW}exit${RESET} = quit"
+                echo -e "${CYAN}config${RESET} = settings ${DIM}|${RESET} ${YELLOW}ESC${RESET}/${YELLOW}exit${RESET} = quit"
                 echo -e "${DIM}─────────────────────────────────────────────────────${RESET}\n"
                 continue
                 ;;
