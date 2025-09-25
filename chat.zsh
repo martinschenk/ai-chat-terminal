@@ -54,7 +54,8 @@ ai_chat_function() {
     # Load configuration
     local CONFIG_DIR="$HOME/.config/ai-chat"
     local CONFIG_FILE="$CONFIG_DIR/config"
-    local SCRIPT_DIR="${0:A:h}"
+    # Fixed path instead of dynamic resolution
+    local SCRIPT_DIR="$HOME/shell-scripts"
 
     # Create config dir if needed
     mkdir -p "$CONFIG_DIR"
@@ -164,7 +165,9 @@ chat_loop() {
     local LANGUAGE="${AI_CHAT_LANGUAGE:-en}"
     local ENABLE_ESC="${AI_CHAT_ESC_EXIT:-true}"
     local CHAT_NAME="${COMMAND_CHAR}_chat"
-    local SCRIPT_DIR="${0:A:h}"
+
+    # Fixed path for language files
+    local SCRIPT_DIR="$HOME/shell-scripts"
 
     # Load language file
     local LANG_FILE="$SCRIPT_DIR/languages/${LANGUAGE}.conf"
