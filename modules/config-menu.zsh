@@ -96,6 +96,100 @@ show_config_menu() {
     esac
 }
 
+# Change language function
+change_language() {
+    echo -e "\n${CYAN}Select Your Language:${RESET}"
+    echo "  [1] 🇬🇧 English"
+    echo "  [2] 🇩🇪 Deutsch"
+    echo "  [3] 🇫🇷 Français"
+    echo "  [4] 🇮🇹 Italiano"
+    echo "  [5] 🇪🇸 Español"
+    echo "  [6] 🇨🇳 中文 (Mandarin)"
+    echo "  [7] 🇮🇳 हिन्दी (Hindi)"
+    echo -n "Select [1-7]: "
+    read -r lang_choice
+
+    local new_lang=""
+    case "$lang_choice" in
+        1) new_lang="en" ;;
+        2) new_lang="de" ;;
+        3) new_lang="fr" ;;
+        4) new_lang="it" ;;
+        5) new_lang="es" ;;
+        6) new_lang="zh" ;;
+        7) new_lang="hi" ;;
+        *) echo -e "${RED}Invalid choice${RESET}"; sleep 2; return ;;
+    esac
+
+    if [[ ! -z "$new_lang" ]]; then
+        # Update config
+        sed -i '' "s/AI_CHAT_LANGUAGE=.*/AI_CHAT_LANGUAGE=\"$new_lang\"/" "$CONFIG_FILE"
+        echo -e "${GREEN}✅ Language changed to: $new_lang${RESET}"
+        echo -e "${YELLOW}Changes will take effect on next chat session${RESET}"
+        sleep 2
+    fi
+}
+
+# Change timeout function
+change_timeout() {
+    echo -e "\n${CYAN}Set Session Timeout (in seconds):${RESET}"
+    echo "Current: ${AI_CHAT_TIMEOUT:-600} seconds"
+    echo -n "Enter new timeout (60-3600): "
+    read -r new_timeout
+
+    if [[ "$new_timeout" =~ ^[0-9]+$ ]] && [[ "$new_timeout" -ge 60 ]] && [[ "$new_timeout" -le 3600 ]]; then
+        sed -i '' "s/AI_CHAT_TIMEOUT=.*/AI_CHAT_TIMEOUT=\"$new_timeout\"/" "$CONFIG_FILE"
+        echo -e "${GREEN}✅ Timeout changed to: $new_timeout seconds${RESET}"
+        sleep 2
+    else
+        echo -e "${RED}Invalid timeout. Must be 60-3600 seconds${RESET}"
+        sleep 2
+    fi
+}
+
+# Toggle ESC exit function
+toggle_esc() {
+    local current="${AI_CHAT_ESC_EXIT:-true}"
+    local new_val="false"
+    [[ "$current" == "false" ]] && new_val="true"
+
+    sed -i '' "s/AI_CHAT_ESC_EXIT=.*/AI_CHAT_ESC_EXIT=\"$new_val\"/" "$CONFIG_FILE"
+    echo -e "${GREEN}✅ ESC exit toggled to: $new_val${RESET}"
+    sleep 2
+}
+
+# Change AI model function
+change_ai_model() {
+    echo -e "\n${CYAN}Select OpenAI Model:${RESET}"
+    echo "  [1] gpt-4o-mini   - Fast & cheap"
+    echo "  [2] gpt-4o       - Best performance"
+    echo "  [3] gpt-4        - Classic powerful"
+    echo "  [4] gpt-4-turbo  - Fast, good quality"
+    echo "  [5] gpt-3.5-turbo - Cheapest"
+    echo -n "Select [1-5]: "
+    read -r model_choice
+
+    local new_model=""
+    case "$model_choice" in
+        1) new_model="gpt-4o-mini" ;;
+        2) new_model="gpt-4o" ;;
+        3) new_model="gpt-4" ;;
+        4) new_model="gpt-4-turbo" ;;
+        5) new_model="gpt-3.5-turbo" ;;
+        *) echo -e "${RED}Invalid choice${RESET}"; sleep 2; return ;;
+    esac
+
+    # Update .env file
+    if grep -q "DEFAULT_OPENAI_MODEL" "$ENV_FILE"; then
+        sed -i '' "s/DEFAULT_OPENAI_MODEL=.*/DEFAULT_OPENAI_MODEL=\"$new_model\"/" "$ENV_FILE"
+    else
+        echo "DEFAULT_OPENAI_MODEL=\"$new_model\"" >> "$ENV_FILE"
+    fi
+
+    echo -e "${GREEN}✅ Model changed to: $new_model${RESET}"
+    sleep 2
+}
+
 # Change command function
 change_command() {
     echo -e "\n${CYAN}Choose new command:${RESET}"
