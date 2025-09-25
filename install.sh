@@ -428,9 +428,11 @@ fi
 
 # Update shell configuration
 echo -e "\n${BLUE}Updating shell configuration...${RESET}"
+echo -e "${YELLOW}DEBUG: COMMAND variable is: '${COMMAND:-NOT SET}'${RESET}"
 
 SHELL_CONFIGS=("$HOME/.zshrc" "$HOME/.bashrc" "$HOME/.profile")
 COMMAND="${COMMAND:-ai}"
+echo -e "${YELLOW}DEBUG: COMMAND after fallback is: '$COMMAND'${RESET}"
 
 for CONFIG in "${SHELL_CONFIGS[@]}"; do
     if [[ -f "$CONFIG" ]]; then
