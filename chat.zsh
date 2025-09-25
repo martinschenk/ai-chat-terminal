@@ -1,6 +1,6 @@
 #!/usr/bin/env zsh
 # AI Chat Terminal - Ultra Simple Version
-# Version: 3.4.0
+# Version: 3.5.0
 # Instant chat with memory and inline configuration
 
 ai_chat_function() {
@@ -103,21 +103,23 @@ ai_chat_function() {
                 # Spanish - ask for variant
                 echo ""
                 echo "¿Qué variante de español prefieres?"
-                echo "  [1] Español (Estándar)"
-                echo "  [2] 🇲🇽 Mexicano"
+                echo "  [1] 🇪🇸 Español (Estándar)"
+                echo "  [2] 🇲🇽 Mexicano (Órale, güey)"
                 echo "  [3] 🇦🇷 Argentino (Che, vos)"
                 echo "  [4] 🇨🇴 Colombiano (Parce)"
-                echo "  [5] 🇨🇱 Chileno (Po, wena)"
-                echo "  [6] 🇪🇸 Andaluz (Quillo)"
+                echo "  [5] 🇻🇪 Venezolano (Pana, épale)"
+                echo "  [6] 🇨🇱 Chileno (Po, wena)"
+                echo "  [7] 🇪🇸 Andaluz (Quillo)"
                 echo ""
-                echo -n "Selección [1-6]: "
+                echo -n "Selección [1-7]: "
                 read -r spanish_choice
                 case "$spanish_choice" in
                     2) selected_lang="es-mexicano" ;;
                     3) selected_lang="es-argentino" ;;
                     4) selected_lang="es-colombiano" ;;
-                    5) selected_lang="es-chileno" ;;
-                    6) selected_lang="es-andaluz" ;;
+                    5) selected_lang="es-venezolano" ;;
+                    6) selected_lang="es-chileno" ;;
+                    7) selected_lang="es-andaluz" ;;
                     *) selected_lang="es" ;;
                 esac
                 ;;
@@ -213,7 +215,52 @@ ai_chat_function() {
 
         echo -e "${BLUE}👤 ${LANG_LABEL_YOU}:${RESET} $*\n"
         echo -e "${GREEN}🤖 ${LANG_LABEL_AI}:${RESET}"
-        sgpt --chat "$CHAT_NAME" "$*"
+
+        # Add dialect/language instruction if needed
+        local DIALECT_PROMPT=""
+        case "$LANGUAGE" in
+            de-schwaebisch)
+                DIALECT_PROMPT="[SYSTEM: Antworte auf Schwäbisch mit typischen schwäbischen Ausdrücken] "
+                ;;
+            de-bayerisch)
+                DIALECT_PROMPT="[SYSTEM: Antworte auf Bayerisch mit typischen bayerischen Ausdrücken] "
+                ;;
+            de-saechsisch)
+                DIALECT_PROMPT="[SYSTEM: Antworte auf Sächsisch mit typischen sächsischen Ausdrücken] "
+                ;;
+            es-mexicano)
+                DIALECT_PROMPT="[SYSTEM: Responde en español mexicano] "
+                ;;
+            es-argentino)
+                DIALECT_PROMPT="[SYSTEM: Respondé en español argentino con voseo] "
+                ;;
+            es-colombiano)
+                DIALECT_PROMPT="[SYSTEM: Responde en español colombiano] "
+                ;;
+            es-chileno)
+                DIALECT_PROMPT="[SYSTEM: Responde en español chileno] "
+                ;;
+            es-andaluz)
+                DIALECT_PROMPT="[SYSTEM: Responde en andaluz] "
+                ;;
+            es-venezolano)
+                DIALECT_PROMPT="[SYSTEM: Responde en español venezolano] "
+                ;;
+            zh)
+                DIALECT_PROMPT="[SYSTEM: 请用中文回答] "
+                ;;
+            hi)
+                DIALECT_PROMPT="[SYSTEM: कृपया हिंदी में उत्तर दें] "
+                ;;
+            fr)
+                DIALECT_PROMPT="[SYSTEM: Réponds en français] "
+                ;;
+            it)
+                DIALECT_PROMPT="[SYSTEM: Rispondi in italiano] "
+                ;;
+        esac
+
+        sgpt --chat "$CHAT_NAME" "${DIALECT_PROMPT}$*"
         echo -e "\n${DIM}─────────────────────────────────────────────────────${RESET}\n"
 
         # Continue in chat mode
@@ -348,7 +395,52 @@ chat_loop() {
 
         # Process with AI
         echo -e "${GREEN}🤖 ${LANG_LABEL_AI} ▶ ${RESET}"
-        sgpt --chat "$CHAT_NAME" "$INPUT"
+
+        # Add dialect/language instruction if needed
+        local DIALECT_PROMPT=""
+        case "$LANGUAGE" in
+            de-schwaebisch)
+                DIALECT_PROMPT="[SYSTEM: Antworte auf Schwäbisch mit typischen schwäbischen Ausdrücken wie 'isch', 'au', 'gell', 'Griaß Gott', 'ha noi', etc.] "
+                ;;
+            de-bayerisch)
+                DIALECT_PROMPT="[SYSTEM: Antworte auf Bayerisch mit typischen bayerischen Ausdrücken wie 'mei', 'a bisserl', 'Servus', 'pfiat di', 'a Gaudi', etc.] "
+                ;;
+            de-saechsisch)
+                DIALECT_PROMPT="[SYSTEM: Antworte auf Sächsisch mit typischen sächsischen Ausdrücken wie 'nu', 'mor', 'Gudn Dach', etc.] "
+                ;;
+            es-mexicano)
+                DIALECT_PROMPT="[SYSTEM: Responde en español mexicano usando expresiones como 'órale', 'güey', 'chido', 'padre', 'ándale', etc.] "
+                ;;
+            es-argentino)
+                DIALECT_PROMPT="[SYSTEM: Respondé en español argentino usando el voseo y expresiones como 'che', 'boludo', 'bárbaro', 'dale', etc.] "
+                ;;
+            es-colombiano)
+                DIALECT_PROMPT="[SYSTEM: Responde en español colombiano usando expresiones como 'parce', 'bacano', 'chévere', 'qué más', etc.] "
+                ;;
+            es-chileno)
+                DIALECT_PROMPT="[SYSTEM: Responde en español chileno usando expresiones como 'po', 'cachai', 'wena', 'bacán', 'altiro', etc.] "
+                ;;
+            es-andaluz)
+                DIALECT_PROMPT="[SYSTEM: Responde en andaluz usando expresiones como 'quillo', 'arfavó', 'illo', 'ozú', etc.] "
+                ;;
+            es-venezolano)
+                DIALECT_PROMPT="[SYSTEM: Responde en español venezolano usando expresiones como 'pana', 'épale', 'chamo', 'fino', 'arrecho', etc.] "
+                ;;
+            zh)
+                DIALECT_PROMPT="[SYSTEM: 请用中文回答] "
+                ;;
+            hi)
+                DIALECT_PROMPT="[SYSTEM: कृपया हिंदी में उत्तर दें] "
+                ;;
+            fr)
+                DIALECT_PROMPT="[SYSTEM: Réponds en français] "
+                ;;
+            it)
+                DIALECT_PROMPT="[SYSTEM: Rispondi in italiano] "
+                ;;
+        esac
+
+        sgpt --chat "$CHAT_NAME" "${DIALECT_PROMPT}$INPUT"
         echo -e "${DIM}─────────────────────────────────────────────────────${RESET}\n"
     done
 }
@@ -478,20 +570,22 @@ show_config_menu() {
             if [[ "$new_lang" == "es" ]]; then
                 echo ""
                 echo -e "${CYAN}Variante española:${RESET}"
-                echo "  [1] Español (Estándar)"
+                echo "  [1] 🇪🇸 Español (Estándar)"
                 echo "  [2] 🇲🇽 Mexicano"
                 echo "  [3] 🇦🇷 Argentino"
                 echo "  [4] 🇨🇴 Colombiano"
-                echo "  [5] 🇨🇱 Chileno"
-                echo "  [6] 🇪🇸 Andaluz"
-                echo -n "Selección [1-6]: "
+                echo "  [5] 🇻🇪 Venezolano"
+                echo "  [6] 🇨🇱 Chileno"
+                echo "  [7] 🇪🇸 Andaluz"
+                echo -n "Selección [1-7]: "
                 read -r variant
                 case "$variant" in
                     2) new_lang="es-mexicano" ;;
                     3) new_lang="es-argentino" ;;
                     4) new_lang="es-colombiano" ;;
-                    5) new_lang="es-chileno" ;;
-                    6) new_lang="es-andaluz" ;;
+                    5) new_lang="es-venezolano" ;;
+                    6) new_lang="es-chileno" ;;
+                    7) new_lang="es-andaluz" ;;
                     *) new_lang="es" ;;
                 esac
             fi

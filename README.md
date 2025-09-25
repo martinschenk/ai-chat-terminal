@@ -2,9 +2,9 @@
 
 **Instant AI chat in your terminal with memory.** No menus, no hassle - just type and chat!
 
-![Version](https://img.shields.io/badge/version-3.4.0-blue)
+![Version](https://img.shields.io/badge/version-3.5.0-blue)
 ![Memory](https://img.shields.io/badge/memory-2%20minutes-red)
-![Languages](https://img.shields.io/badge/languages-15%20Total-orange)
+![Languages](https://img.shields.io/badge/languages-16%20Total-orange)
 ![OS](https://img.shields.io/badge/OS-macOS%20|%20Linux-green)
 
 ## 🚀 Super Easy Installation - Just Copy & Paste!
