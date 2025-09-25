@@ -2,22 +2,42 @@
 
 **Instant AI chat in your terminal with memory.** No menus, no hassle - just type and chat!
 
-![Version](https://img.shields.io/badge/version-3.0.0-blue)
+![Version](https://img.shields.io/badge/version-3.1.0-blue)
 ![Memory](https://img.shields.io/badge/memory-2%20minutes-red)
 ![Languages](https://img.shields.io/badge/languages-EN%20|%20DE-orange)
 ![OS](https://img.shields.io/badge/OS-macOS%20|%20Linux-green)
 
-## 🚀 One-Line Installation
+## 🚀 Super Easy Installation - Just Copy & Paste!
+
+**No experience needed! Just copy this line and paste it in your terminal:**
 
 ```bash
 curl -sSL https://raw.githubusercontent.com/martinschenk/ai-chat-terminal/main/install.sh | bash
 ```
 
-That's it! The installer will:
-- ✅ Auto-detect your shell (.zshrc/.bashrc/.profile)
-- ✅ Ask for your preferred command (default: `q`)
-- ✅ Set your language (English/German)
-- ✅ Configure everything automatically
+### 📝 Step-by-Step for Beginners:
+
+1. **Open your Terminal**
+   - Mac: Press `Cmd + Space`, type "Terminal", hit Enter
+   - Linux: Press `Ctrl + Alt + T`
+
+2. **Copy the command above** (the line starting with `curl`)
+
+3. **Paste it in Terminal** and press Enter
+
+4. **Follow the simple prompts:**
+   - Choose your command (just press Enter for default `q`)
+   - Pick your language (English or German)
+   - Enter your OpenAI API key (the installer shows you how to get one!)
+
+5. **That's it!** Type `q` to start chatting
+
+### 🎯 What the installer does:
+- ✅ Downloads everything automatically
+- ✅ Works from ANY directory (no need to navigate anywhere!)
+- ✅ Sets up your shell configuration
+- ✅ Guides you through API key setup
+- ✅ Ready to chat in 30 seconds
 
 ## 💬 Instant Chat - No Menus!
 
@@ -99,22 +119,47 @@ Options for Windows:
 2. **Git Bash** - May work with limitations
 3. **Cygwin** - Unix-like environment for Windows
 
-## 🔧 Manual Installation
+## 🔧 Alternative Installation Methods
 
-If you prefer to see what's happening:
-
+### Method 1: Download and Run (if curl doesn't work)
 ```bash
-# 1. Clone repo
-git clone https://github.com/martinschenk/ai-chat-terminal.git
-cd ai-chat-terminal
+# Go to your home directory (or any directory you like!)
+cd ~
 
-# 2. Run installer
+# Download the installer
+wget https://raw.githubusercontent.com/martinschenk/ai-chat-terminal/main/install.sh
+
+# Make it executable
+chmod +x install.sh
+
+# Run it
 ./install.sh
 
-# 3. Reload shell
-source ~/.zshrc  # or ~/.bashrc or ~/.profile
+# Reload your shell
+source ~/.zshrc  # or ~/.bashrc
 
-# 4. Start chatting!
+# Start chatting!
+q
+```
+
+### Method 2: Manual Git Clone
+```bash
+# 1. Go to any directory (home is fine)
+cd ~
+
+# 2. Clone the repository
+git clone https://github.com/martinschenk/ai-chat-terminal.git
+
+# 3. Enter the directory
+cd ai-chat-terminal
+
+# 4. Run installer
+./install.sh
+
+# 5. Reload shell
+source ~/.zshrc  # or ~/.bashrc
+
+# 6. Start chatting!
 q
 ```
 
@@ -147,12 +192,35 @@ Then set it: `/config` → Option 2 → Enter your language code
 
 ## 🐛 Troubleshooting
 
-### "Command not found"
+### One-liner installation not working?
+
+**"curl: command not found"**
+- Use the wget method above (Method 1)
+- Or install curl first: `sudo apt-get install curl` (Linux) or `brew install curl` (Mac)
+
+**"Permission denied"**
 ```bash
-source ~/.zshrc  # or ~/.bashrc
+# Add sudo if needed:
+curl -sSL https://raw.githubusercontent.com/martinschenk/ai-chat-terminal/main/install.sh | sudo bash
 ```
 
-### API Key Issues
+**Behind a firewall/proxy?**
+- Download the files manually from: https://github.com/martinschenk/ai-chat-terminal
+- Then follow Method 2 above
+
+### After Installation Issues
+
+**"Command not found" after installation**
+```bash
+# Reload your shell configuration
+source ~/.zshrc  # for zsh
+source ~/.bashrc  # for bash
+# Or just close and reopen your terminal!
+```
+
+**API Key Issues**
+- The chat will guide you on first run if no key is found
+- Or set manually:
 ```bash
 export OPENAI_API_KEY="sk-your-key-here"
 ```
@@ -188,17 +256,22 @@ MIT - Use it, modify it, share it!
 
 **⭐ If this makes your terminal smarter, star the repo!**
 
-## Quick Start Examples
+## 🎉 Complete Beginner? Start Here!
+
+**Just 3 simple steps:**
 
 ```bash
-# Install (30 seconds)
+# STEP 1: Copy and paste this line into your terminal
 curl -sSL https://raw.githubusercontent.com/martinschenk/ai-chat-terminal/main/install.sh | bash
 
-# Configure your shell
-source ~/.zshrc
+# STEP 2: Reload your terminal (copy & paste this)
+source ~/.zshrc   # Mac users
+source ~/.bashrc  # Linux users
 
-# Start chatting
+# STEP 3: Start chatting!
 q
 
-# That's it! You're chatting with AI!
+# 🎊 That's it! You're now chatting with AI!
 ```
+
+**First time? The chat will help you get an API key!**
