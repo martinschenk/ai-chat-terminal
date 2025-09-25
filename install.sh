@@ -68,15 +68,15 @@ BASE_URL="https://raw.githubusercontent.com/martinschenk/ai-chat-terminal/main"
 
 # Download main files
 echo -n "  • Main script... "
-curl -sL "$BASE_URL/chat.zsh" -o "$INSTALL_DIR/aichat.zsh"
+curl -sL "$BASE_URL/aichat.zsh" -o "$INSTALL_DIR/aichat.zsh"
 echo -e "${GREEN}✓${RESET}"
 
 echo -n "  • Functions module... "
-curl -sL "$BASE_URL/chat-functions.zsh" -o "$INSTALL_DIR/modules/functions.zsh"
+curl -sL "$BASE_URL/modules/functions.zsh" -o "$INSTALL_DIR/modules/functions.zsh"
 echo -e "${GREEN}✓${RESET}"
 
 echo -n "  • Config menu module... "
-curl -sL "$BASE_URL/config-menu.zsh" -o "$INSTALL_DIR/modules/config-menu.zsh"
+curl -sL "$BASE_URL/modules/config-menu.zsh" -o "$INSTALL_DIR/modules/config-menu.zsh"
 echo -e "${GREEN}✓${RESET}"
 
 # Download language files
