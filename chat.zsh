@@ -286,7 +286,42 @@ ai_chat_function() {
                 ;;
         esac
 
-        sgpt --chat "$CHAT_NAME" "${DIALECT_PROMPT}$*"
+        # Check if query needs web search (news, weather, current events, etc.)
+        local NEEDS_SEARCH=false
+        local SEARCH_KEYWORDS=("aktuelle" "neueste" "heute" "gestern" "news" "nachrichten" "current" "latest" "today" "yesterday" "wetter" "weather" "stock" "aktien" "2024" "2025")
+
+        for keyword in "${SEARCH_KEYWORDS[@]}"; do
+            if [[ "${*,,}" == *"$keyword"* ]]; then
+                NEEDS_SEARCH=true
+                break
+            fi
+        done
+
+        # Use appropriate model based on need
+        if [[ "$NEEDS_SEARCH" == "true" ]] && [[ ! -z "$PERPLEXITY_API_KEY" ]]; then
+            echo -e "${DIM}🔍 Searching for current information...${RESET}"
+            # Use Perplexity for web search
+            local response=$(curl -s -X POST https://api.perplexity.ai/chat/completions \
+                -H "Authorization: Bearer $PERPLEXITY_API_KEY" \
+                -H "Content-Type: application/json" \
+                -d "{
+                    \"model\": \"pplx-7b-online\",
+                    \"messages\": [
+                        {\"role\": \"system\", \"content\": \"${DIALECT_PROMPT}Answer in the language requested.\"},
+                        {\"role\": \"user\", \"content\": \"$*\"}
+                    ]
+                }" | jq -r '.choices[0].message.content' 2>/dev/null)
+
+            if [[ ! -z "$response" ]] && [[ "$response" != "null" ]]; then
+                echo "$response"
+            else
+                # Fallback to regular GPT
+                sgpt --chat "$CHAT_NAME" "${DIALECT_PROMPT}$*"
+            fi
+        else
+            # Regular GPT for non-search queries
+            sgpt --chat "$CHAT_NAME" "${DIALECT_PROMPT}$*"
+        fi
         echo -e "\n${DIM}─────────────────────────────────────────────────────${RESET}\n"
 
         # Continue in chat mode
@@ -475,7 +510,42 @@ chat_loop() {
                 ;;
         esac
 
-        sgpt --chat "$CHAT_NAME" "${DIALECT_PROMPT}$INPUT"
+        # Check if query needs web search (same logic as direct mode)
+        local NEEDS_SEARCH=false
+        local SEARCH_KEYWORDS=("aktuelle" "neueste" "heute" "gestern" "news" "nachrichten" "current" "latest" "today" "yesterday" "wetter" "weather" "stock" "aktien" "2024" "2025")
+
+        for keyword in "${SEARCH_KEYWORDS[@]}"; do
+            if [[ "${INPUT,,}" == *"$keyword"* ]]; then
+                NEEDS_SEARCH=true
+                break
+            fi
+        done
+
+        # Use appropriate model based on need
+        if [[ "$NEEDS_SEARCH" == "true" ]] && [[ ! -z "$PERPLEXITY_API_KEY" ]]; then
+            echo -e "${DIM}🔍 Searching for current information...${RESET}"
+            # Use Perplexity for web search
+            local response=$(curl -s -X POST https://api.perplexity.ai/chat/completions \
+                -H "Authorization: Bearer $PERPLEXITY_API_KEY" \
+                -H "Content-Type: application/json" \
+                -d "{
+                    \"model\": \"pplx-7b-online\",
+                    \"messages\": [
+                        {\"role\": \"system\", \"content\": \"${DIALECT_PROMPT}Answer in the language requested.\"},
+                        {\"role\": \"user\", \"content\": \"$INPUT\"}
+                    ]
+                }" | jq -r '.choices[0].message.content' 2>/dev/null)
+
+            if [[ ! -z "$response" ]] && [[ "$response" != "null" ]]; then
+                echo "$response"
+            else
+                # Fallback to regular GPT
+                sgpt --chat "$CHAT_NAME" "${DIALECT_PROMPT}$INPUT"
+            fi
+        else
+            # Regular GPT for non-search queries
+            sgpt --chat "$CHAT_NAME" "${DIALECT_PROMPT}$INPUT"
+        fi
         echo -e "${DIM}─────────────────────────────────────────────────────${RESET}\n"
     done
 }
@@ -513,8 +583,9 @@ show_config_menu() {
         LANG_CONFIG_OPT5="Change AI model"
         LANG_CONFIG_OPT6="Back to chat"
         LANG_CONFIG_OPT7="Clear chat cache"
+        LANG_CONFIG_OPT8="Configure web search"
         LANG_CONFIG_OPT9="Uninstall completely"
-        LANG_CONFIG_SELECT="Select [1-7,9]:"
+        LANG_CONFIG_SELECT="Select [1-8,9]:"
         LANG_CONFIG_ENTER_CMD="Enter new command (current: "
         LANG_CONFIG_ENTER_LANG="Enter code:"
         LANG_CONFIG_ENTER_TIMEOUT="Timeout in seconds (current: "
@@ -550,6 +621,7 @@ show_config_menu() {
     echo -e "${PURPLE}║${RESET}  ${GREEN}[5]${RESET} ${LANG_CONFIG_OPT5}                 ${PURPLE}║${RESET}"
     echo -e "${PURPLE}║${RESET}  ${GREEN}[6]${RESET} ${LANG_CONFIG_OPT6}                   ${PURPLE}║${RESET}"
     echo -e "${PURPLE}║${RESET}  ${GREEN}[7]${RESET} 🧹 ${LANG_CONFIG_OPT7}              ${PURPLE}║${RESET}"
+    echo -e "${PURPLE}║${RESET}  ${GREEN}[8]${RESET} 🔍 Configure web search         ${PURPLE}║${RESET}"
     echo -e "${PURPLE}║${RESET}                                       ${PURPLE}║${RESET}"
     echo -e "${PURPLE}║${RESET}  ${RED}[9]${RESET} 🗑️  ${LANG_CONFIG_OPT9}        ${PURPLE}║${RESET}"
     echo -e "${PURPLE}╚═══════════════════════════════════════╝${RESET}"
@@ -671,7 +743,16 @@ show_config_menu() {
             ;;
 
         5)
-            echo -e "${CYAN}AI Models:${RESET}\n"
+            echo -e "${CYAN}AI Models & Search:${RESET}\n"
+
+            # Check if Perplexity is configured
+            if [[ ! -z "$PERPLEXITY_API_KEY" ]]; then
+                echo -e "  ${GREEN}✅ Perplexity Web Search: Active${RESET}"
+            else
+                echo -e "  ${YELLOW}⚠️  Web Search: Not configured${RESET}"
+                echo -e "  ${DIM}   Get key at: perplexity.ai/settings/api${RESET}"
+            fi
+            echo ""
 
             # Model descriptions based on language
             case "$LANGUAGE" in
@@ -826,6 +907,54 @@ show_config_menu() {
                 echo -e "\n${YELLOW}No cache files found or already clear.${RESET}"
             fi
             sleep 2
+            ;;
+
+        8)
+            # Configure Web Search
+            echo -e "${CYAN}Web Search Configuration:${RESET}\n"
+
+            if [[ -z "$PERPLEXITY_API_KEY" ]]; then
+                echo "Enable real-time web search for current information!"
+                echo ""
+                echo "1. Get your API key at: https://perplexity.ai/settings/api"
+                echo "2. It's free to start (or $5/month for more)"
+                echo ""
+                echo -n "Enter your Perplexity API key (or press Enter to skip): "
+                read -r pplx_key
+
+                if [[ ! -z "$pplx_key" ]]; then
+                    # Add to shell config
+                    local shell_config=""
+                    if [[ -f ~/.zshrc ]]; then
+                        shell_config=~/.zshrc
+                    elif [[ -f ~/.bashrc ]]; then
+                        shell_config=~/.bashrc
+                    fi
+
+                    if [[ ! -z "$shell_config" ]]; then
+                        echo "" >> "$shell_config"
+                        echo "# Perplexity API for web search" >> "$shell_config"
+                        echo "export PERPLEXITY_API_KEY='$pplx_key'" >> "$shell_config"
+                        echo -e "${GREEN}✅ Web search enabled! Restart shell to activate.${RESET}"
+                    fi
+                fi
+            else
+                echo -e "${GREEN}✅ Web search is already configured!${RESET}"
+                echo ""
+                echo "Current features:"
+                echo "  • Automatic detection of queries needing current info"
+                echo "  • Real-time news, weather, stock prices"
+                echo "  • Always up-to-date information"
+                echo ""
+                echo -n "Remove web search? (y/N): "
+                read -r remove_search
+                if [[ "$remove_search" == "y" ]] || [[ "$remove_search" == "Y" ]]; then
+                    sed -i '' '/PERPLEXITY_API_KEY/d' ~/.zshrc 2>/dev/null
+                    sed -i '' '/PERPLEXITY_API_KEY/d' ~/.bashrc 2>/dev/null
+                    echo -e "${YELLOW}Web search disabled. Restart shell to apply.${RESET}"
+                fi
+            fi
+            sleep 3
             ;;
 
         9)
