@@ -2,9 +2,9 @@
 
 **Instant AI chat in your terminal with memory.** No menus, no hassle - just type and chat!
 
-![Version](https://img.shields.io/badge/version-3.1.0-blue)
+![Version](https://img.shields.io/badge/version-3.2.0-blue)
 ![Memory](https://img.shields.io/badge/memory-2%20minutes-red)
-![Languages](https://img.shields.io/badge/languages-EN%20|%20DE-orange)
+![Languages](https://img.shields.io/badge/languages-EN%20|%20DE%20|%20FR%20|%20IT%20|%20ES-orange)
 ![OS](https://img.shields.io/badge/OS-macOS%20|%20Linux-green)
 
 ## 🚀 Super Easy Installation - Just Copy & Paste!
@@ -68,7 +68,7 @@ q What's my name?
 - **⚡ Instant** - No menus, starts immediately
 - **🎮 Game-Style Config** - Type `/config` in chat for settings
 - **🚪 Quick Exit** - Press `ESC` or type `exit`
-- **🌍 Multi-Language** - English & German (extensible)
+- **🌍 Multi-Language** - English, German, French, Italian, Spanish
 - **📱 Simple** - One command does everything
 
 ## 🎮 In-Chat Commands

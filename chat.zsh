@@ -1,6 +1,6 @@
 #!/usr/bin/env zsh
 # AI Chat Terminal - Ultra Simple Version
-# Version: 3.1.0
+# Version: 3.2.0
 # Instant chat with memory and inline configuration
 
 ai_chat_function() {
@@ -288,6 +288,34 @@ show_config_menu() {
     local LANGUAGE="${AI_CHAT_LANGUAGE:-en}"
     local TIMEOUT="${AI_CHAT_TIMEOUT:-120}"
     local ENABLE_ESC="${AI_CHAT_ESC_EXIT:-true}"
+    local SCRIPT_DIR="$HOME/shell-scripts"
+
+    # Load language file for config menu
+    local LANG_FILE="$SCRIPT_DIR/languages/${LANGUAGE}.conf"
+    if [[ ! -f "$LANG_FILE" ]]; then
+        # Fallback to English
+        LANG_CONFIG_TITLE="CONFIGURATION"
+        LANG_CONFIG_CURRENT="Current Settings:"
+        LANG_CONFIG_COMMAND="Command"
+        LANG_CONFIG_LANGUAGE="Language"
+        LANG_CONFIG_TIMEOUT="Timeout"
+        LANG_CONFIG_ESC="ESC to exit"
+        LANG_CONFIG_OPT1="Change command character"
+        LANG_CONFIG_OPT2="Change language"
+        LANG_CONFIG_OPT3="Change timeout"
+        LANG_CONFIG_OPT4="Toggle ESC key exit"
+        LANG_CONFIG_OPT5="Change AI model"
+        LANG_CONFIG_OPT6="Back to chat"
+        LANG_CONFIG_OPT9="Uninstall completely"
+        LANG_CONFIG_SELECT="Select [1-6,9]:"
+        LANG_CONFIG_ENTER_CMD="Enter new command (current: "
+        LANG_CONFIG_ENTER_LANG="Enter code:"
+        LANG_CONFIG_ENTER_TIMEOUT="Timeout in seconds (current: "
+        LANG_CONFIG_CHANGED="changed to:"
+        LANG_CONFIG_RESTART="Restart shell to apply"
+    else
+        source "$LANG_FILE"
+    fi
 
     # Colors
     local CYAN='\033[0;36m'
@@ -299,69 +327,72 @@ show_config_menu() {
     local BOLD='\033[1m'
 
     clear
-    echo -e "${BOLD}${CYAN}⚙️  CONFIGURATION${RESET}\n"
+    echo -e "${BOLD}${CYAN}⚙️  ${LANG_CONFIG_TITLE}${RESET}\n"
 
     echo -e "${PURPLE}╔═══════════════════════════════════════╗${RESET}"
-    echo -e "${PURPLE}║${RESET}  Current Settings:                   ${PURPLE}║${RESET}"
-    echo -e "${PURPLE}║${RESET}  ├─ Command: ${YELLOW}$COMMAND_CHAR${RESET}                      ${PURPLE}║${RESET}"
-    echo -e "${PURPLE}║${RESET}  ├─ Language: ${YELLOW}$LANGUAGE${RESET}                    ${PURPLE}║${RESET}"
-    echo -e "${PURPLE}║${RESET}  ├─ Timeout: ${YELLOW}${TIMEOUT}s${RESET}                  ${PURPLE}║${RESET}"
-    echo -e "${PURPLE}║${RESET}  └─ ESC to exit: ${YELLOW}$ENABLE_ESC${RESET}             ${PURPLE}║${RESET}"
+    echo -e "${PURPLE}║${RESET}  ${LANG_CONFIG_CURRENT}                ${PURPLE}║${RESET}"
+    echo -e "${PURPLE}║${RESET}  ├─ ${LANG_CONFIG_COMMAND}: ${YELLOW}$COMMAND_CHAR${RESET}                  ${PURPLE}║${RESET}"
+    echo -e "${PURPLE}║${RESET}  ├─ ${LANG_CONFIG_LANGUAGE}: ${YELLOW}$LANGUAGE${RESET}                 ${PURPLE}║${RESET}"
+    echo -e "${PURPLE}║${RESET}  ├─ ${LANG_CONFIG_TIMEOUT}: ${YELLOW}${TIMEOUT}s${RESET}               ${PURPLE}║${RESET}"
+    echo -e "${PURPLE}║${RESET}  └─ ${LANG_CONFIG_ESC}: ${YELLOW}$ENABLE_ESC${RESET}          ${PURPLE}║${RESET}"
     echo -e "${PURPLE}╠═══════════════════════════════════════╣${RESET}"
-    echo -e "${PURPLE}║${RESET}  ${GREEN}[1]${RESET} Change command character        ${PURPLE}║${RESET}"
-    echo -e "${PURPLE}║${RESET}  ${GREEN}[2]${RESET} Change language                 ${PURPLE}║${RESET}"
-    echo -e "${PURPLE}║${RESET}  ${GREEN}[3]${RESET} Change timeout                  ${PURPLE}║${RESET}"
-    echo -e "${PURPLE}║${RESET}  ${GREEN}[4]${RESET} Toggle ESC key exit             ${PURPLE}║${RESET}"
-    echo -e "${PURPLE}║${RESET}  ${GREEN}[5]${RESET} Change AI model                 ${PURPLE}║${RESET}"
-    echo -e "${PURPLE}║${RESET}  ${GREEN}[6]${RESET} Back to chat                    ${PURPLE}║${RESET}"
+    echo -e "${PURPLE}║${RESET}  ${GREEN}[1]${RESET} ${LANG_CONFIG_OPT1}           ${PURPLE}║${RESET}"
+    echo -e "${PURPLE}║${RESET}  ${GREEN}[2]${RESET} ${LANG_CONFIG_OPT2}                  ${PURPLE}║${RESET}"
+    echo -e "${PURPLE}║${RESET}  ${GREEN}[3]${RESET} ${LANG_CONFIG_OPT3}                  ${PURPLE}║${RESET}"
+    echo -e "${PURPLE}║${RESET}  ${GREEN}[4]${RESET} ${LANG_CONFIG_OPT4}            ${PURPLE}║${RESET}"
+    echo -e "${PURPLE}║${RESET}  ${GREEN}[5]${RESET} ${LANG_CONFIG_OPT5}                 ${PURPLE}║${RESET}"
+    echo -e "${PURPLE}║${RESET}  ${GREEN}[6]${RESET} ${LANG_CONFIG_OPT6}                   ${PURPLE}║${RESET}"
     echo -e "${PURPLE}║${RESET}                                       ${PURPLE}║${RESET}"
-    echo -e "${PURPLE}║${RESET}  ${RED}[9]${RESET} 🗑️  Uninstall completely         ${PURPLE}║${RESET}"
+    echo -e "${PURPLE}║${RESET}  ${RED}[9]${RESET} 🗑️  ${LANG_CONFIG_OPT9}        ${PURPLE}║${RESET}"
     echo -e "${PURPLE}╚═══════════════════════════════════════╝${RESET}"
     echo ""
 
-    echo -ne "${CYAN}Select [1-6,9]: ${RESET}"
+    echo -ne "${CYAN}${LANG_CONFIG_SELECT} ${RESET}"
     read -r choice
 
     case $choice in
         1)
-            echo -ne "${CYAN}Enter new command (current: $COMMAND_CHAR): ${RESET}"
+            echo -ne "${CYAN}${LANG_CONFIG_ENTER_CMD}$COMMAND_CHAR): ${RESET}"
             read -r new_cmd
             if [[ ! -z "$new_cmd" ]]; then
                 echo "AI_CHAT_COMMAND=\"$new_cmd\"" > "$CONFIG_FILE"
                 echo "AI_CHAT_LANGUAGE=\"$LANGUAGE\"" >> "$CONFIG_FILE"
                 echo "AI_CHAT_TIMEOUT=\"$TIMEOUT\"" >> "$CONFIG_FILE"
                 echo "AI_CHAT_ESC_EXIT=\"$ENABLE_ESC\"" >> "$CONFIG_FILE"
-                echo -e "${GREEN}✅ Command changed to: $new_cmd${RESET}"
-                echo -e "${YELLOW}Restart shell to apply${RESET}"
+                echo -e "${GREEN}✅ ${LANG_CONFIG_COMMAND} ${LANG_CONFIG_CHANGED} $new_cmd${RESET}"
+                echo -e "${YELLOW}${LANG_CONFIG_RESTART}${RESET}"
                 sleep 2
             fi
             ;;
 
         2)
-            echo -e "${CYAN}Languages:${RESET}"
+            echo -e "${CYAN}${LANG_CONFIG_LANGUAGE}:${RESET}"
             echo "  en - English"
-            echo "  de - German"
-            echo -ne "${CYAN}Enter code: ${RESET}"
+            echo "  de - Deutsch"
+            echo "  fr - Français"
+            echo "  it - Italiano"
+            echo "  es - Español"
+            echo -ne "${CYAN}${LANG_CONFIG_ENTER_LANG} ${RESET}"
             read -r new_lang
-            if [[ "$new_lang" == "en" ]] || [[ "$new_lang" == "de" ]]; then
+            if [[ "$new_lang" == "en" ]] || [[ "$new_lang" == "de" ]] || [[ "$new_lang" == "fr" ]] || [[ "$new_lang" == "it" ]] || [[ "$new_lang" == "es" ]]; then
                 echo "AI_CHAT_COMMAND=\"$COMMAND_CHAR\"" > "$CONFIG_FILE"
                 echo "AI_CHAT_LANGUAGE=\"$new_lang\"" >> "$CONFIG_FILE"
                 echo "AI_CHAT_TIMEOUT=\"$TIMEOUT\"" >> "$CONFIG_FILE"
                 echo "AI_CHAT_ESC_EXIT=\"$ENABLE_ESC\"" >> "$CONFIG_FILE"
-                echo -e "${GREEN}✅ Language: $new_lang${RESET}"
+                echo -e "${GREEN}✅ ${LANG_CONFIG_LANGUAGE}: $new_lang${RESET}"
                 sleep 2
             fi
             ;;
 
         3)
-            echo -ne "${CYAN}Timeout in seconds (current: $TIMEOUT): ${RESET}"
+            echo -ne "${CYAN}${LANG_CONFIG_ENTER_TIMEOUT}$TIMEOUT): ${RESET}"
             read -r new_timeout
             if [[ "$new_timeout" =~ ^[0-9]+$ ]]; then
                 echo "AI_CHAT_COMMAND=\"$COMMAND_CHAR\"" > "$CONFIG_FILE"
                 echo "AI_CHAT_LANGUAGE=\"$LANGUAGE\"" >> "$CONFIG_FILE"
                 echo "AI_CHAT_TIMEOUT=\"$new_timeout\"" >> "$CONFIG_FILE"
                 echo "AI_CHAT_ESC_EXIT=\"$ENABLE_ESC\"" >> "$CONFIG_FILE"
-                echo -e "${GREEN}✅ Timeout: ${new_timeout}s${RESET}"
+                echo -e "${GREEN}✅ ${LANG_CONFIG_TIMEOUT}: ${new_timeout}s${RESET}"
                 sleep 2
             fi
             ;;
@@ -376,7 +407,7 @@ show_config_menu() {
             echo "AI_CHAT_LANGUAGE=\"$LANGUAGE\"" >> "$CONFIG_FILE"
             echo "AI_CHAT_TIMEOUT=\"$TIMEOUT\"" >> "$CONFIG_FILE"
             echo "AI_CHAT_ESC_EXIT=\"$new_esc\"" >> "$CONFIG_FILE"
-            echo -e "${GREEN}✅ ESC to exit: $new_esc${RESET}"
+            echo -e "${GREEN}✅ ${LANG_CONFIG_ESC}: $new_esc${RESET}"
             sleep 2
             ;;
 
