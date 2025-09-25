@@ -398,7 +398,7 @@ needs_web_search() {
                     "stock" "aktien" "2024" "2025")
 
     for keyword in "${keywords[@]}"; do
-        if [[ "${query,,}" == *"$keyword"* ]]; then
+        if [[ "$(echo "$query" | tr '[:upper:]' '[:lower:]')" == *"$keyword"* ]]; then
             return 0
         fi
     done
