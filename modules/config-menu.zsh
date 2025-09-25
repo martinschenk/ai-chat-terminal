@@ -234,9 +234,8 @@ uninstall_terminal() {
     echo ""
     echo "${LANG_UNINSTALL_WARNING}"
     echo ""
-    echo "• AI Chat Terminal"
-    echo "• ~/shell-scripts-new"
-    echo "• ~/.config/ai-chat"
+    echo "• AI Chat Terminal (~/.aichat)"
+    echo "• Shell configuration aliases"
     echo ""
     echo -e "${YELLOW}${LANG_UNINSTALL_WARNING}${RESET}"
     echo ""
@@ -261,21 +260,17 @@ uninstall_terminal() {
         local configs=("$HOME/.zshrc" "$HOME/.bashrc" "$HOME/.profile")
         for config in "${configs[@]}"; do
             if [[ -f "$config" ]]; then
-                grep -v "source.*shell-scripts" "$config" > "$config.tmp" && mv "$config.tmp" "$config"
-                grep -v "alias.*ai_chat_function" "$config" > "$config.tmp" && mv "$config.tmp" "$config"
+                grep -v "source.*/\.aichat/aichat\.zsh" "$config" > "$config.tmp" && mv "$config.tmp" "$config"
+                grep -v "alias.*ai.*ai_chat_function" "$config" > "$config.tmp" && mv "$config.tmp" "$config"
+                grep -v "# AI Chat Terminal" "$config" > "$config.tmp" && mv "$config.tmp" "$config"
                 echo "  ✓ ${LANG_UNINSTALL_CLEANED} $config"
             fi
         done
 
-        # Remove directories
-        if [[ -d "$HOME/shell-scripts-new" ]]; then
+        # Remove main installation directory
+        if [[ -d "$HOME/.aichat" ]]; then
             rm -rf "$HOME/.aichat"
-            echo "  ✓ ${LANG_UNINSTALL_REMOVED} ~/shell-scripts-new"
-        fi
-
-        if [[ -d "$HOME/.config/ai-chat" ]]; then
-            rm -rf "$HOME/.aichat"
-            echo "  ✓ ${LANG_UNINSTALL_REMOVED} ~/.config/ai-chat"
+            echo "  ✓ ${LANG_UNINSTALL_REMOVED} ~/.aichat"
         fi
 
         echo ""
