@@ -8,7 +8,7 @@
 ![Languages](https://img.shields.io/badge/languages-19-orange.svg)
 ![Stars](https://img.shields.io/github/stars/martinschenk/ai-chat-terminal?style=social)
 
-**🚀 ChatGPT + Real-Time Web Search + Memory = Your Perfect Terminal Assistant**
+**🚀 Instant AI chat in your terminal with memory and real-time web search**
 
 *Finally, an AI that knows what's happening RIGHT NOW - weather, news, stocks, and more!*
 
@@ -262,6 +262,47 @@ gh pr create
 - 💬 [Join our Discord](https://discord.gg/ai-chat-terminal)
 - 📧 [Email us](mailto:support@ai-chat-terminal.dev)
 - 🐦 [Follow on Twitter](https://twitter.com/aichatterminal)
+
+## 🔧 Troubleshooting
+
+<details>
+<summary><b>Command 'ai' already exists / is in use</b></summary>
+
+If you get an error that `ai` is already in use, our installer will automatically detect this and suggest `aic` (AI Chat) instead. You can also:
+
+1. **Use a different command:** During installation, choose `ask`, `chat`, or a custom command
+2. **Remove existing alias:** Check your `~/.zshrc` or `~/.bashrc` for conflicting aliases
+3. **Use the recommended alternative:** `aic` (AI Chat) works great!
+
+</details>
+
+<details>
+<summary><b>API key issues</b></summary>
+
+- **OpenAI:** Make sure you've added credit to your account (minimum $5)
+- **Perplexity:** Free tier has limited requests. Upgrade for more
+- **Check your keys:** Run `ai /config` and re-enter your API keys
+
+</details>
+
+<details>
+<summary><b>shell-gpt not found</b></summary>
+
+Our installer should handle this automatically, but if not:
+```bash
+pip3 install --user shell-gpt
+```
+
+</details>
+
+<details>
+<summary><b>Web search not working</b></summary>
+
+- Make sure you've added your Perplexity API key
+- Run `ai /config` → Option 8 to configure web search
+- Check if you've exceeded your free tier limits
+
+</details>
 
 ## 📈 Roadmap
 

@@ -303,22 +303,57 @@ if [[ ! -f "$CONFIG_DIR/.env" ]]; then
         FINAL_STEP="5/6"
     fi
 
-    # Step 6: Command Selection
+    # Function to check if command is available
+    check_command_available() {
+        local cmd="$1"
+        # Check if command exists or alias exists
+        if command -v "$cmd" &>/dev/null 2>&1 || alias "$cmd" &>/dev/null 2>&1; then
+            return 1  # Command exists
+        fi
+        return 0  # Command is free
+    }
+
+    # Step 6: Command Selection with conflict detection
     echo -e "${YELLOW}Step ${FINAL_STEP}: Choose Command to Start AI Chat${RESET}"
     echo "────────────────────────────────────"
     echo "This is the command you'll type to start chatting."
     echo ""
-    echo "  [1] ai   ${GREEN}⭐ RECOMMENDED${RESET} - Clear and memorable"
+
+    # Check for conflicts and adjust recommendations
+    if check_command_available "ai"; then
+        echo "  [1] ai   ${GREEN}⭐ RECOMMENDED${RESET} - Clear and memorable"
+        DEFAULT_CHOICE="1"
+        DEFAULT_CMD="ai"
+    else
+        echo "  [1] ai   ${RED}⚠ IN USE${RESET} - Already taken on your system"
+        DEFAULT_CHOICE="7"
+        DEFAULT_CMD="aic"
+    fi
+
     echo "  [2] ask  - Natural for questions"
     echo "  [3] q    - Quick single letter"
     echo "  [4] ??   - Double question mark"
     echo "  [5] chat - Descriptive"
     echo "  [6] Custom - Choose your own"
+
+    # Add aic option if ai is taken
+    if ! check_command_available "ai"; then
+        echo "  [7] aic  ${GREEN}⭐ RECOMMENDED${RESET} - AI Chat (since 'ai' is taken)"
+    fi
+
     echo ""
-    echo -n "Select [1-6] (default: 1): "
+    echo -n "Select [1-7] (default: $DEFAULT_CHOICE): "
     read -r CMD_CHOICE
 
     case "$CMD_CHOICE" in
+        1)
+            if check_command_available "ai"; then
+                COMMAND="ai"
+            else
+                echo -e "${YELLOW}⚠ 'ai' is already in use. Using 'aic' instead.${RESET}"
+                COMMAND="aic"
+            fi
+            ;;
         2) COMMAND="ask" ;;
         3) COMMAND="q" ;;
         4) COMMAND="??" ;;
@@ -326,8 +361,19 @@ if [[ ! -f "$CONFIG_DIR/.env" ]]; then
         6)
             echo -n "Enter custom command: "
             read -r COMMAND
+            # Check if custom command is available
+            if ! check_command_available "$COMMAND"; then
+                echo -e "${YELLOW}⚠ Warning: '$COMMAND' may already be in use${RESET}"
+                echo -n "Continue anyway? (y/N): "
+                read -r confirm
+                if [[ "$confirm" != "y" ]] && [[ "$confirm" != "Y" ]]; then
+                    echo "Using 'aic' instead."
+                    COMMAND="aic"
+                fi
+            fi
             ;;
-        *) COMMAND="ai" ;;
+        7) COMMAND="aic" ;;
+        *) COMMAND="$DEFAULT_CMD" ;;
     esac
     echo -e "${GREEN}✓ Command set: $COMMAND${RESET}\n"
 
