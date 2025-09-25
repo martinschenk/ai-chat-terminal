@@ -267,11 +267,18 @@ uninstall_terminal() {
             fi
         done
 
-        # Remove main installation directory
-        if [[ -d "$HOME/.aichat" ]]; then
-            rm -rf "$HOME/.aichat"
-            echo "  ✓ ${LANG_UNINSTALL_REMOVED} ~/.aichat"
-        fi
+        # Remove main installation directory (deferred to avoid deleting ourselves)
+        echo "  ✓ ${LANG_UNINSTALL_REMOVED} ~/.aichat (will be removed after exit)"
+
+        # Create cleanup script that runs after we exit
+        cat > "/tmp/aichat_cleanup.sh" << 'EOF'
+#!/bin/bash
+sleep 1
+rm -rf "$HOME/.aichat" 2>/dev/null
+rm -f "/tmp/aichat_cleanup.sh" 2>/dev/null
+EOF
+        chmod +x "/tmp/aichat_cleanup.sh"
+        nohup "/tmp/aichat_cleanup.sh" >/dev/null 2>&1 &
 
         echo ""
         echo -e "${GREEN}✓ ${LANG_UNINSTALL_SUCCESS}${RESET}"
