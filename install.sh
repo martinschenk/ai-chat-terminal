@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # AI Chat Terminal - Installation Script
-# This script safely installs the AI chat function without exposing API keys
+# Multi-language support with configurable command
 
 set -e  # Exit on error
 
@@ -44,14 +44,47 @@ echo ""
 
 # Setup directories
 INSTALL_DIR="$HOME/ai-chat-terminal"
-echo "📁 Setting up directory: $INSTALL_DIR"
-mkdir -p "$INSTALL_DIR/ai-chat"
+CONFIG_DIR="$HOME/.config/ai-chat"
+
+echo "📁 Setting up directories..."
+mkdir -p "$INSTALL_DIR/ai-chat/languages"
+mkdir -p "$CONFIG_DIR"
+
+# Copy files
 cp -r ai-chat/* "$INSTALL_DIR/ai-chat/" 2>/dev/null || true
+
+# Ask for preferences
+echo ""
+echo "🎨 Configuration"
+echo "================"
+echo ""
+
+# Command character
+read -p "Enter command character (default: q): " cmd_char
+cmd_char=${cmd_char:-q}
+
+# Language
+echo ""
+echo "Available languages:"
+echo "  en - English (default)"
+echo "  de - German"
+read -p "Select language [en]: " language
+language=${language:-en}
+
+# Create user config
+cat > "$CONFIG_DIR/config" << EOF
+# AI Chat Terminal Configuration
+AI_CHAT_COMMAND="$cmd_char"
+AI_CHAT_LANGUAGE="$language"
+AI_CHAT_TIMEOUT=120
+EOF
+
+echo "✅ Configuration saved"
 
 # Check for API key
 if [ -z "$OPENAI_API_KEY" ]; then
     echo ""
-    echo "⚠️  No OpenAI API key found in environment!"
+    echo "⚠️  No OpenAI API key found!"
     echo ""
     echo "To set your API key, add this to ~/.zshrc:"
     echo ""
@@ -72,20 +105,20 @@ else
 fi
 
 # Add to zshrc if not already there
-if ! grep -q "f_function.zsh" ~/.zshrc 2>/dev/null; then
+if ! grep -q "ai_chat.zsh" ~/.zshrc 2>/dev/null; then
     echo "" >> ~/.zshrc
     echo "# AI Chat Terminal" >> ~/.zshrc
-    echo "source $INSTALL_DIR/ai-chat/f_function.zsh" >> ~/.zshrc
-    echo 'alias f="noglob f_function"' >> ~/.zshrc
+    echo "source $INSTALL_DIR/ai-chat/config.sh" >> ~/.zshrc
+    echo "source $INSTALL_DIR/ai-chat/ai_chat.zsh" >> ~/.zshrc
+    echo "alias $cmd_char=\"noglob ai_chat_function\"" >> ~/.zshrc
+    echo "alias ai-chat-config=\"ai_chat_config\"" >> ~/.zshrc
     echo "✅ Added to ~/.zshrc"
 else
     echo "✅ Already configured in ~/.zshrc"
 fi
 
-# Create config directory
+# Configure sgpt
 mkdir -p ~/.config/shell_gpt
-
-# Configure sgpt if not configured
 if [ ! -f ~/.config/shell_gpt/.sgptrc ]; then
     cat > ~/.config/shell_gpt/.sgptrc << 'EOF'
 CHAT_CACHE_PATH=/tmp/chat_cache
@@ -108,8 +141,9 @@ echo "🎉 Installation complete!"
 echo ""
 echo "To start using AI Chat Terminal:"
 echo ""
-echo "  1. Reload your shell:  source ~/.zshrc"
-echo "  2. Quick mode:         f What is the weather?"
-echo "  3. Interactive mode:   f"
+echo "  1. Reload your shell:    source ~/.zshrc"
+echo "  2. Quick mode:           $cmd_char What is the weather?"
+echo "  3. Interactive mode:     $cmd_char"
+echo "  4. Change settings:      ai-chat-config"
 echo ""
 echo "Enjoy! 🚀"
