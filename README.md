@@ -1,55 +1,67 @@
-# 🤖 AI Chat Terminal
+# 🤖 AI Chat Terminal with Memory
 
-A beautiful, interactive AI chat interface for your terminal with multi-language support and customizable commands.
+A beautiful interactive AI chat for your terminal that **remembers your conversation** for contextual follow-up questions.
 
 ![Version](https://img.shields.io/badge/version-2.0.0-blue)
 ![Shell](https://img.shields.io/badge/shell-zsh-green)
 ![License](https://img.shields.io/badge/license-MIT-purple)
 ![Languages](https://img.shields.io/badge/languages-EN%20|%20DE-orange)
+![Memory](https://img.shields.io/badge/memory-2%20minutes-red)
 
 ## ✨ Features
 
+- 🧠 **CONVERSATION MEMORY** - Remembers context for 2 minutes for natural follow-ups
+- 🎮 **Game-Style Menu** - Interactive menu system like a retro game
 - 🎨 **Beautiful Terminal UI** - Colorful interface with emoji icons
 - 🌍 **Multi-language Support** - English and German included, easily extensible
-- ⚙️ **Configurable Command** - Choose your own trigger character (default: `q`)
-- 💬 **Smart Context Management** - Maintains conversation for 2 minutes
+- ⚙️ **Configurable Command** - Choose your trigger character (default: `q`)
 - 🚀 **Two Modes**:
-  - **Quick Mode**: `q your question here` for single queries
-  - **Interactive Mode**: Just type `q` to enter chat mode
-- 🔄 **Auto Session Management** - Automatically starts new sessions after timeout
+  - **Quick Mode with Memory**: Ask follow-up questions naturally
+  - **Interactive Mode**: Full chat experience with menu
 - ⚡ **Fast & Lightweight** - Pure shell script, no heavy dependencies
 
-## 📸 Screenshots
+## 🧠 Memory Feature Examples
 
-### Quick Mode
+### Quick Mode with Context Memory
+```bash
+# First question
+$ q my name is John and I live in Berlin
+
+🤖 AI: Hello John! It's nice to meet you. How are things in Berlin?
+
+# Follow-up question - AI remembers your name and location!
+$ q what's the weather like in my city?
+
+🤖 AI: I'll check the weather for Berlin, John. Currently, Berlin is experiencing...
+
+# Another follow-up - still remembers context!
+$ q translate "hello" to the local language there
+
+🤖 AI: In Berlin, Germany, "hello" in the local language (German) is "Hallo" or more formally "Guten Tag".
 ```
-╭─────────────────────────────────────╮
-│  🤖 AI Chat 💬 Continue (13s)      │
-╰─────────────────────────────────────╯
 
-👤 You: What is 2+2?
-
-🤖 AI:
-2 + 2 equals 4.
-
-────────────────────────────────────
-💡 Tip: Type just 'q' to enter interactive chat mode
-────────────────────────────────────
-```
-
-### Interactive Mode
+### Interactive Mode Shows Memory Status
 ```
 ╭═══════════════════════════════════════════╮
 ║     🤖 Interactive AI Chat                ║
-║     💬 Continue (5s)                      ║
+║     💬 Continue (45s)  <-- Shows active memory!
 ╠═══════════════════════════════════════════╣
 ║  [Ctrl+C] to exit                         ║
-║  exit/quit/bye to leave                   ║
+║  /menu return to menu                     ║
 ╰═══════════════════════════════════════════╯
 
-👤 You ▶ Hello!
+👤 You ▶ I'm learning Python
 🤖 AI ▶
-Hello! How can I help you today?
+Great! Python is an excellent language to learn. What aspect would you like to focus on?
+
+👤 You ▶ how do I make a loop?  <-- AI knows you mean Python!
+🤖 AI ▶
+In Python, you can create loops using 'for' and 'while'. Here's a simple for loop:
+
+```python
+for i in range(5):
+    print(i)
+```
 ───────────────────────────────────────────
 ```
 
@@ -61,9 +73,24 @@ git clone https://github.com/martinschenk/ai-chat-terminal.git
 cd ai-chat-terminal
 ./install.sh
 
-# Start chatting!
-q Hello AI!
+# Start chatting with memory!
+q Remember my name is Alice
+q What's my name?  # AI responds: "Your name is Alice"
 ```
+
+## How Memory Works
+
+The AI maintains your conversation context for **2 minutes** after each message. This means:
+
+- ✅ Ask follow-up questions without repeating context
+- ✅ Reference previous answers naturally
+- ✅ Build complex conversations step by step
+- ✅ The AI understands "it", "that", "my", etc. from context
+
+After 2 minutes of inactivity:
+- 🔄 Session resets automatically
+- 🆕 Start fresh with a new topic
+- 💡 Status indicator shows session state
 
 ## 📦 Installation
 
@@ -75,141 +102,115 @@ q Hello AI!
 
 ### Automatic Installation
 
-The installer will guide you through setup:
+The installer guides you through setup:
 
 ```bash
 ./install.sh
 ```
 
-During installation, you can:
+During installation:
 - Choose your command character (default: `q`)
 - Select your language (English or German)
 - Enter your OpenAI API key
-
-### Manual Installation
-
-```bash
-# 1. Install Shell GPT
-pip install shell-gpt
-
-# 2. Clone this repo
-git clone https://github.com/martinschenk/ai-chat-terminal.git
-
-# 3. Copy files
-cp -r ai-chat-terminal/ai-chat ~/ai-chat-terminal/
-
-# 4. Add to ~/.zshrc
-echo 'source ~/ai-chat-terminal/ai-chat/config.sh' >> ~/.zshrc
-echo 'source ~/ai-chat-terminal/ai-chat/ai_chat.zsh' >> ~/.zshrc
-echo 'alias q="noglob ai_chat_function"' >> ~/.zshrc
-echo 'alias ai-chat-config="ai_chat_config"' >> ~/.zshrc
-
-# 5. Set API key
-echo 'export OPENAI_API_KEY="your-key-here"' >> ~/.zshrc
-
-# 6. Reload
-source ~/.zshrc
-```
+- Memory is automatically configured for 2 minutes
 
 ## 🎮 Usage
 
-### Quick Questions
+### Testing Memory Feature
+
+Try this sequence to see memory in action:
+
 ```bash
-q what is the weather in Berlin?
-q translate "Hello" to Spanish
-q explain quantum computing
+# Introduction
+q my favorite color is blue
+
+# Follow-up (within 2 minutes)
+q what's my favorite color?
+# AI responds: "Your favorite color is blue"
+
+# Another follow-up
+q suggest a car in that color
+# AI responds: "Here are some great cars that come in blue..."
 ```
 
-### Interactive Chat Mode
+### Interactive Mode with Menu
+
 ```bash
-# Start interactive mode
+# Just type q to enter the game-style menu
 q
 
-# Then just type naturally:
-> Hello!
-> What's 2+2?
-> Tell me a joke
-> exit  # or press Ctrl+C to quit
+     ___   ____    _____ _           _
+    / _ \ |_ _|   / ____| |         | |
+   / /_\ \ | |   | |    | |__   __ _| |_
+   |  _  | | |   | |    | '_ \ / _` | __|
+   | | | |_| |_  | |____| | | | (_| | |_
+   \_| |_/\___/  \_____|_| |_|\__,_|\__|
+          Terminal Edition v2.0
+
+╔══════════════════════════════════════════════╗
+║     🎮 MAIN MENU                              ║
+║     💬 Continue (13s)  <-- Memory active!    ║
+╠══════════════════════════════════════════════╣
+║                                               ║
+║  [1] 💬 Start Chat                           ║
+║  [2] ⚙️  Settings                             ║
+║  [3] 🌍 Language: en                         ║
+║  [4] 📖 Help                                 ║
+║  [5] 🚪 Exit                                 ║
+║                                               ║
+║  Command: q | Timeout: 120s                  ║
+╚══════════════════════════════════════════════╝
+
+Select option [1-5]:
 ```
 
-### Configuration Menu
+### Memory Configuration
+
+Change how long context is remembered:
+
 ```bash
 ai-chat-config
+# Select option 3 (Change timeout)
+# Enter 300 for 5 minutes
+# Or 60 for 1 minute
 ```
-
-This opens an interactive menu to:
-- Change command character
-- Switch language
-- Adjust timeout settings
-- Reset to defaults
 
 ## ⚙️ Configuration
 
-### Change Command Character
+### Memory Settings
 
-Want to use `ai` instead of `q`? Run:
+The memory timeout can be customized:
+
+- **Default**: 120 seconds (2 minutes)
+- **Quick chats**: 60 seconds (1 minute)
+- **Long conversations**: 300 seconds (5 minutes)
+- **Extended sessions**: 600 seconds (10 minutes)
+
+Edit timeout in settings menu or manually:
 ```bash
-ai-chat-config
-# Select option 1
-# Enter: ai
+echo 'AI_CHAT_TIMEOUT="300"' >> ~/.config/ai-chat/config
 ```
 
-### Available Languages
+### Understanding Memory Indicators
 
-- **English** (`en`) - Default
-- **German** (`de`) - Deutsch
+The UI shows your memory status:
 
-Switch language:
-```bash
-ai-chat-config
-# Select option 2
-# Enter: de
-```
-
-### Add Your Own Language
-
-1. Copy an existing language file:
-```bash
-cp ai-chat/languages/en.conf ai-chat/languages/es.conf
-```
-
-2. Edit the translations in `es.conf`
-
-3. Set your language:
-```bash
-ai-chat-config
-# Select option 2
-# Enter: es
-```
+- 🚀 **New Session** - Fresh start, no memory
+- 💬 **Continue (Xs)** - Active memory from X seconds ago
+- 🔄 **New Chat Session** - Previous memory expired
 
 ## 🌍 Language Development
 
-Contributing a new language is easy! Create a new file in `ai-chat/languages/` with your language code (e.g., `fr.conf` for French) and translate these keys:
+Add your language easily! The system remembers context in any language.
+
+Create `ai-chat/languages/[code].conf`:
 
 ```bash
-# UI Headers
-LANG_HEADER_TITLE="Interactive AI Chat"
-LANG_HEADER_NEW_SESSION="New Session"
-LANG_HEADER_CONTINUE="Continue"
-LANG_HEADER_NEW_CHAT="New Chat Session"
-
-# UI Labels
-LANG_LABEL_YOU="You"
-LANG_LABEL_AI="AI"
-
-# Instructions
-LANG_INST_EXIT="to exit"
-LANG_INST_SEND="to send"
-LANG_INST_LEAVE="to leave"
-LANG_HINT_INTERACTIVE="Tip: Type just 'COMMAND_CHAR' to enter interactive chat mode"
-
-# Messages
-LANG_MSG_GOODBYE="Chat ended. Goodbye!"
-LANG_MSG_CLEARED="Screen cleared"
-
-# Status Messages
-LANG_STATUS_SECONDS="s"
-LANG_STATUS_AGO="ago"
+# Memory-aware translations
+LANG_HEADER_CONTINUE="Continue"  # Shows when memory is active
+LANG_STATUS_SECONDS="s"          # Time indicator
+LANG_STATUS_AGO="ago"            # For "X seconds ago"
+# ... other translations
 ```
 
 ## 🗂️ Project Structure
@@ -220,9 +221,8 @@ ai-chat-terminal/
 ├── LICENSE                   # MIT License
 ├── install.sh               # Installation script
 ├── .env.example            # Example environment variables
-├── .gitignore             # Git ignore file
 └── ai-chat/
-    ├── ai_chat.zsh        # Main chat function
+    ├── ai_chat.zsh        # Main function with memory management
     ├── config.sh          # Configuration loader
     └── languages/         # Language packs
         ├── en.conf        # English
@@ -231,51 +231,94 @@ ai-chat-terminal/
 
 ## 🔒 Security
 
-- **Never commit API keys!**
-- API keys are stored in environment variables
-- The `.env.example` shows the format without real keys
-- User configuration is stored locally in `~/.config/ai-chat/`
+- **No API keys in code** - Uses environment variables
+- **Memory stored locally** - In `/tmp/chat_cache/`
+- **Auto-cleanup** - Old sessions deleted automatically
+- **Private by default** - No data sent except to OpenAI API
 
 ## 🐛 Troubleshooting
 
-### "Command not found: q"
+### Memory not working?
+
+Check if cache directory exists:
 ```bash
-source ~/.zshrc
+ls -la /tmp/chat_cache/
 ```
 
-### "API key not set"
+Clear cache to reset:
 ```bash
-export OPENAI_API_KEY="your-key-here"
-# Add to ~/.zshrc to make permanent
+rm -rf /tmp/chat_cache/q_chat*
 ```
 
-### Change the command after installation
+### Session expires too quickly?
+
+Increase timeout:
 ```bash
 ai-chat-config
-# Or manually edit ~/.config/ai-chat/config
+# Option 3 → Enter 300 (5 minutes)
 ```
 
-### Reset everything
+### Test if memory works:
+
 ```bash
-rm -rf ~/.config/ai-chat
-rm -rf ~/ai-chat-terminal
-# Remove lines from ~/.zshrc
+q my name is TestUser
+sleep 3
+q what is my name?
+# Should respond with "TestUser"
 ```
+
+## 💡 Pro Tips
+
+### Memory Best Practices
+
+1. **Keep conversations flowing** - Respond within 2 minutes
+2. **Use references** - Say "it", "that", "the previous"
+3. **Build complex queries** - Break them into steps
+4. **Check status** - Look for "Continue (Xs)" indicator
+
+### Creative Uses with Memory
+
+```bash
+# Code review with context
+q review this function: def add(a,b): return a+b
+q now make it handle strings too
+q add error handling to it
+
+# Language learning
+q teach me Spanish colors
+q how do I say the first one in a sentence?
+q what about the second one?
+
+# Story building
+q start a story about a robot
+q continue with the robot finding a friend
+q how does it end?
+```
+
+## 📊 Performance
+
+- ⚡ Response time: ~1-2 seconds
+- 🧠 Memory overhead: <1MB per session
+- 💾 Cache location: `/tmp/chat_cache/`
+- 🔄 Auto-cleanup: After timeout period
+- 📝 Context limit: ~100 messages per session
+
+## 🎯 Roadmap
+
+- [ ] Adjustable memory per session
+- [ ] Export conversation history
+- [ ] Memory persistence across terminal restarts
+- [ ] Visual memory indicator in prompt
+- [ ] Conversation branching
+- [ ] Memory search/replay
 
 ## 🤝 Contributing
 
-Contributions are welcome! Especially:
+We especially welcome:
+- Memory optimization improvements
 - New language translations
-- UI improvements
+- UI enhancements for memory display
 - Bug fixes
-
-### How to Contribute
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/NewLanguage`)
-3. Commit changes (`git commit -m 'Add French language support'`)
-4. Push to branch (`git push origin feature/NewLanguage`)
-5. Open a Pull Request
 
 ## 📝 License
 
@@ -283,49 +326,15 @@ MIT License - see [LICENSE](LICENSE) file
 
 ## 🙏 Credits
 
-- [Shell GPT](https://github.com/TheR1D/shell_gpt) - The AI backend
-- OpenAI for GPT API
+- [Shell GPT](https://github.com/TheR1D/shell_gpt) - Powers the AI backend
+- OpenAI for GPT API with context management
 - Contributors and translators
-
-## 💡 Tips
-
-- Keep conversations contextual by responding within 2 minutes
-- Use `clear` in chat mode to clean the screen
-- Customize timeout in config: `AI_CHAT_TIMEOUT=300` for 5 minutes
-- Create aliases for different personalities:
-  ```bash
-  alias code="q write code for"
-  alias explain="q explain simply"
-  ```
-
-## 🚦 Requirements
-
-- **OS**: macOS, Linux
-- **Shell**: zsh
-- **Python**: 3.8+
-- **Network**: Internet connection for API calls
-
-## 📊 Performance
-
-- ⚡ Response time: ~1-2 seconds
-- 💾 Cache size: <1MB per session
-- 🔋 CPU usage: Minimal
-- 🌐 Bandwidth: ~1KB per message
 
 ---
 
-Made with ❤️ for the terminal community
+Made with ❤️ and 🧠 for the terminal community
 
-**⭐ Star this repo if you find it useful!**
-
-## 🎯 Roadmap
-
-- [ ] More languages (Spanish, French, Japanese)
-- [ ] Vim mode support
-- [ ] Custom themes
-- [ ] Conversation export
-- [ ] Offline mode with local models
-- [ ] Plugin system
+**⭐ Star this repo if the memory feature helps you!**
 
 ## 📧 Support
 
