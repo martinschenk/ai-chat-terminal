@@ -13,9 +13,9 @@ CYAN='\033[0;36m'
 RESET='\033[0m'
 BOLD='\033[1m'
 
-# Installation directory
-INSTALL_DIR="$HOME/shell-scripts-new"
-CONFIG_DIR="$HOME/.config/ai-chat"
+# Installation directory (following Unix standards like .vim, .zsh)
+INSTALL_DIR="$HOME/.aichat"
+CONFIG_DIR="$HOME/.aichat"
 
 # Clear screen for clean start
 clear
@@ -54,10 +54,10 @@ if [[ -d "$INSTALL_DIR" ]] && [[ -f "$CONFIG_DIR/config" ]]; then
     esac
 fi
 
-# Create directories
+# Create directories with proper structure
 echo -e "${BLUE}Setting up directories...${RESET}"
-mkdir -p "$INSTALL_DIR"
-mkdir -p "$INSTALL_DIR/languages"
+mkdir -p "$INSTALL_DIR/modules"
+mkdir -p "$INSTALL_DIR/lang"
 mkdir -p "$CONFIG_DIR"
 
 # Download files from GitHub
@@ -67,16 +67,16 @@ echo -e "${BLUE}Downloading files...${RESET}"
 BASE_URL="https://raw.githubusercontent.com/martinschenk/ai-chat-terminal/main"
 
 # Download main files
-echo -n "  • chat.zsh... "
-curl -sL "$BASE_URL/chat.zsh" -o "$INSTALL_DIR/chat.zsh"
+echo -n "  • Main script... "
+curl -sL "$BASE_URL/chat.zsh" -o "$INSTALL_DIR/aichat.zsh"
 echo -e "${GREEN}✓${RESET}"
 
-echo -n "  • chat-functions.zsh... "
-curl -sL "$BASE_URL/chat-functions.zsh" -o "$INSTALL_DIR/chat-functions.zsh"
+echo -n "  • Functions module... "
+curl -sL "$BASE_URL/chat-functions.zsh" -o "$INSTALL_DIR/modules/functions.zsh"
 echo -e "${GREEN}✓${RESET}"
 
-echo -n "  • config-menu.zsh... "
-curl -sL "$BASE_URL/config-menu.zsh" -o "$INSTALL_DIR/config-menu.zsh"
+echo -n "  • Config menu module... "
+curl -sL "$BASE_URL/config-menu.zsh" -o "$INSTALL_DIR/modules/config-menu.zsh"
 echo -e "${GREEN}✓${RESET}"
 
 # Download language files
@@ -89,7 +89,7 @@ LANGUAGES=(
 
 echo -n "  • Language packs... "
 for lang in "${LANGUAGES[@]}"; do
-    curl -sL "$BASE_URL/languages/${lang}.conf" -o "$INSTALL_DIR/languages/${lang}.conf" 2>/dev/null || true
+    curl -sL "$BASE_URL/languages/${lang}.conf" -o "$INSTALL_DIR/lang/${lang}.conf" 2>/dev/null || true
 done
 echo -e "${GREEN}✓${RESET}"
 
@@ -430,7 +430,7 @@ for CONFIG in "${SHELL_CONFIGS[@]}"; do
         # Add new entry
         echo "" >> "$CONFIG"
         echo "# AI Chat Terminal" >> "$CONFIG"
-        echo "source $INSTALL_DIR/chat.zsh" >> "$CONFIG"
+        echo "source $INSTALL_DIR/aichat.zsh" >> "$CONFIG"
         echo "alias $COMMAND='ai_chat_function'" >> "$CONFIG"
 
         echo -e "  ${GREEN}✓${RESET} Updated $(basename $CONFIG)"

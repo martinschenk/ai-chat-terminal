@@ -4,7 +4,7 @@
 
 # Configuration menu function
 show_config_menu() {
-    local CONFIG_DIR="$HOME/.config/ai-chat"
+    local CONFIG_DIR="$HOME/.aichat"
     local CONFIG_FILE="$CONFIG_DIR/config"
     local ENV_FILE="$CONFIG_DIR/.env"
 
@@ -20,10 +20,10 @@ show_config_menu() {
     local LANGUAGE="${AI_CHAT_LANGUAGE:-en}"
     local TIMEOUT="${AI_CHAT_TIMEOUT:-600}"
     local ENABLE_ESC="${AI_CHAT_ESC_EXIT:-true}"
-    local SCRIPT_DIR="$HOME/shell-scripts-new"
+    # Use global SCRIPT_DIR from main script
 
     # Load language file for config menu
-    local LANG_FILE="$SCRIPT_DIR/languages/${LANGUAGE}.conf"
+    local LANG_FILE="$SCRIPT_DIR/lang/${LANGUAGE}.conf"
     if [[ ! -f "$LANG_FILE" ]]; then
         setup_default_language
     else
@@ -269,12 +269,12 @@ uninstall_terminal() {
 
         # Remove directories
         if [[ -d "$HOME/shell-scripts-new" ]]; then
-            rm -rf "$HOME/shell-scripts-new"
+            rm -rf "$HOME/.aichat"
             echo "  ✓ ${LANG_UNINSTALL_REMOVED} ~/shell-scripts-new"
         fi
 
         if [[ -d "$HOME/.config/ai-chat" ]]; then
-            rm -rf "$HOME/.config/ai-chat"
+            rm -rf "$HOME/.aichat"
             echo "  ✓ ${LANG_UNINSTALL_REMOVED} ~/.config/ai-chat"
         fi
 

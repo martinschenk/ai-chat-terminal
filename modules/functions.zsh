@@ -4,7 +4,7 @@
 
 # Main chat loop
 chat_loop() {
-    local CONFIG_DIR="$HOME/.config/ai-chat"
+    local CONFIG_DIR="$HOME/.aichat"
     local CONFIG_FILE="$CONFIG_DIR/config"
     local TIMEOUT_FILE="$CONFIG_DIR/last_time"
 
@@ -17,10 +17,10 @@ chat_loop() {
     local LANGUAGE="${AI_CHAT_LANGUAGE:-en}"
     local TIMEOUT="${AI_CHAT_TIMEOUT:-600}"
     local ENABLE_ESC="${AI_CHAT_ESC_EXIT:-true}"
-    local SCRIPT_DIR="$HOME/shell-scripts-new"
+    # Use global SCRIPT_DIR from main script
 
     # Load language file for chat
-    local LANG_FILE="$SCRIPT_DIR/languages/${LANGUAGE}.conf"
+    local LANG_FILE="$SCRIPT_DIR/lang/${LANGUAGE}.conf"
     if [[ ! -f "$LANG_FILE" ]]; then
         setup_default_language
     else

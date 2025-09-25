@@ -1,17 +1,17 @@
 #!/bin/zsh
 # AI Chat Terminal - Main Chat Function
-# Version 5.0.0 - With .env support and enhanced onboarding
+# Version 5.2.0 - Clean directory structure, web search, conflict detection
 
-# Get the directory of this script
+# Get the directory of this script (should be ~/.aichat)
 SCRIPT_DIR="$(cd "$(dirname "${(%):-%x}")" && pwd)"
 
-# Source modular components
-source "$SCRIPT_DIR/chat-functions.zsh"
-source "$SCRIPT_DIR/config-menu.zsh"
+# Source modular components from modules directory
+source "$SCRIPT_DIR/modules/functions.zsh"
+source "$SCRIPT_DIR/modules/config-menu.zsh"
 
 # Function to load .env file
 load_env() {
-    local env_file="$HOME/.config/ai-chat/.env"
+    local env_file="$HOME/.aichat/.env"
     if [[ -f "$env_file" ]]; then
         while IFS='=' read -r key value; do
             # Skip comments and empty lines
@@ -35,7 +35,7 @@ ai_chat_function() {
     # Load environment variables from .env
     load_env
 
-    local CONFIG_DIR="$HOME/.config/ai-chat"
+    local CONFIG_DIR="$HOME/.aichat"
     local CONFIG_FILE="$CONFIG_DIR/config"
     local ENV_FILE="$CONFIG_DIR/.env"
     # Use the global SCRIPT_DIR set at the top of the file
@@ -61,7 +61,7 @@ ai_chat_function() {
     local ENABLE_ESC="${AI_CHAT_ESC_EXIT:-true}"
 
     # Load language file
-    local LANG_FILE="$SCRIPT_DIR/languages/${LANGUAGE}.conf"
+    local LANG_FILE="$SCRIPT_DIR/lang/${LANGUAGE}.conf"
     if [[ ! -f "$LANG_FILE" ]]; then
         # Fallback to embedded English
         setup_default_language
@@ -158,7 +158,7 @@ ai_chat_function() {
 
 # First run setup function
 first_run_setup() {
-    local CONFIG_DIR="$HOME/.config/ai-chat"
+    local CONFIG_DIR="$HOME/.aichat"
     local ENV_FILE="$CONFIG_DIR/.env"
     local CONFIG_FILE="$CONFIG_DIR/config"
 
