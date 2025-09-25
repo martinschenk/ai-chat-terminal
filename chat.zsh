@@ -164,6 +164,18 @@ chat_loop() {
     local LANGUAGE="${AI_CHAT_LANGUAGE:-en}"
     local ENABLE_ESC="${AI_CHAT_ESC_EXIT:-true}"
     local CHAT_NAME="${COMMAND_CHAR}_chat"
+    local SCRIPT_DIR="${0:A:h}"
+
+    # Load language file
+    local LANG_FILE="$SCRIPT_DIR/languages/${LANGUAGE}.conf"
+    if [[ ! -f "$LANG_FILE" ]]; then
+        # Fallback to embedded English
+        LANG_LABEL_YOU="You"
+        LANG_LABEL_AI="AI"
+        LANG_MSG_GOODBYE="Goodbye!"
+    else
+        source "$LANG_FILE"
+    fi
 
     # Colors
     local BLUE='\033[0;34m'
