@@ -89,7 +89,7 @@ LANGUAGES=(
 
 echo -n "  • Language packs... "
 for lang in "${LANGUAGES[@]}"; do
-    curl -sL "$BASE_URL/languages/${lang}.conf" -o "$INSTALL_DIR/lang/${lang}.conf" 2>/dev/null || true
+    curl -sL "$BASE_URL/lang/${lang}.conf" -o "$INSTALL_DIR/lang/${lang}.conf" 2>/dev/null || true
 done
 echo -e "${GREEN}✓${RESET}"
 
@@ -211,16 +211,9 @@ if true; then  # FORCE SETUP TO ALWAYS RUN FOR DEBUGGING
     echo -e "${YELLOW}Step 2/6: OpenAI API Key${RESET} ${RED}(Required)${RESET}"
     echo "────────────────────────────────────"
     echo ""
-    echo -e "${CYAN}ℹ️  About OpenAI API:${RESET}"
-    echo "• ${GREEN}Pay-per-use${RESET} - No monthly subscription!"
-    echo "• Start with just ${YELLOW}\$5 credit${RESET} (required minimum)"
-    echo "• Average cost: ${GREEN}\$0.01-0.10 per conversation${RESET}"
-    echo "• ${BOLD}gpt-3.5-turbo${RESET} is cheapest option (10x cheaper than GPT-4)"
-    echo "• One-time \$5 credit lasts weeks for casual use"
-    echo ""
     echo -e "${BOLD}How to get your API key:${RESET}"
     echo "1. Create account at: ${CYAN}https://platform.openai.com${RESET}"
-    echo "2. Add \$5-10 credit to your account"
+    echo "2. Add \$5+ credit to your account"
     echo "3. Generate API key at: ${CYAN}https://platform.openai.com/api-keys${RESET}"
     echo ""
 
@@ -238,17 +231,8 @@ if true; then  # FORCE SETUP TO ALWAYS RUN FOR DEBUGGING
     echo -e "${YELLOW}Step 3/6: Perplexity API Key${RESET} ${GREEN}(Optional - For Web Search)${RESET}"
     echo "────────────────────────────────────"
     echo ""
-    echo -e "${CYAN}ℹ️  About Perplexity API:${RESET}"
-    echo "• ${GREEN}FREE tier available!${RESET} Limited requests/month"
-    echo "• Pro tier: ${YELLOW}\$5/month${RESET} for more requests"
-    echo "• Enables: Current news, weather, stock prices, sports scores"
-    echo ""
-    echo -e "${BOLD}Benefits of adding Perplexity:${RESET}"
-    echo "✨ Real-time information (news, weather, stocks)"
-    echo "✨ Current events and recent discoveries"
-    echo "✨ Live sports scores and statistics"
-    echo ""
     echo "Get your key at: ${CYAN}https://www.perplexity.ai/settings/api${RESET}"
+    echo "• Enables real-time web search (news, weather, stocks)"
     echo ""
     echo -n "Enter Perplexity key (or press Enter to skip): "
     read -r PERPLEXITY_KEY

@@ -459,5 +459,5 @@ update_shell_config() {
 # Chat loop and config functions would continue here...
 # (Truncated for space - would include all the chat_loop, show_config_menu, etc.)
 
-# Export the main function
-export -f ai_chat_function
+# Export the main function (quietly)
+export -f ai_chat_function >/dev/null 2>&1
