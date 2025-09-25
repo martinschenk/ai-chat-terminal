@@ -1,0 +1,14 @@
+# macOS
+.DS_Store
+
+# Temporary files
+*.tmp
+*.swp
+*~
+
+# Log files
+*.log
+
+# Session data (don't commit chat histories)
+chat_sessions/
+last_time
