@@ -169,6 +169,17 @@ ai_chat_function() {
     local CHAT_NAME="${COMMAND_CHAR}_chat"
     local TIMEOUT_FILE="$CONFIG_DIR/last_time"
 
+    # Initialize sgpt chat session if needed
+    local CACHE_DIR="/var/folders/wm/g387kdx54r79r8t48tfy9tgc0000gn/T/chat_cache"
+    mkdir -p "$CACHE_DIR" 2>/dev/null
+
+    # Clear old invalid session if exists
+    if [[ ! -f "$CACHE_DIR/${CHAT_NAME}" ]] || [[ ! -s "$CACHE_DIR/${CHAT_NAME}" ]]; then
+        rm -f "$CACHE_DIR/${CHAT_NAME}" 2>/dev/null
+        # Initialize new session with empty context
+        echo '[]' > "$CACHE_DIR/${CHAT_NAME}" 2>/dev/null
+    fi
+
     # Colors
     local BLUE='\033[0;34m'
     local GREEN='\033[0;32m'
@@ -630,17 +641,75 @@ show_config_menu() {
             ;;
 
         5)
-            echo -e "${CYAN}AI Models:${RESET}"
-            echo "  1) gpt-4o-mini (fast, cheap, good for dialects)"
-            echo "  2) gpt-4o (best for dialects! 🌍)"
-            echo "  3) gpt-4 (powerful, standard)"
-            echo "  4) gpt-4-turbo (fast)"
-            echo "  5) gpt-3.5-turbo (basic, cheap)"
+            echo -e "${CYAN}AI Models:${RESET}\n"
+
+            # Model descriptions based on language
+            case "$LANGUAGE" in
+                de*)
+                    echo "  1) gpt-4o-mini   💰 Günstig | ⚡ Schnell | Gut für Dialekte"
+                    echo "  2) gpt-4o        💎 Premium | 🌍 BESTE für Dialekte! | Teurer"
+                    echo "  3) gpt-4         💪 Stark | Standard | Mittelpreisig"
+                    echo "  4) gpt-4-turbo   ⚡ Sehr schnell | Gut | Mittelpreisig"
+                    echo "  5) gpt-3.5-turbo 💵 Sehr günstig | Basis | Einfache Aufgaben"
+                    ;;
+                es*)
+                    echo "  1) gpt-4o-mini   💰 Económico | ⚡ Rápido | Bueno para dialectos"
+                    echo "  2) gpt-4o        💎 Premium | 🌍 ¡MEJOR para dialectos! | Más caro"
+                    echo "  3) gpt-4         💪 Potente | Estándar | Precio medio"
+                    echo "  4) gpt-4-turbo   ⚡ Muy rápido | Bueno | Precio medio"
+                    echo "  5) gpt-3.5-turbo 💵 Muy económico | Básico | Tareas simples"
+                    ;;
+                fr)
+                    echo "  1) gpt-4o-mini   💰 Économique | ⚡ Rapide | Bon pour dialectes"
+                    echo "  2) gpt-4o        💎 Premium | 🌍 MEILLEUR pour dialectes! | Plus cher"
+                    echo "  3) gpt-4         💪 Puissant | Standard | Prix moyen"
+                    echo "  4) gpt-4-turbo   ⚡ Très rapide | Bon | Prix moyen"
+                    echo "  5) gpt-3.5-turbo 💵 Très économique | Basique | Tâches simples"
+                    ;;
+                it)
+                    echo "  1) gpt-4o-mini   💰 Economico | ⚡ Veloce | Buono per dialetti"
+                    echo "  2) gpt-4o        💎 Premium | 🌍 MIGLIORE per dialetti! | Più costoso"
+                    echo "  3) gpt-4         💪 Potente | Standard | Prezzo medio"
+                    echo "  4) gpt-4-turbo   ⚡ Molto veloce | Buono | Prezzo medio"
+                    echo "  5) gpt-3.5-turbo 💵 Molto economico | Base | Compiti semplici"
+                    ;;
+                zh)
+                    echo "  1) gpt-4o-mini   💰 便宜 | ⚡ 快速 | 适合方言"
+                    echo "  2) gpt-4o        💎 高级 | 🌍 方言最佳！| 较贵"
+                    echo "  3) gpt-4         💪 强大 | 标准 | 中等价格"
+                    echo "  4) gpt-4-turbo   ⚡ 非常快 | 好 | 中等价格"
+                    echo "  5) gpt-3.5-turbo 💵 非常便宜 | 基础 | 简单任务"
+                    ;;
+                hi)
+                    echo "  1) gpt-4o-mini   💰 सस्ता | ⚡ तेज़ | बोलियों के लिए अच्छा"
+                    echo "  2) gpt-4o        💎 प्रीमियम | 🌍 बोलियों के लिए सर्वश्रेष्ठ! | महंगा"
+                    echo "  3) gpt-4         💪 शक्तिशाली | मानक | मध्यम मूल्य"
+                    echo "  4) gpt-4-turbo   ⚡ बहुत तेज़ | अच्छा | मध्यम मूल्य"
+                    echo "  5) gpt-3.5-turbo 💵 बहुत सस्ता | बुनियादी | सरल कार्य"
+                    ;;
+                *)
+                    echo "  1) gpt-4o-mini   💰 Cheap | ⚡ Fast | Good for dialects"
+                    echo "  2) gpt-4o        💎 Premium | 🌍 BEST for dialects! | More expensive"
+                    echo "  3) gpt-4         💪 Powerful | Standard | Medium price"
+                    echo "  4) gpt-4-turbo   ⚡ Very fast | Good | Medium price"
+                    echo "  5) gpt-3.5-turbo 💵 Very cheap | Basic | Simple tasks"
+                    ;;
+            esac
 
             # Show dialect recommendation if using dialect
             if [[ "$LANGUAGE" == *"-"* ]]; then
                 echo ""
-                echo -e "${YELLOW}💡 Tip: For dialects, GPT-4o works best!${RESET}"
+                case "${LANGUAGE%%_*}" in
+                    de*)
+                        echo -e "${YELLOW}💡 Tipp: Für Dialekte funktioniert GPT-4o am besten!${RESET}"
+                        ;;
+                    es*)
+                        echo -e "${YELLOW}💡 Consejo: ¡Para dialectos, GPT-4o funciona mejor!${RESET}"
+                        ;;
+                    *)
+                        echo -e "${YELLOW}💡 Tip: For dialects, GPT-4o works best!${RESET}"
+                        ;;
+                esac
             fi
 
             echo -ne "${CYAN}Select [1-5]: ${RESET}"
