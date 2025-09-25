@@ -2,9 +2,9 @@
 
 **Instant AI chat in your terminal with memory.** No menus, no hassle - just type and chat!
 
-![Version](https://img.shields.io/badge/version-3.2.0-blue)
+![Version](https://img.shields.io/badge/version-3.3.0-blue)
 ![Memory](https://img.shields.io/badge/memory-2%20minutes-red)
-![Languages](https://img.shields.io/badge/languages-EN%20|%20DE%20|%20FR%20|%20IT%20|%20ES-orange)
+![Languages](https://img.shields.io/badge/languages-EN%20|%20DE%20|%20FR%20|%20IT%20|%20ES%20|%20ZH%20|%20HI-orange)
 ![OS](https://img.shields.io/badge/OS-macOS%20|%20Linux-green)
 
 ## 🚀 Super Easy Installation - Just Copy & Paste!
@@ -68,7 +68,7 @@ q What's my name?
 - **⚡ Instant** - No menus, starts immediately
 - **🎮 Game-Style Config** - Type `/config` in chat for settings
 - **🚪 Quick Exit** - Press `ESC` or type `exit`
-- **🌍 Multi-Language** - English, German, French, Italian, Spanish
+- **🌍 Multi-Language** - 7 languages + 3 German dialects!
 - **📱 Simple** - One command does everything
 
 ## 🎮 In-Chat Commands
@@ -171,10 +171,36 @@ Super simple - just 3 files:
 ai-chat-terminal/
 ├── chat.zsh          # Main chat function
 ├── install.sh        # Smart installer
-└── languages/        # Language packs
+└── languages/        # Language packs (10 total!)
     ├── en.conf       # English
-    └── de.conf       # German
+    ├── de.conf       # German (Hochdeutsch)
+    ├── de-schwaebisch.conf  # Schwäbisch
+    ├── de-bayerisch.conf    # Bayerisch
+    ├── de-saechsisch.conf   # Sächsisch
+    ├── fr.conf       # French
+    ├── it.conf       # Italian
+    ├── es.conf       # Spanish
+    ├── zh.conf       # Chinese (Mandarin)
+    └── hi.conf       # Hindi
 ```
+
+## 🌍 Supported Languages
+
+**Main Languages:**
+- 🇬🇧 English (en)
+- 🇩🇪 German (de) - with 3 dialects!
+- 🇫🇷 French (fr)
+- 🇮🇹 Italian (it)
+- 🇪🇸 Spanish (es)
+- 🇨🇳 Chinese Mandarin (zh)
+- 🇮🇳 Hindi (hi)
+
+**German Dialects (Easter Egg!):**
+- Schwäbisch - Southern German charm
+- Bayerisch - Bavarian style
+- Sächsisch - Saxon dialect
+
+First run asks for your language preference!
 
 ## 🌍 Add Your Language
 

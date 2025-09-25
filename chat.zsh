@@ -1,6 +1,6 @@
 #!/usr/bin/env zsh
 # AI Chat Terminal - Ultra Simple Version
-# Version: 3.2.0
+# Version: 3.3.0
 # Instant chat with memory and inline configuration
 
 ai_chat_function() {
@@ -60,7 +60,65 @@ ai_chat_function() {
     # Create config dir if needed
     mkdir -p "$CONFIG_DIR"
 
-    # Load user config if exists
+    # First run check - ask for language preference
+    if [[ ! -f "$CONFIG_FILE" ]]; then
+        clear
+        echo -e "\033[1;36m🌍 Welcome to AI Chat Terminal!\033[0m"
+        echo ""
+        echo "Please select your language / Bitte Sprache wählen / Choisissez votre langue:"
+        echo ""
+        echo "  [1] 🇬🇧 English (default)"
+        echo "  [2] 🇩🇪 Deutsch"
+        echo "  [3] 🇫🇷 Français"
+        echo "  [4] 🇮🇹 Italiano"
+        echo "  [5] 🇪🇸 Español"
+        echo "  [6] 🇨🇳 中文 (Mandarin)"
+        echo "  [7] 🇮🇳 हिन्दी (Hindi)"
+        echo ""
+        echo -n "Select [1-7] (press Enter for English): "
+        read -r lang_choice
+
+        case "$lang_choice" in
+            2)
+                # German - ask for dialect
+                echo ""
+                echo "Möchten Sie einen Dialekt?"
+                echo "  [1] Hochdeutsch (Standard)"
+                echo "  [2] Schwäbisch"
+                echo "  [3] Bayerisch"
+                echo "  [4] Sächsisch"
+                echo ""
+                echo -n "Auswahl [1-4]: "
+                read -r dialect_choice
+                case "$dialect_choice" in
+                    2) selected_lang="de-schwaebisch" ;;
+                    3) selected_lang="de-bayerisch" ;;
+                    4) selected_lang="de-saechsisch" ;;
+                    *) selected_lang="de" ;;
+                esac
+                ;;
+            3) selected_lang="fr" ;;
+            4) selected_lang="it" ;;
+            5) selected_lang="es" ;;
+            6) selected_lang="zh" ;;
+            7) selected_lang="hi" ;;
+            *) selected_lang="en" ;;
+        esac
+
+        # Save initial config
+        echo "AI_CHAT_COMMAND=\"q\"" > "$CONFIG_FILE"
+        echo "AI_CHAT_LANGUAGE=\"$selected_lang\"" >> "$CONFIG_FILE"
+        echo "AI_CHAT_TIMEOUT=\"120\"" >> "$CONFIG_FILE"
+        echo "AI_CHAT_ESC_EXIT=\"true\"" >> "$CONFIG_FILE"
+
+        echo ""
+        echo -e "\033[0;32m✓ Language set to: $selected_lang\033[0m"
+        echo ""
+        sleep 2
+        clear
+    fi
+
+    # Load user config
     if [[ -f "$CONFIG_FILE" ]]; then
         source "$CONFIG_FILE"
     fi
@@ -372,9 +430,30 @@ show_config_menu() {
             echo "  fr - Français"
             echo "  it - Italiano"
             echo "  es - Español"
+            echo "  zh - 中文 (Chinese)"
+            echo "  hi - हिन्दी (Hindi)"
             echo -ne "${CYAN}${LANG_CONFIG_ENTER_LANG} ${RESET}"
             read -r new_lang
-            if [[ "$new_lang" == "en" ]] || [[ "$new_lang" == "de" ]] || [[ "$new_lang" == "fr" ]] || [[ "$new_lang" == "it" ]] || [[ "$new_lang" == "es" ]]; then
+
+            # Handle German dialects
+            if [[ "$new_lang" == "de" ]]; then
+                echo ""
+                echo -e "${CYAN}Deutscher Dialekt:${RESET}"
+                echo "  [1] Hochdeutsch (Standard)"
+                echo "  [2] Schwäbisch"
+                echo "  [3] Bayerisch"
+                echo "  [4] Sächsisch"
+                echo -n "Auswahl [1-4]: "
+                read -r dialect
+                case "$dialect" in
+                    2) new_lang="de-schwaebisch" ;;
+                    3) new_lang="de-bayerisch" ;;
+                    4) new_lang="de-saechsisch" ;;
+                    *) new_lang="de" ;;
+                esac
+            fi
+
+            if [[ "$new_lang" == "en" ]] || [[ "$new_lang" == "de" ]] || [[ "$new_lang" == "de-"* ]] || [[ "$new_lang" == "fr" ]] || [[ "$new_lang" == "it" ]] || [[ "$new_lang" == "es" ]] || [[ "$new_lang" == "zh" ]] || [[ "$new_lang" == "hi" ]]; then
                 echo "AI_CHAT_COMMAND=\"$COMMAND_CHAR\"" > "$CONFIG_FILE"
                 echo "AI_CHAT_LANGUAGE=\"$new_lang\"" >> "$CONFIG_FILE"
                 echo "AI_CHAT_TIMEOUT=\"$TIMEOUT\"" >> "$CONFIG_FILE"
