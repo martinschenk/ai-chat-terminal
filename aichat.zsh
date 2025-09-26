@@ -169,7 +169,7 @@ ai_chat_function() {
             sgpt --chat "$CHAT_NAME" --no-functions "${DIALECT_PROMPT}Today is $CURRENT_DATE, current time is $CURRENT_TIME. Answer based on this local information only. $*"
         else
             # Normal mode with web search capabilities
-            sgpt --chat "$CHAT_NAME" "${DIALECT_PROMPT}Today is $CURRENT_DATE. $*"
+            sgpt --chat "$CHAT_NAME" "${DIALECT_PROMPT}Today is $CURRENT_DATE, current time is $CURRENT_TIME. $*"
         fi
 
         echo -e "\n${DIM}─────────────────────────────────────────────────────${RESET}\n"
