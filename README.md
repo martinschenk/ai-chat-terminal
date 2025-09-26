@@ -36,22 +36,16 @@ Start by typing `chat` to enter the interactive terminal:
 🤖 AI ▶
 Port 3000 conflicts are common in development. Here are the solutions:
 
-1. **Check what's using port 3000:**
-   ```bash
+1. Check what's using port 3000:
    lsof -ti:3000
    kill -9 $(lsof -ti:3000)
-   ```
 
-2. **Use a different port in Docker:**
-   ```bash
+2. Use a different port in Docker:
    docker run -p 3001:3000 your-app
-   ```
 
-3. **In docker-compose.yml:**
-   ```yaml
+3. In docker-compose.yml:
    ports:
      - "3001:3000"
-   ```
 
 The issue is likely another process (React dev server, Next.js, etc.) already using port 3000.
 ─────────────────────────────────────────────────────
@@ -60,43 +54,26 @@ The issue is likely another process (React dev server, Next.js, etc.) already us
 🤖 AI ▶
 Here's a robust JSON parser with comprehensive error handling:
 
-```python
 import json
 from typing import Dict, Any, Optional
 
 def safe_json_parse(json_string: str) -> Optional[Dict[str, Any]]:
-    """
-    Safely parse JSON string with error handling.
-
-    Args:
-        json_string: Raw JSON string to parse
-
-    Returns:
-        Parsed JSON as dict or None if parsing fails
-    """
     try:
-        # Handle empty or None input
         if not json_string or json_string.strip() == "":
             return None
-
-        # Parse JSON
         data = json.loads(json_string.strip())
         return data
-
     except json.JSONDecodeError as e:
         print(f"JSON parsing error: {e}")
-        print(f"Error at line {e.lineno}, column {e.colno}")
         return None
-
     except Exception as e:
         print(f"Unexpected error: {e}")
         return None
 
-# Usage examples:
+# Usage:
 result = safe_json_parse('{"name": "John", "age": 30}')
 if result:
     print(f"Name: {result['name']}")
-```
 
 This handles malformed JSON, empty strings, and provides detailed error information.
 ─────────────────────────────────────────────────────
@@ -105,27 +82,27 @@ This handles malformed JSON, empty strings, and provides detailed error informat
 🤖 AI ▶
 As of September 27, 2025, TypeScript 5.x has introduced several powerful features:
 
-**TypeScript 5.0** (March 2023):
+TypeScript 5.0 (March 2023):
 - Decorators support (stage 3 proposal)
-- `const` type parameters for better inference
-- Supporting multiple config files with `extends`
+- const type parameters for better inference
+- Supporting multiple config files with extends
 
-**TypeScript 5.1** (June 2023):
+TypeScript 5.1 (June 2023):
 - Easier implicit returns for undefined-returning functions
 - Unrelated types for getters and setters
 - JSX element improvements
 
-**TypeScript 5.2** (August 2023):
-- `using` declarations for explicit resource management
+TypeScript 5.2 (August 2023):
+- using declarations for explicit resource management
 - Decorator metadata
 - Named and anonymous tuple elements
 
-**TypeScript 5.3** (November 2023):
+TypeScript 5.3 (November 2023):
 - Import attributes syntax
 - Resolution strategy and bundler improvements
 - Better performance for monorepos
 
-**TypeScript 5.4** (March 2024):
+TypeScript 5.4 (March 2024):
 - Preserved narrowing in closures
 - NoInfer utility type
 - Object.groupBy typing improvements
