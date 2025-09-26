@@ -128,19 +128,34 @@ fi
 # Skip interactive setup - will be handled by first run of 'ai' command
 echo -e "${BLUE}Setting up shell integration...${RESET}"
 
-# Create basic config structure for shell integration
+# Smart shell configuration with detection
 update_shell_config() {
     local command_name="${1:-ai}"
 
-    # Shell configuration files to update
-    local shell_configs=("$HOME/.zshrc" "$HOME/.bashrc")
+    # Detect current shell and prioritize accordingly
+    local current_shell=$(basename "$SHELL" 2>/dev/null)
+    local shell_configs=()
+    local updated_configs=()
+
+    # Smart detection: prioritize current shell
+    case "$current_shell" in
+        zsh)
+            shell_configs=("$HOME/.zshrc" "$HOME/.bashrc" "$HOME/.profile")
+            ;;
+        bash)
+            shell_configs=("$HOME/.bashrc" "$HOME/.zshrc" "$HOME/.profile")
+            ;;
+        *)
+            shell_configs=("$HOME/.zshrc" "$HOME/.bashrc" "$HOME/.profile")
+            ;;
+    esac
 
     for config_file in "${shell_configs[@]}"; do
         if [[ -f "$config_file" ]]; then
-            # Remove any existing AI Chat Terminal entries
+            # Remove any existing AI Chat Terminal entries (comprehensive cleanup)
             grep -v "# AI Chat Terminal" "$config_file" > "$config_file.tmp" && mv "$config_file.tmp" "$config_file"
             grep -v "source.*aichat.zsh" "$config_file" > "$config_file.tmp" && mv "$config_file.tmp" "$config_file"
-            grep -v "alias.*ai.*ai_chat_function" "$config_file" > "$config_file.tmp" && mv "$config_file.tmp" "$config_file"
+            grep -v "alias.*=.*ai_chat_function" "$config_file" > "$config_file.tmp" && mv "$config_file.tmp" "$config_file"
 
             # Add new configuration
             echo "" >> "$config_file"
@@ -149,15 +164,29 @@ update_shell_config() {
             echo "alias $command_name='ai_chat_function'" >> "$config_file"
 
             echo -e "  ${GREEN}✓${RESET} Updated $config_file"
+            updated_configs+=("$config_file")
         fi
     done
+
+    # Store updated configs for smart messaging
+    UPDATED_SHELL_CONFIGS=("${updated_configs[@]}")
 }
 
 # Setup shell integration with default 'chat' command
 update_shell_config "chat"
 
-# Installation complete message
+# Installation complete message with smart shell detection
 echo -e "\n${GREEN}✅ Installation Complete!${RESET}\n"
 echo "Next steps:"
-echo -e "  ${CYAN}source ~/.zshrc${RESET}"
+
+# Show relevant shell configs that were actually updated
+if [[ ${#UPDATED_SHELL_CONFIGS[@]} -gt 0 ]]; then
+    for config in "${UPDATED_SHELL_CONFIGS[@]}"; do
+        config_name=$(basename "$config")
+        echo -e "  ${CYAN}source ~/$config_name${RESET}"
+    done
+else
+    echo -e "  ${CYAN}source ~/.zshrc${RESET}  ${DIM}# or restart terminal${RESET}"
+fi
+
 echo -e "  ${CYAN}chat${RESET}"

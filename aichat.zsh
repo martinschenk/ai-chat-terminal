@@ -234,11 +234,11 @@ first_run_setup() {
     echo -e "\033[1;33mStep 3/3: Select AI Model\033[0m"
     echo "────────────────────────────────────"
     echo ""
-    echo -e "  [1] gpt-4o       \033[0;32m⭐ RECOMMENDED\033[0m - Best performance (\$2.50/1M tokens)"
-    echo -e "  [2] gpt-4o-mini   - \033[0;32mFast & cheap\033[0m (\$0.15/1M tokens)"
-    echo -e "  [3] gpt-4-turbo  - Fast, good quality (\$10/1M tokens)"
-    echo -e "  [4] gpt-4        - Classic powerful model (\$30/1M tokens)"
-    echo -e "  [5] gpt-3.5-turbo - \033[0;33m💰 CHEAPEST\033[0m (\$0.50/1M tokens)"
+    echo -e "  [1] gpt-4o       \033[0;32m⭐ RECOMMENDED\033[0m - Best performance"
+    echo -e "  [2] gpt-4o-mini   - \033[0;32mFast & cheap\033[0m"
+    echo -e "  [3] gpt-4-turbo  - Fast, good quality"
+    echo -e "  [4] gpt-4        - Classic powerful model"
+    echo -e "  [5] gpt-3.5-turbo - Budget option"
     echo ""
     echo -n "Select [1-5] (default: 1): "
     read -r model_choice
@@ -411,14 +411,30 @@ perform_web_search() {
     fi
 }
 
-# Update shell configuration
+# Smart shell configuration with detection (same as installer)
 update_shell_config() {
     local command="$1"
-    local shell_configs=("$HOME/.zshrc" "$HOME/.bashrc" "$HOME/.profile")
+
+    # Detect current shell and prioritize accordingly
+    local current_shell=$(basename "$SHELL" 2>/dev/null)
+    local shell_configs=()
+
+    # Smart detection: prioritize current shell
+    case "$current_shell" in
+        zsh)
+            shell_configs=("$HOME/.zshrc" "$HOME/.bashrc" "$HOME/.profile")
+            ;;
+        bash)
+            shell_configs=("$HOME/.bashrc" "$HOME/.zshrc" "$HOME/.profile")
+            ;;
+        *)
+            shell_configs=("$HOME/.zshrc" "$HOME/.bashrc" "$HOME/.profile")
+            ;;
+    esac
 
     for config in "${shell_configs[@]}"; do
         if [[ -f "$config" ]]; then
-            # Remove ALL old AI Chat Terminal entries (regardless of alias name)
+            # Remove ALL old AI Chat Terminal entries (comprehensive cleanup)
             grep -v "source.*shell-scripts" "$config" > "$config.tmp" && mv "$config.tmp" "$config"
             grep -v "source.*/\.aichat/aichat\.zsh" "$config" > "$config.tmp" && mv "$config.tmp" "$config"
             # Remove ANY alias pointing to ai_chat_function (smart cleanup)
