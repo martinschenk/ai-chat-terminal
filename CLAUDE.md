@@ -1,10 +1,17 @@
 # AI Chat Terminal - Claude Code Instructions
 
 ## Project Overview
-AI Chat Terminal is a Shell-GPT based CLI tool that brings ChatGPT + Web Search to the terminal with 19 language support and regional dialects.
+AI Chat Terminal is a Shell-GPT based CLI tool that brings ChatGPT + Web Search + AI Vector Database to the terminal with 19 language support and regional dialects.
 
 **GitHub**: https://github.com/martinschenk/ai-chat-terminal
-**Current Version**: 5.3.0 (Session Management & UX Overhaul - Sept 2025)
+**Current Version**: 5.3.0 (Smart Memory System with Vector Database - Sept 2025)
+
+**🎯 Major Features (v5.3.0):**
+- **Dual-Layer Memory**: Short-term context (5-50 msgs) + Long-term SQLite database
+- **AI Vector Search**: Semantic search with sentence-transformers (384D embeddings)
+- **Cost Optimization**: Configurable context windows with cost indicators
+- **Graceful Degradation**: Falls back to text search if AI unavailable
+- **Zero Setup**: Database auto-created, works on any macOS/Linux system
 
 ## 📁 Project Structure & Installation Locations
 
@@ -21,9 +28,10 @@ AI Chat Terminal is a Shell-GPT based CLI tool that brings ChatGPT + Web Search 
 │   ├── de.conf         # German with Schwäbisch, Bayerisch, Sächsisch
 │   ├── es.conf         # Spanish with Mexican, Argentinian, etc.
 │   └── ...
+├── memory_system.py    # AI Vector Database (NEW v5.3.0)
 ├── CLAUDE.md           # This file
 ├── README.md           # Marketing/docs
-└── VERSION             # Current version number
+└── VERSION             # Current version number (5.3.0)
 ```
 
 ### User Installation Location (when installed from GitHub)
@@ -39,6 +47,8 @@ AI Chat Terminal is a Shell-GPT based CLI tool that brings ChatGPT + Web Search 
 │   ├── es.conf                 # Spanish + variants
 │   ├── fr.conf, it.conf, ...   # Other languages
 │   └── zh.conf, hi.conf        # Chinese, Hindi
+├── memory_system.py            # AI Vector Database (NEW)
+├── memory.db                   # SQLite database (auto-created)
 ├── config                      # User configuration
 └── .env                        # API keys (secure)
 ```
@@ -98,6 +108,55 @@ echo "x.x.x" > VERSION
 git add VERSION && git commit -m "release: vx.x.x" && git push
 ```
 
+## 🧠 Smart Memory System (v5.3.0)
+
+### Technical Implementation
+```bash
+📁 ~/.aichat/memory.db               # SQLite database (auto-created)
+├── chat_history                     # All messages with metadata
+├── chat_embeddings (if AI available) # 384D vector embeddings
+└── memory_summaries                 # Future: conversation summaries
+```
+
+### Key Components
+- **memory_system.py**: Core AI vector database logic
+- **sentence-transformers**: Converts text → 384-dimensional embeddings
+- **sqlite-vec**: Vector similarity search in SQLite
+- **Graceful Degradation**: Text search fallback if AI unavailable
+
+### What "Graceful Degradation" Means:
+```bash
+# Scenario 1: Full AI System (optimal)
+✅ sqlite-vec extension loads → Vector search with semantic understanding
+Search: "Docker problems" → Finds: "container won't start", "image issues"
+
+# Scenario 2: Fallback Mode (still functional)
+❌ sqlite-vec fails to load → Falls back to basic text search
+Search: "Docker" → Finds: any message containing "Docker" (LIKE queries)
+
+# System NEVER breaks - always provides some search functionality
+```
+
+### What "No Dependencies on System SQLite" Means:
+```bash
+# Problem: macOS ships with SQLite compiled WITHOUT extension support
+# Solution: Our system detects this and adapts automatically
+
+# System A (Full features): Linux with extension support
+✅ Vector search + Text search
+
+# System B (Reduced features): macOS with limited SQLite
+✅ Text search only (still very useful)
+
+# User sees no difference in installation - everything "just works"
+```
+
+### Memory System Integration:
+- **Auto-save**: Every chat message saved in background (non-blocking)
+- **Config Menu**: [6] Memory system → Search, stats, cleanup
+- **Search Examples**: "Docker issues", "Python debugging", "API problems"
+- **Smart Scoring**: Important messages (errors, TODOs) get higher scores
+
 ## Critical Requirements
 
 ### 🚨 NEVER Lie in Marketing
@@ -136,6 +195,24 @@ Always clearly explain in installer:
 - **Perplexity API**: For web search features
 
 ## 🆕 Recent Major Improvements (Sept 2025)
+
+### ✅ Smart Memory System - v5.3.0 (NEW!)
+**Feature**: Revolutionary AI-powered vector database for semantic search
+**Implementation**:
+- **SQLite + Vector Embeddings**: sentence-transformers (384D) + sqlite-vec
+- **Dual-Layer Architecture**: Short-term context + long-term memory
+- **Graceful Degradation**: Falls back to text search if AI unavailable
+- **Zero Setup**: Database auto-created, works on any system
+- **Search Intelligence**: "Docker problems" finds "container issues"
+- **Config Integration**: Menu [6] → Memory system with search/stats/cleanup
+
+### ✅ Cost-Optimized Context Windows - v5.2.0
+**Feature**: Configurable message limits (5-50) with cost indicators
+**Implementation**:
+- **Smart Context Management**: Prevents API cost explosion
+- **User Control**: Choose between ultra-low cost vs. memory
+- **Default Optimization**: 20 messages = ~$0.01 per request
+- **Flow Chart Documentation**: Clear cost/memory trade-offs
 
 ### ✅ Fixed Language & Dialect Selection
 **Problem**: German and Spanish dialect selection wasn't working in setup

@@ -1,6 +1,6 @@
 # AI Chat Terminal
 
-A ChatGPT-powered terminal interface with integrated web search and dual-layer SQLite memory system.
+A ChatGPT-powered terminal interface with integrated web search and AI-powered vector database.
 
 [![Version](https://img.shields.io/badge/version-5.3.0-blue.svg)](https://github.com/martinschenk/ai-chat-terminal)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
@@ -167,9 +167,9 @@ Cost-optimized memory system with configurable message limits:
 🎯 Default: 20 messages (perfect balance of memory + cost)
 ```
 
-### 🧠 Smart Memory System (Phase 2)
+### 🧠 AI-Powered Vector Database System
 
-AI Chat Terminal features a revolutionary dual-layer memory architecture:
+AI Chat Terminal features a revolutionary dual-layer memory architecture with AI-powered semantic search:
 
 ```
                    🧠 DUAL-LAYER MEMORY SYSTEM
@@ -188,23 +188,52 @@ AI Chat Terminal features a revolutionary dual-layer memory architecture:
                      │
 ┌────────────────────▼────────────────────────────────────┐
 │                 LONG-TERM MEMORY                        │
-│                (SQLite + Embeddings)                    │
-│  • Semantic search across all conversations            │
-│  • Vector embeddings for context understanding         │
+│           (SQLite + Vector Embeddings)                 │
+│  • AI semantic search with sentence-transformers       │
+│  • 384-dimensional vector embeddings                   │
+│  • Understands meaning, not just keywords              │
 │  • Persistent storage (~1KB per message)               │
 │  • Automatic cleanup after 30+ days                    │
 └─────────────────────────────────────────────────────────┘
 
-🔍 Memory Search Examples:
-   • "What did we discuss about Docker yesterday?"
-   • "Show me Python debugging conversations"
-   • "Find solutions for API timeout errors"
+🔍 AI Search Examples (finds meaning, not just keywords):
+   • "Docker problems" → finds "container startup issues"
+   • "Python bugs" → finds "script errors", "debugging sessions"
+   • "API failures" → finds "timeout errors", "connection issues"
 
-💾 Automatic Features:
-   • Background saving (non-blocking)
-   • Smart importance scoring
-   • Semantic similarity search
-   • Database cleanup tools
+🤖 How Vector Search Works:
+   • Each message converted to 384 numbers (embedding)
+   • AI model (all-MiniLM-L6-v2) understands context
+   • Search finds similar meanings, not just exact words
+   • Falls back to text search if AI unavailable
+
+💾 What's Stored in Database:
+   • Message content and metadata (JSON)
+   • Conversation timestamps and session IDs
+   • AI-generated importance scores (0.0-2.0)
+   • 384-dimensional vector embeddings per message
+   • Automatic background saves (non-blocking)
+```
+
+#### 🛡️ Graceful Degradation & Compatibility
+
+**System works everywhere, even without AI features:**
+
+- **Full AI Mode**: Vector search with semantic understanding
+- **Fallback Mode**: Basic text search when AI unavailable
+- **No Dependencies**: Works on any macOS/Linux regardless of system SQLite
+- **Zero Setup**: Database created automatically on first use
+- **Robust Error Handling**: Continues working if embeddings fail
+
+**Why this matters:**
+```bash
+# Scenario 1: Full AI system (optimal)
+Search: "Docker problems" → Finds: "container won't start", "image issues"
+
+# Scenario 2: Fallback mode (still useful)
+Search: "Docker" → Finds: any message containing "Docker"
+
+# System never breaks, always provides some search functionality
 ```
 
 ### Language Selection with Dialects
