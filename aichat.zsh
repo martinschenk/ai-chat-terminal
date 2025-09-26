@@ -315,6 +315,7 @@ EOF
         LANG_SETUP_ENABLED="Enabled"
         LANG_SETUP_GET_STARTED="Get started:"
         LANG_SETUP_STARTING="Starting your first chat session..."
+        LANG_SETUP_EXAMPLE="What is new in tech today"
     fi
 
     # Success message
@@ -333,7 +334,7 @@ EOF
 
     echo -e "\033[1m${LANG_SETUP_GET_STARTED}\033[0m"
     echo -e "  \033[0;32m$command_char\033[0m"
-    echo -e "  \033[0;32m$command_char\033[0m 'What is the latest tech news'"
+    echo -e "  \033[0;32m$command_char\033[0m ${LANG_SETUP_EXAMPLE}"
     echo ""
 
     echo -e "\033[2m${LANG_SETUP_STARTING}\033[0m"
