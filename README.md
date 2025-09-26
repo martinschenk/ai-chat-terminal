@@ -150,20 +150,46 @@ chat "How to optimize PostgreSQL queries?"
 ```
 
 ### Configuration
-Start chat, then type `/config` to open settings menu.
+Start chat, then type `/config` to open settings menu:
 
-## Configuration
+```
+⚙️  CONFIGURATION
 
-Start chat, then type `/config` inside the chat to access the configuration menu:
+╔═══════════════════════════════════════╗
+║  Current Settings:                ║
+║  ├─ Command: chat                  ║
+║  ├─ Language: en                 ║
+║  ├─ Timeout: 3600s               ║
+║  └─ ESC to exit: true          ║
+╠═══════════════════════════════════════╣
+║  [1] Change command character           ║
+║  [2] Change language                  ║
+║  [3] Change timeout                  ║
+║  [4] Toggle ESC key exit            ║
+║  [5] Change AI model                 ║
+║  [6] 🧹 Clear chat cache              ║
+║  [7] ℹ️  About & Version                ║
+║  [8] Back to chat                   ║
+║                                       ║
+║  [9] 🗑️  Uninstall completely        ║
+╚═══════════════════════════════════════╝
+
+Select [1-9]:
+```
+
+## Configuration Options
+
+The configuration menu provides these options:
 
 1. **Change Command** - Switch between `chat`, `ai`, `ask`, `q`, or custom
 2. **Change Language** - Select from 19 supported languages
-3. **Change Timeout** - Adjust session memory duration
+3. **Change Timeout** - Adjust session memory duration (60-3600 seconds)
 4. **Toggle ESC Exit** - Enable/disable quick exit with ESC key
 5. **Change AI Model** - Select OpenAI model (GPT-4o recommended)
 6. **Clear Cache** - Reset conversation history
-7. **Back to Chat** - Return to conversation
-8. **Uninstall** - Complete removal with cleanup
+7. **About & Version** - View version and attribution information
+8. **Back to Chat** - Return to conversation
+9. **Uninstall** - Complete removal with cleanup
 
 ## Requirements
 
