@@ -454,14 +454,17 @@ update_shell_config() {
 
     for config in "${shell_configs[@]}"; do
         if [[ -f "$config" ]]; then
-            # Remove old entries
+            # Remove ALL old AI Chat Terminal entries (regardless of alias name)
             grep -v "source.*shell-scripts" "$config" > "$config.tmp" && mv "$config.tmp" "$config"
-            grep -v "alias $command=" "$config" > "$config.tmp" && mv "$config.tmp" "$config"
+            grep -v "source.*/\.aichat/aichat\.zsh" "$config" > "$config.tmp" && mv "$config.tmp" "$config"
+            # Remove ANY alias pointing to ai_chat_function (smart cleanup)
+            grep -v "alias.*=.*ai_chat_function" "$config" > "$config.tmp" && mv "$config.tmp" "$config"
+            grep -v "# AI Chat Terminal" "$config" > "$config.tmp" && mv "$config.tmp" "$config"
 
             # Add new entry
             echo "" >> "$config"
             echo "# AI Chat Terminal" >> "$config"
-            echo "source $HOME/shell-scripts-new/chat.zsh" >> "$config"
+            echo "source $HOME/.aichat/aichat.zsh" >> "$config"
             echo "alias $command='ai_chat_function'" >> "$config"
         fi
     done
