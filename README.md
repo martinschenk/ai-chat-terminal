@@ -64,13 +64,49 @@ Based on your local information, the current date and time is Saturday, Septembe
 As of September 27, 2025, React 19 RC is the latest version with Server Components, improved concurrent rendering, and better hydration performance.
 ─────────────────────────────────────────────────────
 
-👤 You ▶ git reset last commit
+👤 You ▶ I'm building a React app with user authentication
 🤖 AI ▶
-To undo the last commit but keep changes:
-git reset --soft HEAD~1
+For React authentication, I recommend using JWT tokens with a context provider pattern. You'll need login/logout functions and protected routes.
+─────────────────────────────────────────────────────
 
-To completely remove the last commit:
-git reset --hard HEAD~1
+👤 You ▶ show me the context code for that
+🤖 AI ▶
+Here's an AuthContext for your React authentication:
+
+const AuthContext = createContext()
+
+export const AuthProvider = ({ children }) => {
+  const [user, setUser] = useState(null)
+  const [loading, setLoading] = useState(true)
+
+  const login = async (email, password) => {
+    const response = await api.post('/login', { email, password })
+    setUser(response.data.user)
+    localStorage.setItem('token', response.data.token)
+  }
+
+  return (
+    <AuthContext.Provider value={{ user, login, logout }}>
+      {children}
+    </AuthContext.Provider>
+  )
+}
+─────────────────────────────────────────────────────
+
+👤 You ▶ how do I protect routes with this?
+🤖 AI ▶
+Create a ProtectedRoute component that uses your AuthContext:
+
+const ProtectedRoute = ({ children }) => {
+  const { user, loading } = useContext(AuthContext)
+
+  if (loading) return <div>Loading...</div>
+  if (!user) return <Navigate to="/login" />
+
+  return children
+}
+
+Then wrap your routes: <ProtectedRoute><Dashboard /></ProtectedRoute>
 ─────────────────────────────────────────────────────
 
 👤 You ▶
@@ -94,22 +130,20 @@ Start chat, then type `/config` to open settings menu:
 ║  Current Settings:                ║
 ║  ├─ Command: chat                  ║
 ║  ├─ Language: en                 ║
-║  ├─ Timeout: 3600s               ║
 ║  └─ ESC to exit: true          ║
 ╠═══════════════════════════════════════╣
 ║  [1] Change command character           ║
 ║  [2] Change language                  ║
-║  [3] Change timeout                  ║
-║  [4] Toggle ESC key exit            ║
-║  [5] Change AI model                 ║
-║  [6] 🧹 Clear chat cache              ║
-║  [7] ℹ️  About & Version                ║
-║  [8] Back to chat                   ║
+║  [3] Toggle ESC key exit            ║
+║  [4] Change AI model                 ║
+║  [5] 🧹 Clear chat cache              ║
+║  [6] ℹ️  About & Version                ║
+║  [7] Back to chat                   ║
 ║                                       ║
-║  [9] 🗑️  Uninstall completely        ║
+║  [8] 🗑️  Uninstall completely        ║
 ╚═══════════════════════════════════════╝
 
-Select [1-9]:
+Select [1-8]:
 ```
 
 ## Configuration Options
@@ -118,13 +152,12 @@ The configuration menu provides these options:
 
 1. **Change Command** - Switch between `chat`, `ai`, `ask`, `q`, or custom
 2. **Change Language** - Select from 19 supported languages
-3. **Change Timeout** - Adjust session memory duration (60-3600 seconds)
-4. **Toggle ESC Exit** - Enable/disable quick exit with ESC key
-5. **Change AI Model** - Select OpenAI model (GPT-4o recommended)
-6. **Clear Cache** - Reset conversation history
-7. **About & Version** - View version and attribution information
-8. **Back to Chat** - Return to conversation
-9. **Uninstall** - Complete removal with cleanup
+3. **Toggle ESC Exit** - Enable/disable quick exit with ESC key
+4. **Change AI Model** - Select OpenAI model (GPT-4o recommended)
+5. **Clear Cache** - Reset conversation history
+6. **About & Version** - View version and attribution information
+7. **Back to Chat** - Return to conversation
+8. **Uninstall** - Complete removal with cleanup
 
 ## Requirements
 

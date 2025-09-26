@@ -71,7 +71,6 @@ ai_chat_function() {
     # Defaults from config or fallback
     local COMMAND_CHAR="${AI_CHAT_COMMAND:-ai}"
     local LANGUAGE="${AI_CHAT_LANGUAGE:-en}"
-    local TIMEOUT_SECONDS="${AI_CHAT_TIMEOUT:-3600}"
     local ENABLE_ESC="${AI_CHAT_ESC_EXIT:-true}"
 
     # Load language file
@@ -85,7 +84,6 @@ ai_chat_function() {
 
     # Chat configuration - avoid duplicate "chat" in name
     local CHAT_NAME="${COMMAND_CHAR}_session"
-    local TIMEOUT_FILE="$CONFIG_DIR/last_time"
 
     # Initialize sgpt chat session if needed
     local CACHE_DIR="/tmp/chat_cache"
@@ -111,28 +109,7 @@ ai_chat_function() {
     local BOLD='\033[1m'
     local DIM='\033[2m'
 
-    # Check session status
-    local CURRENT_TIME=$(date +%s)
-    local SESSION_STATUS=""
-
-    if [[ -f "$TIMEOUT_FILE" ]]; then
-        local LAST_TIME=$(cat "$TIMEOUT_FILE")
-        local TIME_DIFF=$((CURRENT_TIME - LAST_TIME))
-
-        if [[ $TIME_DIFF -gt $TIMEOUT_SECONDS ]]; then
-            rm -f "/tmp/chat_cache/${CHAT_NAME}.json" 2>/dev/null
-            rm -f "$CACHE_DIR/${CHAT_NAME}" 2>/dev/null
-            SESSION_STATUS=""
-        else
-            SESSION_STATUS="${DIM}[${LANG_HEADER_CONTINUE} ${TIME_DIFF}${LANG_STATUS_SECONDS}]${RESET}"
-        fi
-    else
-        # No previous session
-        SESSION_STATUS=""
-    fi
-
-    # Always update timestamp when user interacts (extends session)
-    echo "$CURRENT_TIME" > "$TIMEOUT_FILE"
+    # No session timeout - chat sessions persist indefinitely
 
     # Handle direct questions (ai "question here")
     if [[ $# -gt 0 ]]; then
@@ -143,7 +120,7 @@ ai_chat_function() {
         fi
 
         # Direct question mode
-        echo -e "\n${CYAN}/config${RESET} = ${LANG_CHAT_SETTINGS:-settings} ${DIM}|${RESET} ${YELLOW}ESC${RESET}/${YELLOW}${LANG_CHAT_EXIT:-exit}${RESET} = ${LANG_CHAT_QUIT:-quit} ${SESSION_STATUS}"
+        echo -e "\n${CYAN}/config${RESET} = ${LANG_CHAT_SETTINGS:-settings} ${DIM}|${RESET} ${YELLOW}ESC${RESET}/${YELLOW}${LANG_CHAT_EXIT:-exit}${RESET} = ${LANG_CHAT_QUIT:-quit}"
         echo -e "${DIM}─────────────────────────────────────────────────────${RESET}\n"
 
         echo -e "${BLUE}👤 ${LANG_LABEL_YOU}:${RESET} $*\n"
@@ -183,7 +160,7 @@ ai_chat_function() {
 
     # Instant chat mode
     clear
-    echo -e "${CYAN}/config${RESET} = ${LANG_CHAT_SETTINGS:-settings} ${DIM}|${RESET} ${YELLOW}ESC${RESET}/${YELLOW}${LANG_CHAT_EXIT:-exit}${RESET} = ${LANG_CHAT_QUIT:-quit} ${SESSION_STATUS}"
+    echo -e "${CYAN}/config${RESET} = ${LANG_CHAT_SETTINGS:-settings} ${DIM}|${RESET} ${YELLOW}ESC${RESET}/${YELLOW}${LANG_CHAT_EXIT:-exit}${RESET} = ${LANG_CHAT_QUIT:-quit}"
     echo -e "${DIM}─────────────────────────────────────────────────────${RESET}\n"
 
     chat_loop
@@ -304,7 +281,6 @@ EOF
 # AI Chat Terminal User Configuration
 AI_CHAT_COMMAND="$command_char"
 AI_CHAT_LANGUAGE="$language"
-AI_CHAT_TIMEOUT="3600"
 AI_CHAT_ESC_EXIT="true"
 EOF
 

@@ -15,7 +15,6 @@ chat_loop() {
 
     local COMMAND_CHAR="${AI_CHAT_COMMAND:-ai}"
     local LANGUAGE="${AI_CHAT_LANGUAGE:-en}"
-    local TIMEOUT="${AI_CHAT_TIMEOUT:-3600}"
     local ENABLE_ESC="${AI_CHAT_ESC_EXIT:-true}"
     # Use global SCRIPT_DIR from main script
 
@@ -104,8 +103,6 @@ chat_loop() {
                 ;;
         esac
 
-        # Update timestamp for session continuity
-        echo "$(date +%s)" > "$TIMEOUT_FILE"
 
         # Process with AI
         echo -e "${GREEN}🤖 ${LANG_LABEL_AI} ▶ ${RESET}"

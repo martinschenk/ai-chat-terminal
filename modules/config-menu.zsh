@@ -19,7 +19,6 @@ show_config_menu() {
 
         local COMMAND_CHAR="${AI_CHAT_COMMAND:-ai}"
         local LANGUAGE="${AI_CHAT_LANGUAGE:-en}"
-        local TIMEOUT="${AI_CHAT_TIMEOUT:-3600}"
         local ENABLE_ESC="${AI_CHAT_ESC_EXIT:-true}"
         # Use global SCRIPT_DIR from main script
 
@@ -47,19 +46,17 @@ show_config_menu() {
         echo -e "${PURPLE}║${RESET}  ${LANG_CONFIG_CURRENT}                ${PURPLE}║${RESET}"
         echo -e "${PURPLE}║${RESET}  ├─ ${LANG_CONFIG_COMMAND}: ${YELLOW}$COMMAND_CHAR${RESET}                  ${PURPLE}║${RESET}"
         echo -e "${PURPLE}║${RESET}  ├─ ${LANG_CONFIG_LANGUAGE}: ${YELLOW}$LANGUAGE${RESET}                 ${PURPLE}║${RESET}"
-        echo -e "${PURPLE}║${RESET}  ├─ ${LANG_CONFIG_TIMEOUT}: ${YELLOW}${TIMEOUT}s${RESET}               ${PURPLE}║${RESET}"
         echo -e "${PURPLE}║${RESET}  └─ ${LANG_CONFIG_ESC}: ${YELLOW}$ENABLE_ESC${RESET}          ${PURPLE}║${RESET}"
         echo -e "${PURPLE}╠═══════════════════════════════════════╣${RESET}"
         echo -e "${PURPLE}║${RESET}  ${GREEN}[1]${RESET} ${LANG_CONFIG_OPT1}           ${PURPLE}║${RESET}"
         echo -e "${PURPLE}║${RESET}  ${GREEN}[2]${RESET} ${LANG_CONFIG_OPT2}                  ${PURPLE}║${RESET}"
-        echo -e "${PURPLE}║${RESET}  ${GREEN}[3]${RESET} ${LANG_CONFIG_OPT3}                  ${PURPLE}║${RESET}"
-        echo -e "${PURPLE}║${RESET}  ${GREEN}[4]${RESET} ${LANG_CONFIG_OPT4}            ${PURPLE}║${RESET}"
-        echo -e "${PURPLE}║${RESET}  ${GREEN}[5]${RESET} ${LANG_CONFIG_OPT5}                 ${PURPLE}║${RESET}"
-        echo -e "${PURPLE}║${RESET}  ${GREEN}[6]${RESET} 🧹 ${LANG_CONFIG_OPT7}              ${PURPLE}║${RESET}"
-        echo -e "${PURPLE}║${RESET}  ${GREEN}[7]${RESET} ℹ️  About & Version                ${PURPLE}║${RESET}"
-        echo -e "${PURPLE}║${RESET}  ${GREEN}[8]${RESET} ${LANG_CONFIG_OPT6}                   ${PURPLE}║${RESET}"
+        echo -e "${PURPLE}║${RESET}  ${GREEN}[3]${RESET} ${LANG_CONFIG_OPT4}            ${PURPLE}║${RESET}"
+        echo -e "${PURPLE}║${RESET}  ${GREEN}[4]${RESET} ${LANG_CONFIG_OPT5}                 ${PURPLE}║${RESET}"
+        echo -e "${PURPLE}║${RESET}  ${GREEN}[5]${RESET} 🧹 ${LANG_CONFIG_OPT7}              ${PURPLE}║${RESET}"
+        echo -e "${PURPLE}║${RESET}  ${GREEN}[6]${RESET} ℹ️  About & Version                ${PURPLE}║${RESET}"
+        echo -e "${PURPLE}║${RESET}  ${GREEN}[7]${RESET} ${LANG_CONFIG_OPT6}                   ${PURPLE}║${RESET}"
         echo -e "${PURPLE}║${RESET}                                       ${PURPLE}║${RESET}"
-        echo -e "${PURPLE}║${RESET}  ${RED}[9]${RESET} 🗑️  ${LANG_CONFIG_OPT9}        ${PURPLE}║${RESET}"
+        echo -e "${PURPLE}║${RESET}  ${RED}[8]${RESET} 🗑️  ${LANG_CONFIG_OPT9}        ${PURPLE}║${RESET}"
         echo -e "${PURPLE}╚═══════════════════════════════════════╝${RESET}"
         echo ""
 
@@ -73,25 +70,22 @@ show_config_menu() {
             2)  # Change language
                 change_language
                 ;;
-            3)  # Change timeout
-                change_timeout
-                ;;
-            4)  # Toggle ESC
+            3)  # Toggle ESC
                 toggle_esc
                 ;;
-            5)  # Change AI model
+            4)  # Change AI model
                 change_ai_model
                 ;;
-            6)  # Clear cache
+            5)  # Clear cache
                 clear_chat_cache
                 ;;
-            7)  # About & Version
+            6)  # About & Version
                 show_about_info
                 ;;
-            8)  # Back to chat
+            7)  # Back to chat
                 return
                 ;;
-            9)  # Uninstall
+            8)  # Uninstall
                 uninstall_terminal
                 # If uninstall was cancelled, we continue the loop
                 # If uninstall succeeded, the script will have exited
@@ -148,22 +142,6 @@ change_language() {
     fi
 }
 
-# Change timeout function
-change_timeout() {
-    echo -e "\n${CYAN}Set Session Timeout (in seconds):${RESET}"
-    echo "Current: ${AI_CHAT_TIMEOUT:-3600} seconds"
-    echo -n "Enter new timeout (60-3600): "
-    read -r new_timeout
-
-    if [[ "$new_timeout" =~ ^[0-9]+$ ]] && [[ "$new_timeout" -ge 60 ]] && [[ "$new_timeout" -le 3600 ]]; then
-        sed -i '' "s/AI_CHAT_TIMEOUT=.*/AI_CHAT_TIMEOUT=\"$new_timeout\"/" "$CONFIG_FILE"
-        echo -e "${GREEN}✅ Timeout changed to: $new_timeout seconds${RESET}"
-        sleep 2
-    else
-        echo -e "${RED}Invalid timeout. Must be 60-3600 seconds${RESET}"
-        sleep 2
-    fi
-}
 
 # Toggle ESC exit function
 toggle_esc() {
