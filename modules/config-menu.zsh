@@ -128,8 +128,18 @@ change_language() {
     if [[ ! -z "$new_lang" ]]; then
         # Update config
         sed -i '' "s/AI_CHAT_LANGUAGE=.*/AI_CHAT_LANGUAGE=\"$new_lang\"/" "$CONFIG_FILE"
-        echo -e "${GREEN}✅ Language changed to: $new_lang${RESET}"
-        echo -e "${YELLOW}Changes will take effect on next chat session${RESET}"
+
+        # Reload language file immediately
+        local LANG_FILE="$SCRIPT_DIR/lang/${new_lang}.conf"
+        if [[ -f "$LANG_FILE" ]]; then
+            source "$LANG_FILE"
+            echo -e "${GREEN}✅ Language changed to: $new_lang${RESET}"
+            echo -e "${GREEN}Language active immediately!${RESET}"
+        else
+            # Fallback to default English strings
+            setup_default_language
+            echo -e "${GREEN}✅ Language changed to: $new_lang (English fallback)${RESET}"
+        fi
         sleep 2
     fi
 }
