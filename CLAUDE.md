@@ -58,7 +58,7 @@ alias ai='ai_chat_function'    # or user's chosen command
 
 ```bash
 # 1. Clean environment (improved uninstall detection)
-ai /config → [9] Uninstall → "LÖSCHEN"  # or use old method:
+Start ai, then type /config → [9] Uninstall → "LÖSCHEN"  # or use old method:
 rm -rf ~/.aichat ~/.config/ai-chat ~/shell-scripts* 2>/dev/null
 
 # 2. Reload shell (if aliases were changed)
@@ -217,7 +217,7 @@ alias ai='ai_chat_function'    # or user's chosen command (ask, chat, etc.)
 ```
 
 ## Uninstall Process (Enhanced)
-The improved uninstall function (`ai /config` → [9]):
+The improved uninstall function (start ai, then type /config → [9]):
 1. **Smart Detection**: Finds ANY alias pointing to `ai_chat_function`
 2. **Shell Cleanup**: Removes from `.zshrc`, `.bashrc`, `.profile`
 3. **Directory Removal**: Deletes entire `~/.aichat/` directory

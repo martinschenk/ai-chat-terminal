@@ -50,13 +50,11 @@ chat "Show me code examples for that"                # Continues previous topic
 ```
 
 ### Configuration
-```bash
-chat /config                    # Open settings menu
-```
+Start chat, then type `/config` to open settings menu.
 
 ## Configuration
 
-Access the configuration menu with `chat /config`:
+Start chat, then type `/config` inside the chat to access the configuration menu:
 
 1. **Change Command** - Switch between `chat`, `ai`, `ask`, `q`, or custom
 2. **Change Language** - Select from 19 supported languages
@@ -83,7 +81,7 @@ English, German (+ Schwäbisch, Bayerisch, Sächsisch), Spanish (+ Mexican, Arge
 If `chat` conflicts with existing commands, the installer will suggest alternatives like `ai`, `ask`, or `aic`.
 
 ### API Key Issues
-Ensure your OpenAI account has sufficient credit. Run `chat /config` to update your API key.
+Ensure your OpenAI account has sufficient credit. Start `chat` then use `/config` to update your API key.
 
 ### Shell-GPT Not Found
 ```bash
@@ -92,9 +90,7 @@ pip3 install --user shell-gpt
 
 ## Uninstall
 
-```bash
-chat /config  # Select option 8 (Uninstall)
-```
+Start `chat`, then type `/config` and select option 8 (Uninstall).
 
 ## Contributing
 
