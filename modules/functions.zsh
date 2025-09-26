@@ -111,9 +111,26 @@ chat_loop() {
         local DIALECT_PROMPT=""
         get_dialect_prompt "$LANGUAGE"
 
-        # Use ChatGPT with web search capabilities (include current date)
+        # Check if question is about date/time (disable web search for these)
+        local QUESTION_LOWER=$(echo "$INPUT" | tr '[:upper:]' '[:lower:]')
+        local IS_DATE_TIME_QUESTION=false
+
+        # Date/time keywords (multilingual)
+        if [[ "$QUESTION_LOWER" =~ (heute|today|hoy|datum|date|zeit|time|hora|wann|when|cuándo|welcher tag|what day|qué día|uhrzeit|clock|reloj|calendar|kalender|calendario) ]]; then
+            IS_DATE_TIME_QUESTION=true
+        fi
+
+        # Use ChatGPT with current date context
         local CURRENT_DATE=$(date '+%A, %B %d, %Y')
-        sgpt --chat "$CHAT_NAME" "${DIALECT_PROMPT}Today is $CURRENT_DATE. $INPUT"
+        local CURRENT_TIME=$(date '+%H:%M')
+
+        if [[ "$IS_DATE_TIME_QUESTION" == "true" ]]; then
+            # Disable web search for date/time questions
+            sgpt --chat "$CHAT_NAME" --no-functions "${DIALECT_PROMPT}Today is $CURRENT_DATE, current time is $CURRENT_TIME. Answer based on this local information only. $INPUT"
+        else
+            # Normal mode with web search capabilities
+            sgpt --chat "$CHAT_NAME" "${DIALECT_PROMPT}Today is $CURRENT_DATE. $INPUT"
+        fi
 
         echo -e "${DIM}─────────────────────────────────────────────────────${RESET}\n"
     done
