@@ -153,11 +153,11 @@ update_shell_config() {
     done
 }
 
-# Setup shell integration with default 'ai' command
-update_shell_config "ai"
+# Setup shell integration with default 'chat' command
+update_shell_config "chat"
 
 # Installation complete message
 echo -e "\n${GREEN}✅ Installation Complete!${RESET}\n"
 echo "Next steps:"
 echo -e "  ${CYAN}source ~/.zshrc${RESET}"
-echo -e "  ${CYAN}ai${RESET}"
+echo -e "  ${CYAN}chat${RESET}"

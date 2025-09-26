@@ -253,7 +253,7 @@ first_run_setup() {
     esac
     echo -e "\033[0;32m✓ Model selected: $openai_model\033[0m\n"
 
-    local command_char="ai"
+    local command_char="chat"
     # Create configuration files
     echo -e "\033[0;34mSaving configuration...\033[0m"
 
@@ -307,8 +307,8 @@ EOF
 
     echo -e "\033[1mTry it out:\033[0m"
     echo -e "  \033[0;32m$command_char\033[0m Hello!"
-    echo -e "  \033[0;32m$command_char\033[0m What's the weather today?"
-    echo -e "  \033[0;32m$command_char\033[0m What's in the news?"
+    echo -e "  \033[0;32m$command_char\033[0m What's the latest in tech news?"
+    echo -e "  \033[0;32m$command_char\033[0m Help me debug this Python error"
     echo -e "  \033[0;32m$command_char\033[0m /config  \033[2m(to modify settings)\033[0m"
     echo ""
 

@@ -197,22 +197,22 @@ change_ai_model() {
 # Change command function
 change_command() {
     echo -e "\n${CYAN}Choose new command:${RESET}"
-    echo "  [1] ai   - Clear and memorable"
-    echo "  [2] ask  - Natural for questions"
-    echo "  [3] q    - Quick single letter"
-    echo "  [4] ??   - Double question mark"
-    echo "  [5] chat - Descriptive"
+    echo "  [1] chat - Clear and descriptive"
+    echo "  [2] ai   - Short and memorable"
+    echo "  [3] ask  - Natural for questions"
+    echo "  [4] q    - Quick single letter"
+    echo "  [5] ??   - Double question mark"
     echo "  [6] Custom"
     echo -n "Select [1-6]: "
     read -r cmd_choice
 
     local new_cmd=""
     case "$cmd_choice" in
-        1) new_cmd="ai" ;;
-        2) new_cmd="ask" ;;
-        3) new_cmd="q" ;;
-        4) new_cmd="??" ;;
-        5) new_cmd="chat" ;;
+        1) new_cmd="chat" ;;
+        2) new_cmd="ai" ;;
+        3) new_cmd="ask" ;;
+        4) new_cmd="q" ;;
+        5) new_cmd="??" ;;
         6)
             echo -n "Enter custom command: "
             read -r new_cmd
