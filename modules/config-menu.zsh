@@ -426,8 +426,9 @@ EOF
         echo ""
         echo -e "${GREEN}Uninstall completed. Please restart your terminal or run: source ~/.zshrc${RESET}"
         echo ""
-        echo "Exiting AI Chat Terminal..."
-        exit 0
+        echo "Returning to normal terminal..."
+        cd "$HOME"
+        exec "$SHELL"
     else
         echo -e "${GREEN}Cancelled.${RESET}"
         sleep 2
