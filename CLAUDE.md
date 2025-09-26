@@ -4,7 +4,7 @@
 AI Chat Terminal is a Shell-GPT based CLI tool that brings ChatGPT + Web Search to the terminal with 19 language support and regional dialects.
 
 **GitHub**: https://github.com/martinschenk/ai-chat-terminal
-**Current Version**: 5.2.1 (Shell Integration & Bug Fixes - Sept 2025)
+**Current Version**: 5.3.0 (Session Management & UX Overhaul - Sept 2025)
 
 ## 📁 Project Structure & Installation Locations
 
@@ -171,6 +171,24 @@ Always clearly explain in installer:
 - Fixes "Could not determine chat role" errors
 - Ensures proper shell-gpt integration
 
+### ✅ Session Timeout System Removal (NEW)
+**Problem**: Confusing [Continue XXXs] display and unnecessary session expiration
+**Solution**: Completely removed session timeout system
+- No more session timeouts - chat persists indefinitely
+- Removed TIMEOUT_FILE, SESSION_STATUS, and related logic
+- Clean header display: '/config = settings | ESC/exit = quit'
+- Simplified config menu (removed timeout option, renumbered [1-8])
+- Users can chat as long as they want without interruption
+
+### ✅ Enhanced Documentation with Examples (NEW)
+**Problem**: README had verbose, unrealistic examples
+**Solution**: Complete redesign with concise, engaging examples
+- Memory Example: Shows conversation context across multiple questions
+- DateTime Example: Demonstrates local time awareness and personality
+- Fun Example: Shows AI humor and engaging responses
+- Language Selection: Visual guide to dialect selection (German variants)
+- All examples show actual terminal format with proper headers
+
 ## Language Support (Enhanced)
 **19 languages with regional dialects (NOW WORKING!):**
 - **German**: Hochdeutsch + Schwäbisch, Bayerisch, Sächsisch
@@ -255,6 +273,9 @@ The improved uninstall function (start ai, then type /config → [9]):
 - **NEW**: Ensure config menu UX remains smooth
 - **NEW**: Test special character handling without quotes
 - **NEW**: Verify chat session role naming works correctly
+- **NEW**: Test persistent chat sessions (no timeout interruptions)
+- **NEW**: Verify date/time context injection works in all modes
+- **NEW**: Test documentation examples match actual terminal behavior
 
 ## Development Philosophy
 - **Honest marketing** - No inflated user numbers
