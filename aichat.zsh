@@ -92,8 +92,7 @@ ai_chat_function() {
     # Ensure sgpt config exists
     mkdir -p ~/.config/shell_gpt
 
-    # Initialize shell-gpt chat role properly
-    sgpt --chat "$CHAT_NAME" --no-cache "init" >/dev/null 2>&1 || true
+    # Chat will be initialized on first use
 
     # Colors
     local BLUE='\033[0;34m'
@@ -139,6 +138,11 @@ ai_chat_function() {
         # Use ChatGPT with current date context
         local CURRENT_DATE=$(date '+%A, %B %d, %Y')
         local CURRENT_TIME=$(date '+%H:%M')
+
+        # Initialize chat if this is the first message
+        if ! sgpt --list-chats 2>/dev/null | grep -q "^$CHAT_NAME$"; then
+            sgpt --chat "$CHAT_NAME" "Hello, I'm starting a new chat session." >/dev/null 2>&1 || true
+        fi
 
         if [[ "$IS_DATE_TIME_QUESTION" == "true" ]]; then
             # Disable web search for date/time questions

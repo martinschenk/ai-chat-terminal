@@ -124,6 +124,11 @@ chat_loop() {
         local CURRENT_DATE=$(date '+%A, %B %d, %Y')
         local CURRENT_TIME=$(date '+%H:%M')
 
+        # Initialize chat if this is the first message
+        if ! sgpt --list-chats 2>/dev/null | grep -q "^$CHAT_NAME$"; then
+            sgpt --chat "$CHAT_NAME" "Hello, I'm starting a new chat session." >/dev/null 2>&1 || true
+        fi
+
         if [[ "$IS_DATE_TIME_QUESTION" == "true" ]]; then
             # Disable web search for date/time questions
             sgpt --chat "$CHAT_NAME" --no-functions "${DIALECT_PROMPT}Today is $CURRENT_DATE, current time is $CURRENT_TIME. Answer based on this local information only. $INPUT"
