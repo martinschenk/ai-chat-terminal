@@ -119,14 +119,15 @@ Start chat, then type `/config` to open settings menu:
 │  [3] Toggle ESC key exit
 │  [4] Change AI model
 │  [5] 💬 Set context window
-│  [6] 🧹 Clear chat cache
-│  [7] ℹ️  About & Version
-│  [8] Back to chat
+│  [6] 🧠 Memory system
+│  [7] 🧹 Clear chat cache
+│  [8] ℹ️  About & Version
+│  [9] Back to chat
 │
-│  [9] 🗑️  Uninstall completely
+│  [10] 🗑️  Uninstall completely
 └─────────────────────────────────────
 
-Select [1-9]:
+Select [1-10]:
 ```
 
 ### Smart Context Window Management
