@@ -193,10 +193,18 @@ first_run_setup() {
 
     local language="en"
     case "$lang_choice" in
-        2) language="de" ;;
+        2)
+            language="de"
+            handle_german_selection
+            language="$selected_lang"
+            ;;
         3) language="fr" ;;
         4) language="it" ;;
-        5) language="es" ;;
+        5)
+            language="es"
+            handle_spanish_selection
+            language="$selected_lang"
+            ;;
         6) language="zh" ;;
         7) language="hi" ;;
         *) language="en" ;;

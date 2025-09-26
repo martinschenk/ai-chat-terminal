@@ -186,7 +186,35 @@ change_ai_model() {
         echo "DEFAULT_OPENAI_MODEL=\"$new_model\"" >> "$ENV_FILE"
     fi
 
-    echo -e "${GREEN}✅ Model changed to: $new_model${RESET}"
+    echo -e "${GREEN}✅ OpenAI Model changed to: $new_model${RESET}"
+
+    # Check if Perplexity is configured
+    if [[ ! -z "$PERPLEXITY_API_KEY" ]]; then
+        echo -e "\n${CYAN}Select Perplexity Model for Web Search:${RESET}"
+        echo "  [1] pplx-7b-online  ⭐ RECOMMENDED"
+        echo "  [2] pplx-70b-online"
+        echo "  [3] sonar-small-online"
+        echo "  [4] sonar-medium-online"
+        echo -n "Select [1-4] (default: 1): "
+        read -r pplx_choice
+
+        local new_pplx_model="pplx-7b-online"
+        case "$pplx_choice" in
+            2) new_pplx_model="pplx-70b-online" ;;
+            3) new_pplx_model="sonar-small-online" ;;
+            4) new_pplx_model="sonar-medium-online" ;;
+        esac
+
+        # Update Perplexity model in .env
+        if grep -q "DEFAULT_PERPLEXITY_MODEL" "$ENV_FILE"; then
+            sed -i '' "s/DEFAULT_PERPLEXITY_MODEL=.*/DEFAULT_PERPLEXITY_MODEL=\"$new_pplx_model\"/" "$ENV_FILE"
+        else
+            echo "DEFAULT_PERPLEXITY_MODEL=\"$new_pplx_model\"" >> "$ENV_FILE"
+        fi
+
+        echo -e "${GREEN}✅ Perplexity Model changed to: $new_pplx_model${RESET}"
+    fi
+
     sleep 2
 }
 
