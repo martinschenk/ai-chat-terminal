@@ -19,7 +19,7 @@ show_config_menu() {
 
         local COMMAND_CHAR="${AI_CHAT_COMMAND:-ai}"
         local LANGUAGE="${AI_CHAT_LANGUAGE:-en}"
-        local TIMEOUT="${AI_CHAT_TIMEOUT:-600}"
+        local TIMEOUT="${AI_CHAT_TIMEOUT:-3600}"
         local ENABLE_ESC="${AI_CHAT_ESC_EXIT:-true}"
         # Use global SCRIPT_DIR from main script
 
@@ -151,7 +151,7 @@ change_language() {
 # Change timeout function
 change_timeout() {
     echo -e "\n${CYAN}Set Session Timeout (in seconds):${RESET}"
-    echo "Current: ${AI_CHAT_TIMEOUT:-600} seconds"
+    echo "Current: ${AI_CHAT_TIMEOUT:-3600} seconds"
     echo -n "Enter new timeout (60-3600): "
     read -r new_timeout
 

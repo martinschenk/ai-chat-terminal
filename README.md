@@ -5,9 +5,7 @@ A ChatGPT-powered terminal interface with integrated web search and memory.
 [![Version](https://img.shields.io/badge/version-5.2.0-blue.svg)](https://github.com/martinschenk/ai-chat-terminal)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-macOS%20|%20Linux-lightgrey.svg)](https://github.com/martinschenk/ai-chat-terminal)
-[![Author](https://img.shields.io/badge/author-Martin%20Schenk-orange.svg)](https://github.com/martinschenk)
 
-**Copyright © 2025 Martin Schenk | Licensed under MIT License**
 
 ## Features
 
@@ -30,26 +28,94 @@ After installation:
 
 ## Usage
 
-### Basic Chat
-```bash
-chat "Hello, how are you?"
-chat "Explain Docker containers"
-chat "Write a Python function to parse JSON"
+Start by typing `chat` to enter the interactive terminal:
+
+### Development Assistance
+```
+/config = settings | ESC/exit = quit
+─────────────────────────────────────────────────────
+
+👤 You ▶ I'm setting up a React app with TypeScript. What's the best folder structure?
+🤖 AI ▶
+For a React TypeScript app, I recommend this structure:
+
+src/
+├── components/          # Reusable UI components
+│   ├── common/         # Shared components
+│   └── ui/             # Basic UI elements
+├── pages/              # Route components
+├── hooks/              # Custom React hooks
+├── services/           # API calls and external services
+├── types/              # TypeScript type definitions
+├── utils/              # Helper functions
+└── styles/             # CSS/SCSS files
+
+This keeps your code organized and scalable. Would you like me to explain any specific part?
+─────────────────────────────────────────────────────
+
+👤 You ▶ show me the tsconfig.json for this setup
+🤖 AI ▶
+Here's a solid tsconfig.json for your React TypeScript setup:
+
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "lib": ["DOM", "DOM.Iterable", "ES6"],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "noFallthroughCasesInSwitch": true,
+    "module": "esnext",
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "baseUrl": "src",
+    "paths": {
+      "@/*": ["*"],
+      "@/components/*": ["components/*"],
+      "@/types/*": ["types/*"]
+    }
+  },
+  "include": ["src"]
+}
+
+The paths configuration allows clean imports like `import Button from '@/components/Button'`.
+─────────────────────────────────────────────────────
+
+👤 You ▶ datetime?
+🤖 AI ▶
+Based on your local information, the current date and time is Saturday, September 27, 2025, at 00:26.
+─────────────────────────────────────────────────────
+
+👤 You ▶ what's the latest in JavaScript frameworks today?
+🤖 AI ▶
+As of September 27, 2025, here are the latest developments in JavaScript frameworks:
+
+**React 19 RC** - Released with exciting features like Server Components becoming stable and improved concurrent rendering.
+
+**Next.js 15** - Just launched with enhanced App Router performance and improved developer experience for full-stack applications.
+
+**Vue 3.4** - The latest version includes better TypeScript integration and performance optimizations.
+
+**Svelte 5** - Recently announced with a new reactivity system called "runes" that simplifies state management.
+
+The trend is toward better server-side rendering, improved developer experience, and enhanced performance optimizations across all major frameworks.
+─────────────────────────────────────────────────────
+
+👤 You ▶
 ```
 
-### Web Search (Automatic)
+### Quick Commands
+You can also ask direct questions without entering the chat:
 ```bash
-chat "What's the latest news in AI development?"
-chat "Current status of Bitcoin price"
-chat "Who won today's major tech conference announcements?"
-chat "Latest TypeScript version features"
-```
-
-### Memory Examples
-```bash
-chat "I'm working on a Node.js REST API"
-chat "What's the best way to handle authentication?"  # Remembers Node.js context
-chat "Show me code examples for that"                # Continues previous topic
+chat "Fix this Docker error: port already in use"
+chat "Best practices for Python virtual environments"
+chat "How to optimize PostgreSQL queries?"
 ```
 
 ### Configuration

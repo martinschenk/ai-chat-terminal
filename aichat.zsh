@@ -71,7 +71,7 @@ ai_chat_function() {
     # Defaults from config or fallback
     local COMMAND_CHAR="${AI_CHAT_COMMAND:-ai}"
     local LANGUAGE="${AI_CHAT_LANGUAGE:-en}"
-    local TIMEOUT_SECONDS="${AI_CHAT_TIMEOUT:-600}"
+    local TIMEOUT_SECONDS="${AI_CHAT_TIMEOUT:-3600}"
     local ENABLE_ESC="${AI_CHAT_ESC_EXIT:-true}"
 
     # Load language file
@@ -121,15 +121,17 @@ ai_chat_function() {
 
         if [[ $TIME_DIFF -gt $TIMEOUT_SECONDS ]]; then
             rm -f "/tmp/chat_cache/${CHAT_NAME}.json" 2>/dev/null
+            rm -f "$CACHE_DIR/${CHAT_NAME}" 2>/dev/null
             SESSION_STATUS=""
         else
             SESSION_STATUS="${DIM}[${LANG_HEADER_CONTINUE} ${TIME_DIFF}${LANG_STATUS_SECONDS}]${RESET}"
         fi
     else
-        rm -f "/tmp/chat_cache/${CHAT_NAME}.json" 2>/dev/null
+        # No previous session
+        SESSION_STATUS=""
     fi
 
-    # Update timestamp
+    # Always update timestamp when user interacts (extends session)
     echo "$CURRENT_TIME" > "$TIMEOUT_FILE"
 
     # Handle direct questions (ai "question here")
@@ -302,7 +304,7 @@ EOF
 # AI Chat Terminal User Configuration
 AI_CHAT_COMMAND="$command_char"
 AI_CHAT_LANGUAGE="$language"
-AI_CHAT_TIMEOUT="600"
+AI_CHAT_TIMEOUT="3600"
 AI_CHAT_ESC_EXIT="true"
 EOF
 
