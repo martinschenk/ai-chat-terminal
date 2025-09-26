@@ -30,81 +30,112 @@ After installation:
 
 Start by typing `chat` to enter the interactive terminal:
 
-### Development Assistance
+### Development Examples
 ```
-/config = settings | ESC/exit = quit
+👤 You ▶ I need help with Docker. My container keeps failing on port 3000
+🤖 AI ▶
+Port 3000 conflicts are common in development. Here are the solutions:
+
+1. **Check what's using port 3000:**
+   ```bash
+   lsof -ti:3000
+   kill -9 $(lsof -ti:3000)
+   ```
+
+2. **Use a different port in Docker:**
+   ```bash
+   docker run -p 3001:3000 your-app
+   ```
+
+3. **In docker-compose.yml:**
+   ```yaml
+   ports:
+     - "3001:3000"
+   ```
+
+The issue is likely another process (React dev server, Next.js, etc.) already using port 3000.
 ─────────────────────────────────────────────────────
 
-👤 You ▶ I'm setting up a React app with TypeScript. What's the best folder structure?
+👤 You ▶ show me a Python function to parse JSON with error handling
 🤖 AI ▶
-For a React TypeScript app, I recommend this structure:
+Here's a robust JSON parser with comprehensive error handling:
 
-src/
-├── components/          # Reusable UI components
-│   ├── common/         # Shared components
-│   └── ui/             # Basic UI elements
-├── pages/              # Route components
-├── hooks/              # Custom React hooks
-├── services/           # API calls and external services
-├── types/              # TypeScript type definitions
-├── utils/              # Helper functions
-└── styles/             # CSS/SCSS files
+```python
+import json
+from typing import Dict, Any, Optional
 
-This keeps your code organized and scalable. Would you like me to explain any specific part?
+def safe_json_parse(json_string: str) -> Optional[Dict[str, Any]]:
+    """
+    Safely parse JSON string with error handling.
+
+    Args:
+        json_string: Raw JSON string to parse
+
+    Returns:
+        Parsed JSON as dict or None if parsing fails
+    """
+    try:
+        # Handle empty or None input
+        if not json_string or json_string.strip() == "":
+            return None
+
+        # Parse JSON
+        data = json.loads(json_string.strip())
+        return data
+
+    except json.JSONDecodeError as e:
+        print(f"JSON parsing error: {e}")
+        print(f"Error at line {e.lineno}, column {e.colno}")
+        return None
+
+    except Exception as e:
+        print(f"Unexpected error: {e}")
+        return None
+
+# Usage examples:
+result = safe_json_parse('{"name": "John", "age": 30}')
+if result:
+    print(f"Name: {result['name']}")
+```
+
+This handles malformed JSON, empty strings, and provides detailed error information.
 ─────────────────────────────────────────────────────
 
-👤 You ▶ show me the tsconfig.json for this setup
+👤 You ▶ what's the current status of TypeScript 5.x features?
 🤖 AI ▶
-Here's a solid tsconfig.json for your React TypeScript setup:
+As of September 27, 2025, TypeScript 5.x has introduced several powerful features:
 
-{
-  "compilerOptions": {
-    "target": "ES2020",
-    "lib": ["DOM", "DOM.Iterable", "ES6"],
-    "allowJs": true,
-    "skipLibCheck": true,
-    "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
-    "strict": true,
-    "forceConsistentCasingInFileNames": true,
-    "noFallthroughCasesInSwitch": true,
-    "module": "esnext",
-    "moduleResolution": "node",
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "noEmit": true,
-    "jsx": "react-jsx",
-    "baseUrl": "src",
-    "paths": {
-      "@/*": ["*"],
-      "@/components/*": ["components/*"],
-      "@/types/*": ["types/*"]
-    }
-  },
-  "include": ["src"]
-}
+**TypeScript 5.0** (March 2023):
+- Decorators support (stage 3 proposal)
+- `const` type parameters for better inference
+- Supporting multiple config files with `extends`
 
-The paths configuration allows clean imports like `import Button from '@/components/Button'`.
+**TypeScript 5.1** (June 2023):
+- Easier implicit returns for undefined-returning functions
+- Unrelated types for getters and setters
+- JSX element improvements
+
+**TypeScript 5.2** (August 2023):
+- `using` declarations for explicit resource management
+- Decorator metadata
+- Named and anonymous tuple elements
+
+**TypeScript 5.3** (November 2023):
+- Import attributes syntax
+- Resolution strategy and bundler improvements
+- Better performance for monorepos
+
+**TypeScript 5.4** (March 2024):
+- Preserved narrowing in closures
+- NoInfer utility type
+- Object.groupBy typing improvements
+
+The focus has been on developer experience, performance, and modern JavaScript feature support.
 ─────────────────────────────────────────────────────
 
 👤 You ▶ datetime?
 🤖 AI ▶
-Based on your local information, the current date and time is Saturday, September 27, 2025, at 00:26.
-─────────────────────────────────────────────────────
-
-👤 You ▶ what's the latest in JavaScript frameworks today?
-🤖 AI ▶
-As of September 27, 2025, here are the latest developments in JavaScript frameworks:
-
-**React 19 RC** - Released with exciting features like Server Components becoming stable and improved concurrent rendering.
-
-**Next.js 15** - Just launched with enhanced App Router performance and improved developer experience for full-stack applications.
-
-**Vue 3.4** - The latest version includes better TypeScript integration and performance optimizations.
-
-**Svelte 5** - Recently announced with a new reactivity system called "runes" that simplifies state management.
-
-The trend is toward better server-side rendering, improved developer experience, and enhanced performance optimizations across all major frameworks.
+Based on your local information, the current date and time is Saturday, September 27, 2025, at 00:26. If you need any further assistance or have more questions, feel free to ask!
 ─────────────────────────────────────────────────────
 
 👤 You ▶
