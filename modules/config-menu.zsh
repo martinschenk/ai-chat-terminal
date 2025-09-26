@@ -169,20 +169,20 @@ toggle_esc() {
 # Change AI model function
 change_ai_model() {
     echo -e "\n${CYAN}Select OpenAI Model:${RESET}"
-    echo "  [1] gpt-4o-mini   - Fast & cheap"
-    echo "  [2] gpt-4o       - Best performance"
-    echo "  [3] gpt-4        - Classic powerful"
-    echo "  [4] gpt-4-turbo  - Fast, good quality"
+    echo "  [1] gpt-4o       ⭐ RECOMMENDED - Best performance"
+    echo "  [2] gpt-4o-mini   - Fast & cheap"
+    echo "  [3] gpt-4-turbo  - Fast, good quality"
+    echo "  [4] gpt-4        - Classic powerful"
     echo "  [5] gpt-3.5-turbo - Cheapest"
     echo -n "Select [1-5]: "
     read -r model_choice
 
     local new_model=""
     case "$model_choice" in
-        1) new_model="gpt-4o-mini" ;;
-        2) new_model="gpt-4o" ;;
-        3) new_model="gpt-4" ;;
-        4) new_model="gpt-4-turbo" ;;
+        1) new_model="gpt-4o" ;;
+        2) new_model="gpt-4o-mini" ;;
+        3) new_model="gpt-4-turbo" ;;
+        4) new_model="gpt-4" ;;
         5) new_model="gpt-3.5-turbo" ;;
         *) echo -e "${RED}Invalid choice${RESET}"; sleep 2; return ;;
     esac

@@ -260,20 +260,20 @@ first_run_setup() {
     echo -e "\033[1;33mStep 4/4: Select AI Model\033[0m"
     echo "────────────────────────────────────"
     echo ""
-    echo -e "  [1] gpt-4o-mini   - \033[0;32mFast & cheap\033[0m (\$0.15/1M tokens)"
-    echo -e "  [2] gpt-4o       \033[0;32m⭐ RECOMMENDED\033[0m - Best performance (\$2.50/1M tokens)"
-    echo -e "  [3] gpt-4        - Classic powerful model (\$30/1M tokens)"
-    echo -e "  [4] gpt-4-turbo  - Fast, good quality (\$10/1M tokens)"
+    echo -e "  [1] gpt-4o       \033[0;32m⭐ RECOMMENDED\033[0m - Best performance (\$2.50/1M tokens)"
+    echo -e "  [2] gpt-4o-mini   - \033[0;32mFast & cheap\033[0m (\$0.15/1M tokens)"
+    echo -e "  [3] gpt-4-turbo  - Fast, good quality (\$10/1M tokens)"
+    echo -e "  [4] gpt-4        - Classic powerful model (\$30/1M tokens)"
     echo -e "  [5] gpt-3.5-turbo - \033[0;33m💰 CHEAPEST\033[0m (\$0.50/1M tokens)"
     echo ""
-    echo -n "Select [1-5] (default: 2): "
+    echo -n "Select [1-5] (default: 1): "
     read -r model_choice
 
     local openai_model="gpt-4o"
     case "$model_choice" in
-        1) openai_model="gpt-4o-mini" ;;
-        3) openai_model="gpt-4" ;;
-        4) openai_model="gpt-4-turbo" ;;
+        2) openai_model="gpt-4o-mini" ;;
+        3) openai_model="gpt-4-turbo" ;;
+        4) openai_model="gpt-4" ;;
         5) openai_model="gpt-3.5-turbo" ;;
         *) openai_model="gpt-4o" ;;  # Default
     esac
