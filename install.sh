@@ -200,8 +200,10 @@ echo "Next steps:"
 if [[ ! -z "$PRIMARY_SHELL_CONFIG" ]]; then
     config_name=$(basename "$PRIMARY_SHELL_CONFIG")
     echo -e "  ${CYAN}source ~/$config_name${RESET}  ${DIM}# or restart terminal${RESET}"
+    echo -e "${DIM}  # DEBUG: Updated $PRIMARY_SHELL_CONFIG for $SHELL${RESET}"
 else
     echo -e "  ${CYAN}Restart your terminal${RESET}"
+    echo -e "${DIM}  # DEBUG: No PRIMARY_SHELL_CONFIG set${RESET}"
 fi
 
 echo -e "  ${CYAN}chat${RESET}"
