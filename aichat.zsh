@@ -151,8 +151,9 @@ ai_chat_function() {
         local DIALECT_PROMPT=""
         get_dialect_prompt "$LANGUAGE"
 
-        # Use ChatGPT with web search capabilities
-        sgpt --chat "$CHAT_NAME" "${DIALECT_PROMPT}$*"
+        # Use ChatGPT with web search capabilities (include current date)
+        local CURRENT_DATE=$(date '+%A, %B %d, %Y')
+        sgpt --chat "$CHAT_NAME" "${DIALECT_PROMPT}Today is $CURRENT_DATE. $*"
 
         echo -e "\n${DIM}─────────────────────────────────────────────────────${RESET}\n"
 
