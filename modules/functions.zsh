@@ -86,14 +86,14 @@ chat_loop() {
                 show_config_menu
                 # After config, show header again
                 clear
-                echo -e "${CYAN}/config${RESET} = settings ${DIM}|${RESET} ${YELLOW}ESC${RESET}/${YELLOW}exit${RESET} = quit"
+                echo -e "${CYAN}/config${RESET} = ${LANG_CHAT_SETTINGS:-settings} ${DIM}|${RESET} ${YELLOW}ESC${RESET}/${YELLOW}${LANG_CHAT_EXIT:-exit}${RESET} = ${LANG_CHAT_QUIT:-quit}"
                 echo -e "${DIM}─────────────────────────────────────────────────────${RESET}\n"
                 continue
                 ;;
 
             clear|cls)
                 clear
-                echo -e "${CYAN}/config${RESET} = settings ${DIM}|${RESET} ${YELLOW}ESC${RESET}/${YELLOW}exit${RESET} = quit"
+                echo -e "${CYAN}/config${RESET} = ${LANG_CHAT_SETTINGS:-settings} ${DIM}|${RESET} ${YELLOW}ESC${RESET}/${YELLOW}${LANG_CHAT_EXIT:-exit}${RESET} = ${LANG_CHAT_QUIT:-quit}"
                 echo -e "${DIM}─────────────────────────────────────────────────────${RESET}\n"
                 continue
                 ;;

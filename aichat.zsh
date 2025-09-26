@@ -133,7 +133,7 @@ ai_chat_function() {
         fi
 
         # Direct question mode
-        echo -e "\n${CYAN}/config${RESET} = settings ${DIM}|${RESET} ${YELLOW}ESC${RESET}/${YELLOW}exit${RESET} = quit ${SESSION_STATUS}"
+        echo -e "\n${CYAN}/config${RESET} = ${LANG_CHAT_SETTINGS:-settings} ${DIM}|${RESET} ${YELLOW}ESC${RESET}/${YELLOW}${LANG_CHAT_EXIT:-exit}${RESET} = ${LANG_CHAT_QUIT:-quit} ${SESSION_STATUS}"
         echo -e "${DIM}─────────────────────────────────────────────────────${RESET}\n"
 
         echo -e "${BLUE}👤 ${LANG_LABEL_YOU}:${RESET} $*\n"
@@ -155,7 +155,7 @@ ai_chat_function() {
 
     # Instant chat mode
     clear
-    echo -e "${CYAN}/config${RESET} = settings ${DIM}|${RESET} ${YELLOW}ESC${RESET}/${YELLOW}exit${RESET} = quit ${SESSION_STATUS}"
+    echo -e "${CYAN}/config${RESET} = ${LANG_CHAT_SETTINGS:-settings} ${DIM}|${RESET} ${YELLOW}ESC${RESET}/${YELLOW}${LANG_CHAT_EXIT:-exit}${RESET} = ${LANG_CHAT_QUIT:-quit} ${SESSION_STATUS}"
     echo -e "${DIM}─────────────────────────────────────────────────────${RESET}\n"
 
     chat_loop
@@ -291,28 +291,44 @@ DEFAULT_COLOR=green
 # Note: OPENAI_API_KEY is loaded from ~/.aichat/.env for security
 EOF
 
+    # Load language file for localized success message
+    local LANG_FILE="$SCRIPT_DIR/lang/${language}.conf"
+    if [[ -f "$LANG_FILE" ]]; then
+        source "$LANG_FILE"
+    else
+        # Fallback to English
+        LANG_SETUP_COMPLETE="Setup Complete!"
+        LANG_SETUP_READY="Your AI Chat Terminal is ready to use!"
+        LANG_SETUP_CONFIG="Configuration:"
+        LANG_SETUP_LANGUAGE="Language"
+        LANG_SETUP_MODEL="AI Model"
+        LANG_SETUP_WEBSEARCH="Web Search"
+        LANG_SETUP_COMMAND="Command"
+        LANG_SETUP_ENABLED="Enabled"
+        LANG_SETUP_GET_STARTED="Get started:"
+        LANG_SETUP_STARTING="Starting your first chat session..."
+    fi
+
     # Success message
     clear
-    echo -e "\033[1;32m\033[1m🎉 Setup Complete!\033[0m"
+    echo -e "\033[1;32m\033[1m🎉 ${LANG_SETUP_COMPLETE}\033[0m"
     echo -e "\033[1;32m==================\033[0m\n"
 
-    echo -e "\033[0;37mYour AI Chat Terminal is ready to use!\033[0m"
+    echo -e "\033[0;37m${LANG_SETUP_READY}\033[0m"
     echo ""
-    echo -e "\033[1mConfiguration:\033[0m"
-    echo -e "  • Language: \033[0;36m$language\033[0m"
-    echo -e "  • AI Model: \033[0;36m$openai_model\033[0m"
-    echo -e "  • Web Search: \033[0;32m✓ Enabled (ChatGPT)\033[0m"
-    echo -e "  • Command: \033[0;36m$command_char\033[0m"
-    echo ""
-
-    echo -e "\033[1mTry it out:\033[0m"
-    echo -e "  \033[0;32m$command_char\033[0m Hello!"
-    echo -e "  \033[0;32m$command_char\033[0m What's the latest in tech news?"
-    echo -e "  \033[0;32m$command_char\033[0m Help me debug this Python error"
-    echo -e "  \033[0;32m$command_char\033[0m /config  \033[2m(to modify settings)\033[0m"
+    echo -e "\033[1m${LANG_SETUP_CONFIG}\033[0m"
+    echo -e "  • ${LANG_SETUP_LANGUAGE}: \033[0;36m$language\033[0m"
+    echo -e "  • ${LANG_SETUP_MODEL}: \033[0;36m$openai_model\033[0m"
+    echo -e "  • ${LANG_SETUP_WEBSEARCH}: \033[0;32m✓ ${LANG_SETUP_ENABLED} (ChatGPT)\033[0m"
+    echo -e "  • ${LANG_SETUP_COMMAND}: \033[0;36m$command_char\033[0m"
     echo ""
 
-    echo -e "\033[2mStarting your first chat session...\033[0m"
+    echo -e "\033[1m${LANG_SETUP_GET_STARTED}\033[0m"
+    echo -e "  \033[0;32m$command_char\033[0m"
+    echo -e "  \033[0;32m$command_char\033[0m 'What is the latest tech news'"
+    echo ""
+
+    echo -e "\033[2m${LANG_SETUP_STARTING}\033[0m"
     sleep 2
 }
 
