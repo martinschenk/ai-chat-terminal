@@ -51,6 +51,17 @@ source /Users/martin/.aichat/aichat.zsh
 alias ai='ai_chat_function'    # or user's chosen command
 ```
 
+## IMPORTANT: Date/Year Handling
+
+⚠️ **CRITICAL REMINDER**: When adding dates or years to ANY code, docs, or comments:
+1. **NEVER assume the current year**
+2. **ALWAYS check the current date first** (Today is 2025-09-26)
+3. **Use 2025 for all new copyright notices**
+4. **Search existing files for old years** and update them
+5. **Check system date if unsure**: use `date` command or ask user
+
+**Common mistake**: Using 2024 when it's actually 2025! Always verify!
+
 ## Development Workflow
 
 ### Testing Installation Process

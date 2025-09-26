@@ -7,7 +7,7 @@ A ChatGPT-powered terminal interface with integrated web search and memory.
 [![Platform](https://img.shields.io/badge/platform-macOS%20|%20Linux-lightgrey.svg)](https://github.com/martinschenk/ai-chat-terminal)
 [![Author](https://img.shields.io/badge/author-Martin%20Schenk-orange.svg)](https://github.com/martinschenk)
 
-**Copyright © 2024 Martin Schenk | Licensed under MIT License**
+**Copyright © 2025 Martin Schenk | Licensed under MIT License**
 
 ## Features
 

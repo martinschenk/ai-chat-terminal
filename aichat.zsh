@@ -1,6 +1,6 @@
 #!/bin/zsh
 # AI Chat Terminal - Main Chat Function
-# Copyright (c) 2024 Martin Schenk
+# Copyright (c) 2025 Martin Schenk
 # Licensed under MIT License - https://opensource.org/licenses/MIT
 # Version 5.2.0 - Clean directory structure, web search, conflict detection
 
@@ -300,7 +300,7 @@ DEFAULT_COLOR=green
 EOF
 
     # Load language file for localized success message
-    local LANG_FILE="$SCRIPT_DIR/lang/${language}.conf"
+    local LANG_FILE="$CONFIG_DIR/lang/${language}.conf"
     if [[ -f "$LANG_FILE" ]]; then
         source "$LANG_FILE"
     else

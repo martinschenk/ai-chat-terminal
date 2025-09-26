@@ -383,7 +383,7 @@ show_about_info() {
     echo -e "${PURPLE}╚═══════════════════════════════════════╝${RESET}"
     echo ""
     echo -e "${DIM}Built on Shell-GPT by TheR1D${RESET}"
-    echo -e "${DIM}Copyright © 2024 Martin Schenk${RESET}"
+    echo -e "${DIM}Copyright © 2025 Martin Schenk${RESET}"
     echo ""
     echo -e "${CYAN}Press any key to return...${RESET}"
     read -r
