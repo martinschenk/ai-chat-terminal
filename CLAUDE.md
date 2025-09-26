@@ -4,7 +4,7 @@
 AI Chat Terminal is a Shell-GPT based CLI tool that brings ChatGPT + Web Search to the terminal with 19 language support and regional dialects.
 
 **GitHub**: https://github.com/martinschenk/ai-chat-terminal
-**Current Version**: 5.2.0 (Major UX improvements - Sept 2024)
+**Current Version**: 5.2.1 (Shell Integration & Bug Fixes - Sept 2025)
 
 ## 📁 Project Structure & Installation Locations
 
@@ -48,7 +48,7 @@ Location: `~/.zshrc` or `~/.bashrc`
 ```bash
 # AI Chat Terminal
 source /Users/martin/.aichat/aichat.zsh
-alias ai='ai_chat_function'    # or user's chosen command
+alias chat='noglob ai_chat_function'    # with noglob for special characters
 ```
 
 ## IMPORTANT: Date/Year Handling
@@ -135,7 +135,7 @@ Always clearly explain in installer:
 ### Optional
 - **Perplexity API**: For web search features
 
-## 🆕 Recent Major Improvements (Sept 2024)
+## 🆕 Recent Major Improvements (Sept 2025)
 
 ### ✅ Fixed Language & Dialect Selection
 **Problem**: German and Spanish dialect selection wasn't working in setup
@@ -157,11 +157,19 @@ Always clearly explain in installer:
 - Uninstall function finds ANY alias pointing to `ai_chat_function` (regardless of name)
 - No more duplicate aliases when users change commands
 
-### ✅ Perplexity Model Selection in Config
-**Problem**: Config menu only asked for OpenAI model, not Perplexity
-**Solution**: Added Perplexity model selection after OpenAI model selection
-- Only shows if Perplexity API key is configured
-- Models: pplx-7b-online, pplx-70b-online, sonar-small-online, sonar-medium-online
+### ✅ Shell Globbing Prevention (NEW)
+**Problem**: Commands with special characters (?, *, []) caused shell globbing errors
+**Solution**: Added `noglob` prefix to all aliases
+- Prevents zsh/bash from expanding special characters before script execution
+- Enables natural CLI usage: `chat What is the weather today?` (no quotes needed)
+- Fixed "zsh: no matches found" errors for questions ending with '?'
+
+### ✅ Chat Session Role Bug Fix (NEW)
+**Problem**: When command was "chat", shell-gpt got role "chat_chat" and failed
+**Solution**: Changed chat session naming from `${COMMAND_CHAR}_chat` to `${COMMAND_CHAR}_session`
+- Prevents duplicate "chat" in role names
+- Fixes "Could not determine chat role" errors
+- Ensures proper shell-gpt integration
 
 ## Language Support (Enhanced)
 **19 languages with regional dialects (NOW WORKING!):**
@@ -224,7 +232,7 @@ Adds to shell profile (`~/.zshrc` or `~/.bashrc`):
 ```bash
 # AI Chat Terminal
 source /Users/martin/.aichat/aichat.zsh
-alias ai='ai_chat_function'    # or user's chosen command (ask, chat, etc.)
+alias chat='noglob ai_chat_function'    # with noglob for special characters (ask, chat, etc.)
 ```
 
 ## Uninstall Process (Enhanced)
@@ -245,6 +253,8 @@ The improved uninstall function (start ai, then type /config → [9]):
 - **NEW**: Test dialect selection flows regularly
 - **NEW**: Verify multi-alias prevention works
 - **NEW**: Ensure config menu UX remains smooth
+- **NEW**: Test special character handling without quotes
+- **NEW**: Verify chat session role naming works correctly
 
 ## Development Philosophy
 - **Honest marketing** - No inflated user numbers
