@@ -230,7 +230,17 @@ clear_chat_cache() {
 
     local cache_cleared=false
 
-    # Clear from temp directory
+    # Clear shell-gpt chat cache
+    if [[ -d "/tmp/chat_cache" ]]; then
+        local count=$(find /tmp/chat_cache -name "${AI_CHAT_COMMAND:-chat}_*" -type f 2>/dev/null | wc -l)
+        if [[ $count -gt 0 ]]; then
+            find /tmp/chat_cache -name "${AI_CHAT_COMMAND:-chat}_*" -type f -delete 2>/dev/null
+            echo -e "  ${GREEN}✓${RESET} Cleared $count chat sessions"
+            cache_cleared=true
+        fi
+    fi
+
+    # Clear old session files from other locations
     if [[ -d "/var/folders" ]]; then
         find /var/folders -name "*_chat" -type f 2>/dev/null | while read cache_file; do
             if [[ -w "$cache_file" ]]; then
@@ -240,14 +250,9 @@ clear_chat_cache() {
         done
     fi
 
-    # Clear from ~/.config/shell_gpt/chat_sessions
-    if [[ -d "$HOME/.config/shell_gpt/chat_sessions" ]]; then
-        find "$HOME/.config/shell_gpt/chat_sessions" -type f ! -name ".gitkeep" -delete 2>/dev/null
-        cache_cleared=true
-    fi
-
     if [[ "$cache_cleared" == "true" ]]; then
         echo -e "\n${GREEN}✅ Cache cleared successfully!${RESET}"
+        echo -e "${CYAN}Next chat will start fresh with no memory.${RESET}"
     else
         echo -e "\n${YELLOW}No cache files found.${RESET}"
     fi

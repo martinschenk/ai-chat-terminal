@@ -82,8 +82,9 @@ ai_chat_function() {
         source "$LANG_FILE"
     fi
 
-    # Chat configuration - avoid duplicate "chat" in name
-    local CHAT_NAME="${COMMAND_CHAR}_session"
+    # Chat configuration - use daily session that persists
+    local SESSION_DATE=$(date +%Y-%m-%d)
+    local CHAT_NAME="${COMMAND_CHAR}_${SESSION_DATE}"
 
     # Initialize sgpt chat session if needed
     local CACHE_DIR="/tmp/chat_cache"
@@ -141,7 +142,7 @@ ai_chat_function() {
 
         # Initialize chat if this is the first message or repair corrupted session
         if ! sgpt --list-chats 2>/dev/null | grep -q "^$CHAT_NAME$"; then
-            sgpt --chat "$CHAT_NAME" "Hello, I'm starting a new chat session." >/dev/null 2>&1 || true
+            sgpt --chat "$CHAT_NAME" "Hello! This is a new daily chat session for $SESSION_DATE. Please remember our conversation throughout the day." >/dev/null 2>&1 || true
         else
             # Test if chat session is corrupted and repair if needed
             if ! sgpt --chat "$CHAT_NAME" "test" >/dev/null 2>&1; then
