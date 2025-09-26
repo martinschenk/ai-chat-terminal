@@ -83,8 +83,8 @@ ai_chat_function() {
         source "$LANG_FILE"
     fi
 
-    # Chat configuration
-    local CHAT_NAME="${COMMAND_CHAR}_chat"
+    # Chat configuration - avoid duplicate "chat" in name
+    local CHAT_NAME="${COMMAND_CHAR}_session"
     local TIMEOUT_FILE="$CONFIG_DIR/last_time"
 
     # Initialize sgpt chat session if needed
