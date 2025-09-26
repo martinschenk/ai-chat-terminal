@@ -11,7 +11,9 @@ A ChatGPT-powered terminal interface with integrated web search and memory.
 
 - **ChatGPT Integration** - Powered by OpenAI's latest models (GPT-4o, GPT-4o-mini, etc.)
 - **Integrated Web Search** - Real-time information via ChatGPT search capabilities
-- **Conversational Memory** - Maintains context during chat sessions
+- **🧠 Smart Memory System** - Dual-layer memory: short-term context + long-term SQLite database
+- **🔍 Semantic Search** - Find past conversations using natural language queries
+- **💰 Cost-Optimized Context** - Configurable message limits (5-50) to control API costs
 - **Multi-Language Support** - 19 languages with regional dialects
 - **Customizable Commands** - Use `chat`, `ai`, `ask`, or custom aliases
 
@@ -165,6 +167,46 @@ Cost-optimized memory system with configurable message limits:
 🎯 Default: 20 messages (perfect balance of memory + cost)
 ```
 
+### 🧠 Smart Memory System (Phase 2)
+
+AI Chat Terminal features a revolutionary dual-layer memory architecture:
+
+```
+                   🧠 DUAL-LAYER MEMORY SYSTEM
+
+┌─────────────────────────────────────────────────────────┐
+│                 SHORT-TERM MEMORY                       │
+│               (Shell-GPT Context)                       │
+│  • Last 5-50 messages (configurable)                   │
+│  • Fast API responses                                   │
+│  • Cost optimized                                      │
+└────────────────────┬────────────────────────────────────┘
+                     │
+              ┌──────▼──────┐
+              │  Auto-Save  │ (Background)
+              └──────┬──────┘
+                     │
+┌────────────────────▼────────────────────────────────────┐
+│                 LONG-TERM MEMORY                        │
+│                (SQLite + Embeddings)                    │
+│  • Semantic search across all conversations            │
+│  • Vector embeddings for context understanding         │
+│  • Persistent storage (~1KB per message)               │
+│  • Automatic cleanup after 30+ days                    │
+└─────────────────────────────────────────────────────────┘
+
+🔍 Memory Search Examples:
+   • "What did we discuss about Docker yesterday?"
+   • "Show me Python debugging conversations"
+   • "Find solutions for API timeout errors"
+
+💾 Automatic Features:
+   • Background saving (non-blocking)
+   • Smart importance scoring
+   • Semantic similarity search
+   • Database cleanup tools
+```
+
 ### Language Selection with Dialects
 Shows 19 languages including regional variants:
 ```
@@ -196,16 +238,21 @@ The configuration menu provides these options:
 2. **Change Language** - Select from 19 supported languages
 3. **Toggle ESC Exit** - Enable/disable quick exit with ESC key
 4. **Change AI Model** - Select OpenAI model (GPT-4o recommended)
-5. **Clear Cache** - Reset conversation history
-6. **About & Version** - View version and attribution information
-7. **Back to Chat** - Return to conversation
-8. **Uninstall** - Complete removal with cleanup
+5. **💬 Set Context Window** - Configure message limit (5-50) with cost indicators
+6. **🧠 Memory System** - Search memories, view stats, cleanup old data
+7. **🧹 Clear Cache** - Reset conversation history
+8. **ℹ️ About & Version** - View version and attribution information
+9. **Back to Chat** - Return to conversation
+10. **🗑️ Uninstall** - Complete removal with cleanup
 
 ## Requirements
 
 - **OpenAI API Key** (required) - Get yours at [platform.openai.com/api-keys](https://platform.openai.com/api-keys)
 - **Python 3** (usually pre-installed on macOS/Linux)
 - **Shell-GPT** (automatically installed)
+- **Memory System Dependencies** (automatically installed):
+  - `sentence-transformers` (~80MB, for semantic search)
+  - `sqlite-vec` (for vector embeddings in SQLite)
 
 ## Supported Languages
 

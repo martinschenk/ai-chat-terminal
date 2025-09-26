@@ -55,15 +55,16 @@ show_config_menu() {
         echo -e "${PURPLE}│${RESET}  ${GREEN}[3]${RESET} ${LANG_CONFIG_OPT4}"
         echo -e "${PURPLE}│${RESET}  ${GREEN}[4]${RESET} ${LANG_CONFIG_OPT5}"
         echo -e "${PURPLE}│${RESET}  ${GREEN}[5]${RESET} 💬 Set context window"
-        echo -e "${PURPLE}│${RESET}  ${GREEN}[6]${RESET} 🧹 ${LANG_CONFIG_OPT7}"
-        echo -e "${PURPLE}│${RESET}  ${GREEN}[7]${RESET} ℹ️  About & Version"
-        echo -e "${PURPLE}│${RESET}  ${GREEN}[8]${RESET} ${LANG_CONFIG_OPT6}"
+        echo -e "${PURPLE}│${RESET}  ${GREEN}[6]${RESET} 🧠 Memory system"
+        echo -e "${PURPLE}│${RESET}  ${GREEN}[7]${RESET} 🧹 ${LANG_CONFIG_OPT7}"
+        echo -e "${PURPLE}│${RESET}  ${GREEN}[8]${RESET} ℹ️  About & Version"
+        echo -e "${PURPLE}│${RESET}  ${GREEN}[9]${RESET} ${LANG_CONFIG_OPT6}"
         echo -e "${PURPLE}│${RESET}"
-        echo -e "${PURPLE}│${RESET}  ${RED}[9]${RESET} 🗑️  ${LANG_CONFIG_OPT9}"
+        echo -e "${PURPLE}│${RESET}  ${RED}[10]${RESET} 🗑️  ${LANG_CONFIG_OPT9}"
         echo -e "${PURPLE}└─────────────────────────────────────${RESET}"
         echo ""
 
-        echo -ne "${CYAN}${LANG_CONFIG_SELECT} ${RESET}"
+        echo -ne "${CYAN}Select [1-10]: ${RESET}"
         read -r choice
 
         case $choice in
@@ -82,16 +83,19 @@ show_config_menu() {
             5)  # Set context window
                 change_context_window
                 ;;
-            6)  # Clear cache
+            6)  # Memory system
+                memory_system_menu
+                ;;
+            7)  # Clear cache
                 clear_chat_cache
                 ;;
-            7)  # About & Version
+            8)  # About & Version
                 show_about_info
                 ;;
-            8)  # Back to chat
+            9)  # Back to chat
                 return
                 ;;
-            9)  # Uninstall
+            10)  # Uninstall
                 uninstall_terminal
                 # If uninstall was cancelled, we continue the loop
                 # If uninstall succeeded, the script will have exited
@@ -403,4 +407,140 @@ show_about_info() {
     echo ""
     echo -e "${CYAN}Press any key to return...${RESET}"
     read -r
+}
+
+# Memory system menu
+memory_system_menu() {
+    local CYAN='\033[0;36m'
+    local GREEN='\033[0;32m'
+    local YELLOW='\033[1;33m'
+    local PURPLE='\033[0;35m'
+    local RED='\033[0;31m'
+    local BLUE='\033[0;34m'
+    local RESET='\033[0m'
+    local BOLD='\033[1m'
+    local DIM='\033[2m'
+
+    while true; do
+        clear
+        echo -e "${BOLD}${CYAN}🧠 Memory System${RESET}\n"
+
+        # Get memory statistics
+        local MEMORY_STATS=""
+        if [[ -f "$SCRIPT_DIR/memory_system.py" ]]; then
+            MEMORY_STATS=$(python3 "$SCRIPT_DIR/memory_system.py" stats 2>/dev/null)
+        fi
+
+        # Parse stats
+        local TOTAL_MESSAGES="0"
+        local TOTAL_SESSIONS="0"
+        local DB_SIZE="0.0"
+        local OLDEST_DATE="N/A"
+        local NEWEST_DATE="N/A"
+
+        if [[ -n "$MEMORY_STATS" ]]; then
+            TOTAL_MESSAGES=$(echo "$MEMORY_STATS" | jq -r '.total_messages // 0' 2>/dev/null)
+            TOTAL_SESSIONS=$(echo "$MEMORY_STATS" | jq -r '.total_sessions // 0' 2>/dev/null)
+            DB_SIZE=$(echo "$MEMORY_STATS" | jq -r '.db_size_mb // 0' 2>/dev/null)
+            OLDEST_DATE=$(echo "$MEMORY_STATS" | jq -r '.oldest_message // "N/A"' 2>/dev/null)
+            NEWEST_DATE=$(echo "$MEMORY_STATS" | jq -r '.newest_message // "N/A"' 2>/dev/null)
+        fi
+
+        echo -e "${PURPLE}┌─────────────────────────────────────${RESET}"
+        echo -e "${PURPLE}│${RESET}  ${BOLD}Memory Database Statistics:${RESET}"
+        echo -e "${PURPLE}│${RESET}  ├─ Total Messages: ${YELLOW}$TOTAL_MESSAGES${RESET}"
+        echo -e "${PURPLE}│${RESET}  ├─ Chat Sessions: ${YELLOW}$TOTAL_SESSIONS${RESET}"
+        echo -e "${PURPLE}│${RESET}  ├─ Database Size: ${YELLOW}${DB_SIZE} MB${RESET}"
+        echo -e "${PURPLE}│${RESET}  ├─ Oldest Message: ${YELLOW}$OLDEST_DATE${RESET}"
+        echo -e "${PURPLE}│${RESET}  └─ Newest Message: ${YELLOW}$NEWEST_DATE${RESET}"
+        echo -e "${PURPLE}├─────────────────────────────────────${RESET}"
+        echo -e "${PURPLE}│${RESET}  ${GREEN}[1]${RESET} Search memories"
+        echo -e "${PURPLE}│${RESET}  ${GREEN}[2]${RESET} Show recent messages"
+        echo -e "${PURPLE}│${RESET}  ${GREEN}[3]${RESET} Database statistics"
+        echo -e "${PURPLE}│${RESET}  ${YELLOW}[4]${RESET} Cleanup old data (30+ days)"
+        echo -e "${PURPLE}│${RESET}  ${GREEN}[5]${RESET} Back to main menu"
+        echo -e "${PURPLE}└─────────────────────────────────────${RESET}"
+        echo ""
+
+        echo -ne "${CYAN}Select [1-5]: ${RESET}"
+        read -r choice
+
+        case $choice in
+            1)  # Search memories
+                echo ""
+                echo -ne "${CYAN}Enter search query: ${RESET}"
+                read -r query
+                if [[ -n "$query" ]]; then
+                    echo -e "\n${YELLOW}Searching memories for: \"$query\"${RESET}\n"
+                    if [[ -f "$SCRIPT_DIR/memory_system.py" ]]; then
+                        python3 "$SCRIPT_DIR/memory_system.py" search "$query" 2>/dev/null || echo -e "${RED}Error searching memories${RESET}"
+                    else
+                        echo -e "${RED}Memory system not available${RESET}"
+                    fi
+                    echo ""
+                    echo -e "${CYAN}Press any key to continue...${RESET}"
+                    read -r
+                fi
+                ;;
+            2)  # Show recent messages
+                echo -e "\n${YELLOW}Recent messages from current session:${RESET}\n"
+                local SESSION_DATE=$(date +%Y-%m-%d)
+                local CHAT_NAME="chat_${SESSION_DATE}"
+                if [[ -f "/tmp/chat_cache/$CHAT_NAME" ]]; then
+                    python3 -c "
+import json
+try:
+    with open('/tmp/chat_cache/$CHAT_NAME', 'r') as f:
+        messages = json.load(f)
+    for msg in messages[-10:]:  # Last 10 messages
+        role = msg.get('role', 'unknown')
+        content = msg.get('content', '')[:100]
+        print(f'{role}: {content}...')
+except:
+    print('No recent messages found')
+"
+                else
+                    echo "No recent chat session found"
+                fi
+                echo ""
+                echo -e "${CYAN}Press any key to continue...${RESET}"
+                read -r
+                ;;
+            3)  # Database statistics
+                echo -e "\n${YELLOW}Detailed Statistics:${RESET}\n"
+                if [[ -f "$SCRIPT_DIR/memory_system.py" ]]; then
+                    python3 "$SCRIPT_DIR/memory_system.py" stats 2>/dev/null | jq . 2>/dev/null || echo -e "${RED}Error getting statistics${RESET}"
+                else
+                    echo -e "${RED}Memory system not available${RESET}"
+                fi
+                echo ""
+                echo -e "${CYAN}Press any key to continue...${RESET}"
+                read -r
+                ;;
+            4)  # Cleanup old data
+                echo ""
+                echo -e "${YELLOW}⚠️  This will delete messages older than 30 days${RESET}"
+                echo -ne "${CYAN}Continue? (y/N): ${RESET}"
+                read -r confirm
+                if [[ "$confirm" =~ ^[Yy]$ ]]; then
+                    if [[ -f "$SCRIPT_DIR/memory_system.py" ]]; then
+                        local DELETED=$(python3 "$SCRIPT_DIR/memory_system.py" cleanup 30 2>/dev/null)
+                        echo -e "${GREEN}$DELETED${RESET}"
+                    else
+                        echo -e "${RED}Memory system not available${RESET}"
+                    fi
+                    echo ""
+                    echo -e "${CYAN}Press any key to continue...${RESET}"
+                    read -r
+                fi
+                ;;
+            5)  # Back
+                return
+                ;;
+            *)
+                echo -e "${RED}Invalid option. Please try again.${RESET}"
+                sleep 1
+                ;;
+        esac
+    done
 }

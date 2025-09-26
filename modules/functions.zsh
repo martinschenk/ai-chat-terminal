@@ -37,6 +37,18 @@ chat_loop() {
 
     local INPUT=""
 
+    # Memory system integration
+    add_to_memory() {
+        local session_id="$1"
+        local role="$2"
+        local content="$3"
+
+        # Add to memory system (background, don't block chat)
+        if [[ -f "$SCRIPT_DIR/memory_system.py" ]]; then
+            python3 "$SCRIPT_DIR/memory_system.py" add "$session_id" "$role" "$content" &>/dev/null &
+        fi
+    }
+
     # Function to limit chat history to context window (same as in main script)
     limit_chat_history() {
         local chat_file="/tmp/chat_cache/$CHAT_NAME"
@@ -166,16 +178,28 @@ except:
             fi
         fi
 
+        # Add user message to memory (before processing)
+        add_to_memory "$CHAT_NAME" "user" "$INPUT"
+
         # Limit chat history to context window before sending new message
         limit_chat_history "$CONTEXT_WINDOW"
 
+        # Store AI response for memory system
+        local AI_RESPONSE=""
+
         if [[ "$IS_DATE_TIME_QUESTION" == "true" ]]; then
             # Disable web search for date/time questions
-            sgpt --chat "$CHAT_NAME" --no-functions "${DIALECT_PROMPT}Today is $CURRENT_DATE, current time is $CURRENT_TIME. Answer based on this local information only. $INPUT"
+            AI_RESPONSE=$(sgpt --chat "$CHAT_NAME" --no-functions "${DIALECT_PROMPT}Today is $CURRENT_DATE, current time is $CURRENT_TIME. Answer based on this local information only. $INPUT")
         else
             # Normal mode with web search capabilities
-            sgpt --chat "$CHAT_NAME" "${DIALECT_PROMPT}Today is $CURRENT_DATE, current time is $CURRENT_TIME. $INPUT"
+            AI_RESPONSE=$(sgpt --chat "$CHAT_NAME" "${DIALECT_PROMPT}Today is $CURRENT_DATE, current time is $CURRENT_TIME. $INPUT")
         fi
+
+        # Display AI response
+        echo "$AI_RESPONSE"
+
+        # Add AI response to memory (after displaying)
+        add_to_memory "$CHAT_NAME" "assistant" "$AI_RESPONSE"
 
         echo -e "${DIM}─────────────────────────────────────────────────────${RESET}\n"
     done

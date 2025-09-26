@@ -82,6 +82,11 @@ echo -n "  • Config menu module... "
 curl -sL "$BASE_URL/modules/config-menu.zsh" -o "$INSTALL_DIR/modules/config-menu.zsh"
 echo -e "${GREEN}✓${RESET}"
 
+echo -n "  • Memory system... "
+curl -sL "$BASE_URL/memory_system.py" -o "$INSTALL_DIR/memory_system.py"
+chmod +x "$INSTALL_DIR/memory_system.py"
+echo -e "${GREEN}✓${RESET}"
+
 # Download language files
 LANGUAGES=(
     "en" "de" "de-schwaebisch" "de-bayerisch" "de-saechsisch"
@@ -127,6 +132,10 @@ if ! command -v jq &> /dev/null; then
         sudo apt-get install -y jq
     fi
 fi
+
+# Install memory system dependencies
+echo -n "  • Memory system... "
+pip3 install --user sentence-transformers sqlite-vec &>/dev/null && echo -e "${GREEN}✓${RESET}" || echo -e "${YELLOW}⚠ Install manually with: pip3 install sentence-transformers sqlite-vec${RESET}"
 
 # Skip interactive setup - will be handled by first run of 'ai' command
 echo -e "${BLUE}Setting up shell integration...${RESET}"
