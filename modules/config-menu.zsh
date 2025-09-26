@@ -4,96 +4,104 @@
 
 # Configuration menu function
 show_config_menu() {
-    local CONFIG_DIR="$HOME/.aichat"
-    local CONFIG_FILE="$CONFIG_DIR/config"
-    local ENV_FILE="$CONFIG_DIR/.env"
+    while true; do
+        local CONFIG_DIR="$HOME/.aichat"
+        local CONFIG_FILE="$CONFIG_DIR/config"
+        local ENV_FILE="$CONFIG_DIR/.env"
 
-    # Load environment
-    load_env
+        # Load environment
+        load_env
 
-    # Load config
-    if [[ -f "$CONFIG_FILE" ]]; then
-        source "$CONFIG_FILE"
-    fi
+        # Load config
+        if [[ -f "$CONFIG_FILE" ]]; then
+            source "$CONFIG_FILE"
+        fi
 
-    local COMMAND_CHAR="${AI_CHAT_COMMAND:-ai}"
-    local LANGUAGE="${AI_CHAT_LANGUAGE:-en}"
-    local TIMEOUT="${AI_CHAT_TIMEOUT:-600}"
-    local ENABLE_ESC="${AI_CHAT_ESC_EXIT:-true}"
-    # Use global SCRIPT_DIR from main script
+        local COMMAND_CHAR="${AI_CHAT_COMMAND:-ai}"
+        local LANGUAGE="${AI_CHAT_LANGUAGE:-en}"
+        local TIMEOUT="${AI_CHAT_TIMEOUT:-600}"
+        local ENABLE_ESC="${AI_CHAT_ESC_EXIT:-true}"
+        # Use global SCRIPT_DIR from main script
 
-    # Load language file for config menu
-    local LANG_FILE="$SCRIPT_DIR/lang/${LANGUAGE}.conf"
-    if [[ ! -f "$LANG_FILE" ]]; then
-        setup_default_language
-    else
-        source "$LANG_FILE"
-    fi
+        # Load language file for config menu
+        local LANG_FILE="$SCRIPT_DIR/lang/${LANGUAGE}.conf"
+        if [[ ! -f "$LANG_FILE" ]]; then
+            setup_default_language
+        else
+            source "$LANG_FILE"
+        fi
 
-    # Colors
-    local CYAN='\033[0;36m'
-    local GREEN='\033[0;32m'
-    local YELLOW='\033[1;33m'
-    local PURPLE='\033[0;35m'
-    local RED='\033[0;31m'
-    local RESET='\033[0m'
-    local BOLD='\033[1m'
+        # Colors
+        local CYAN='\033[0;36m'
+        local GREEN='\033[0;32m'
+        local YELLOW='\033[1;33m'
+        local PURPLE='\033[0;35m'
+        local RED='\033[0;31m'
+        local RESET='\033[0m'
+        local BOLD='\033[1m'
 
-    clear
-    echo -e "${BOLD}${CYAN}⚙️  ${LANG_CONFIG_TITLE}${RESET}\n"
+        clear
+        echo -e "${BOLD}${CYAN}⚙️  ${LANG_CONFIG_TITLE}${RESET}\n"
 
-    echo -e "${PURPLE}╔═══════════════════════════════════════╗${RESET}"
-    echo -e "${PURPLE}║${RESET}  ${LANG_CONFIG_CURRENT}                ${PURPLE}║${RESET}"
-    echo -e "${PURPLE}║${RESET}  ├─ ${LANG_CONFIG_COMMAND}: ${YELLOW}$COMMAND_CHAR${RESET}                  ${PURPLE}║${RESET}"
-    echo -e "${PURPLE}║${RESET}  ├─ ${LANG_CONFIG_LANGUAGE}: ${YELLOW}$LANGUAGE${RESET}                 ${PURPLE}║${RESET}"
-    echo -e "${PURPLE}║${RESET}  ├─ ${LANG_CONFIG_TIMEOUT}: ${YELLOW}${TIMEOUT}s${RESET}               ${PURPLE}║${RESET}"
-    echo -e "${PURPLE}║${RESET}  └─ ${LANG_CONFIG_ESC}: ${YELLOW}$ENABLE_ESC${RESET}          ${PURPLE}║${RESET}"
-    echo -e "${PURPLE}╠═══════════════════════════════════════╣${RESET}"
-    echo -e "${PURPLE}║${RESET}  ${GREEN}[1]${RESET} ${LANG_CONFIG_OPT1}           ${PURPLE}║${RESET}"
-    echo -e "${PURPLE}║${RESET}  ${GREEN}[2]${RESET} ${LANG_CONFIG_OPT2}                  ${PURPLE}║${RESET}"
-    echo -e "${PURPLE}║${RESET}  ${GREEN}[3]${RESET} ${LANG_CONFIG_OPT3}                  ${PURPLE}║${RESET}"
-    echo -e "${PURPLE}║${RESET}  ${GREEN}[4]${RESET} ${LANG_CONFIG_OPT4}            ${PURPLE}║${RESET}"
-    echo -e "${PURPLE}║${RESET}  ${GREEN}[5]${RESET} ${LANG_CONFIG_OPT5}                 ${PURPLE}║${RESET}"
-    echo -e "${PURPLE}║${RESET}  ${GREEN}[6]${RESET} ${LANG_CONFIG_OPT6}                   ${PURPLE}║${RESET}"
-    echo -e "${PURPLE}║${RESET}  ${GREEN}[7]${RESET} 🧹 ${LANG_CONFIG_OPT7}              ${PURPLE}║${RESET}"
-    echo -e "${PURPLE}║${RESET}  ${GREEN}[8]${RESET} 🔍 ${LANG_CONFIG_OPT8}         ${PURPLE}║${RESET}"
-    echo -e "${PURPLE}║${RESET}                                       ${PURPLE}║${RESET}"
-    echo -e "${PURPLE}║${RESET}  ${RED}[9]${RESET} 🗑️  ${LANG_CONFIG_OPT9}        ${PURPLE}║${RESET}"
-    echo -e "${PURPLE}╚═══════════════════════════════════════╝${RESET}"
-    echo ""
+        echo -e "${PURPLE}╔═══════════════════════════════════════╗${RESET}"
+        echo -e "${PURPLE}║${RESET}  ${LANG_CONFIG_CURRENT}                ${PURPLE}║${RESET}"
+        echo -e "${PURPLE}║${RESET}  ├─ ${LANG_CONFIG_COMMAND}: ${YELLOW}$COMMAND_CHAR${RESET}                  ${PURPLE}║${RESET}"
+        echo -e "${PURPLE}║${RESET}  ├─ ${LANG_CONFIG_LANGUAGE}: ${YELLOW}$LANGUAGE${RESET}                 ${PURPLE}║${RESET}"
+        echo -e "${PURPLE}║${RESET}  ├─ ${LANG_CONFIG_TIMEOUT}: ${YELLOW}${TIMEOUT}s${RESET}               ${PURPLE}║${RESET}"
+        echo -e "${PURPLE}║${RESET}  └─ ${LANG_CONFIG_ESC}: ${YELLOW}$ENABLE_ESC${RESET}          ${PURPLE}║${RESET}"
+        echo -e "${PURPLE}╠═══════════════════════════════════════╣${RESET}"
+        echo -e "${PURPLE}║${RESET}  ${GREEN}[1]${RESET} ${LANG_CONFIG_OPT1}           ${PURPLE}║${RESET}"
+        echo -e "${PURPLE}║${RESET}  ${GREEN}[2]${RESET} ${LANG_CONFIG_OPT2}                  ${PURPLE}║${RESET}"
+        echo -e "${PURPLE}║${RESET}  ${GREEN}[3]${RESET} ${LANG_CONFIG_OPT3}                  ${PURPLE}║${RESET}"
+        echo -e "${PURPLE}║${RESET}  ${GREEN}[4]${RESET} ${LANG_CONFIG_OPT4}            ${PURPLE}║${RESET}"
+        echo -e "${PURPLE}║${RESET}  ${GREEN}[5]${RESET} ${LANG_CONFIG_OPT5}                 ${PURPLE}║${RESET}"
+        echo -e "${PURPLE}║${RESET}  ${GREEN}[6]${RESET} ${LANG_CONFIG_OPT6}                   ${PURPLE}║${RESET}"
+        echo -e "${PURPLE}║${RESET}  ${GREEN}[7]${RESET} 🧹 ${LANG_CONFIG_OPT7}              ${PURPLE}║${RESET}"
+        echo -e "${PURPLE}║${RESET}  ${GREEN}[8]${RESET} 🔍 ${LANG_CONFIG_OPT8}         ${PURPLE}║${RESET}"
+        echo -e "${PURPLE}║${RESET}                                       ${PURPLE}║${RESET}"
+        echo -e "${PURPLE}║${RESET}  ${RED}[9]${RESET} 🗑️  ${LANG_CONFIG_OPT9}        ${PURPLE}║${RESET}"
+        echo -e "${PURPLE}╚═══════════════════════════════════════╝${RESET}"
+        echo ""
 
-    echo -ne "${CYAN}${LANG_CONFIG_SELECT} ${RESET}"
-    read -r choice
+        echo -ne "${CYAN}${LANG_CONFIG_SELECT} ${RESET}"
+        read -r choice
 
-    case $choice in
-        1)  # Change command
-            change_command
-            ;;
-        2)  # Change language
-            change_language
-            ;;
-        3)  # Change timeout
-            change_timeout
-            ;;
-        4)  # Toggle ESC
-            toggle_esc
-            ;;
-        5)  # Change AI model
-            change_ai_model
-            ;;
-        6)  # Back to chat
-            return
-            ;;
-        7)  # Clear cache
-            clear_chat_cache
-            ;;
-        8)  # Configure web search
-            configure_web_search
-            ;;
-        9)  # Uninstall
-            uninstall_terminal
-            ;;
-    esac
+        case $choice in
+            1)  # Change command
+                change_command
+                ;;
+            2)  # Change language
+                change_language
+                ;;
+            3)  # Change timeout
+                change_timeout
+                ;;
+            4)  # Toggle ESC
+                toggle_esc
+                ;;
+            5)  # Change AI model
+                change_ai_model
+                ;;
+            6)  # Back to chat
+                return
+                ;;
+            7)  # Clear cache
+                clear_chat_cache
+                ;;
+            8)  # Configure web search
+                configure_web_search
+                ;;
+            9)  # Uninstall
+                uninstall_terminal
+                # If uninstall was cancelled, we continue the loop
+                # If uninstall succeeded, the script will have exited
+                ;;
+            *)  # Invalid option
+                echo -e "${RED}Invalid option. Please try again.${RESET}"
+                sleep 1
+                ;;
+        esac
+    done
 }
 
 # Change language function
