@@ -128,65 +128,80 @@ fi
 # Skip interactive setup - will be handled by first run of 'ai' command
 echo -e "${BLUE}Setting up shell integration...${RESET}"
 
-# Smart shell configuration with detection
+# Professional shell configuration (writes only to primary shell config)
 update_shell_config() {
     local command_name="${1:-ai}"
 
-    # Detect current shell and prioritize accordingly
+    # Detect current shell
     local current_shell=$(basename "$SHELL" 2>/dev/null)
-    local shell_configs=()
-    local updated_configs=()
+    local primary_config=""
+    local cleanup_configs=()
 
-    # Smart detection: prioritize current shell
+    # Determine primary config file
     case "$current_shell" in
         zsh)
-            shell_configs=("$HOME/.zshrc" "$HOME/.bashrc" "$HOME/.profile")
+            primary_config="$HOME/.zshrc"
+            cleanup_configs=("$HOME/.bashrc" "$HOME/.profile")
             ;;
         bash)
-            shell_configs=("$HOME/.bashrc" "$HOME/.zshrc" "$HOME/.profile")
+            primary_config="$HOME/.bashrc"
+            cleanup_configs=("$HOME/.zshrc" "$HOME/.profile")
+            ;;
+        fish)
+            primary_config="$HOME/.config/fish/config.fish"
+            cleanup_configs=("$HOME/.zshrc" "$HOME/.bashrc" "$HOME/.profile")
             ;;
         *)
-            shell_configs=("$HOME/.zshrc" "$HOME/.bashrc" "$HOME/.profile")
+            # Fallback: prefer .zshrc if exists, otherwise .bashrc
+            if [[ -f "$HOME/.zshrc" ]]; then
+                primary_config="$HOME/.zshrc"
+            elif [[ -f "$HOME/.bashrc" ]]; then
+                primary_config="$HOME/.bashrc"
+            else
+                primary_config="$HOME/.profile"
+            fi
+            cleanup_configs=("$HOME/.zshrc" "$HOME/.bashrc" "$HOME/.profile")
             ;;
     esac
 
-    for config_file in "${shell_configs[@]}"; do
+    # Clean up from all config files (remove old installations)
+    for config_file in "${cleanup_configs[@]}" "$primary_config"; do
         if [[ -f "$config_file" ]]; then
-            # Remove any existing AI Chat Terminal entries (comprehensive cleanup)
             grep -v "# AI Chat Terminal" "$config_file" > "$config_file.tmp" && mv "$config_file.tmp" "$config_file"
             grep -v "source.*aichat.zsh" "$config_file" > "$config_file.tmp" && mv "$config_file.tmp" "$config_file"
             grep -v "alias.*=.*ai_chat_function" "$config_file" > "$config_file.tmp" && mv "$config_file.tmp" "$config_file"
-
-            # Add new configuration
-            echo "" >> "$config_file"
-            echo "# AI Chat Terminal" >> "$config_file"
-            echo "source $INSTALL_DIR/aichat.zsh" >> "$config_file"
-            echo "alias $command_name='ai_chat_function'" >> "$config_file"
-
-            echo -e "  ${GREEN}✓${RESET} Updated $config_file"
-            updated_configs+=("$config_file")
         fi
     done
 
-    # Store updated configs for smart messaging
-    UPDATED_SHELL_CONFIGS=("${updated_configs[@]}")
+    # Install only to primary config
+    if [[ ! -z "$primary_config" ]]; then
+        # Create config file if it doesn't exist
+        touch "$primary_config"
+
+        # Add new configuration to primary config only
+        echo "" >> "$primary_config"
+        echo "# AI Chat Terminal" >> "$primary_config"
+        echo "source $INSTALL_DIR/aichat.zsh" >> "$primary_config"
+        echo "alias $command_name='ai_chat_function'" >> "$primary_config"
+
+        echo -e "  ${GREEN}✓${RESET} Updated $(basename "$primary_config")"
+        PRIMARY_SHELL_CONFIG="$primary_config"
+    fi
 }
 
 # Setup shell integration with default 'chat' command
 update_shell_config "chat"
 
-# Installation complete message with smart shell detection
+# Installation complete message with professional output
 echo -e "\n${GREEN}✅ Installation Complete!${RESET}\n"
 echo "Next steps:"
 
-# Show relevant shell configs that were actually updated
-if [[ ${#UPDATED_SHELL_CONFIGS[@]} -gt 0 ]]; then
-    for config in "${UPDATED_SHELL_CONFIGS[@]}"; do
-        config_name=$(basename "$config")
-        echo -e "  ${CYAN}source ~/$config_name${RESET}"
-    done
+# Show only the primary shell config that was updated
+if [[ ! -z "$PRIMARY_SHELL_CONFIG" ]]; then
+    config_name=$(basename "$PRIMARY_SHELL_CONFIG")
+    echo -e "  ${CYAN}source ~/$config_name${RESET}  ${DIM}# or restart terminal${RESET}"
 else
-    echo -e "  ${CYAN}source ~/.zshrc${RESET}  ${DIM}# or restart terminal${RESET}"
+    echo -e "  ${CYAN}Restart your terminal${RESET}"
 fi
 
 echo -e "  ${CYAN}chat${RESET}"
