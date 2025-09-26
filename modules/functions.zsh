@@ -124,9 +124,16 @@ chat_loop() {
         local CURRENT_DATE=$(date '+%A, %B %d, %Y')
         local CURRENT_TIME=$(date '+%H:%M')
 
-        # Initialize chat if this is the first message
+        # Initialize chat if this is the first message or repair corrupted session
         if ! sgpt --list-chats 2>/dev/null | grep -q "^$CHAT_NAME$"; then
             sgpt --chat "$CHAT_NAME" "Hello, I'm starting a new chat session." >/dev/null 2>&1 || true
+        else
+            # Test if chat session is corrupted and repair if needed
+            if ! sgpt --chat "$CHAT_NAME" "test" >/dev/null 2>&1; then
+                echo "Repairing corrupted chat session..." >&2
+                rm -f "/tmp/chat_cache/$CHAT_NAME" 2>/dev/null
+                sgpt --chat "$CHAT_NAME" "Hello, I'm starting a new chat session." >/dev/null 2>&1 || true
+            fi
         fi
 
         if [[ "$IS_DATE_TIME_QUESTION" == "true" ]]; then
