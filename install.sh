@@ -1,5 +1,5 @@
 #!/bin/bash
-# AI Chat Terminal - Smart Installer v5.2.0
+# AI Chat Terminal - Smart Installer v5.2.1
 # Copyright (c) 2024 Martin Schenk
 # Licensed under MIT License - https://opensource.org/licenses/MIT
 # Enhanced onboarding with language-first approach
@@ -26,7 +26,7 @@ echo -e "${CYAN}${BOLD}"
 echo "╔═══════════════════════════════════════╗"
 echo "║                                       ║"
 echo "║    🤖 AI Chat Terminal Installer     ║"
-echo "║          Version 5.2.0                ║"
+echo "║          Version 5.2.1                ║"
 echo "║       © 2024 Martin Schenk            ║"
 echo "║                                       ║"
 echo "╚═══════════════════════════════════════╝"
