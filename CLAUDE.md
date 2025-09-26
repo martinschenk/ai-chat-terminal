@@ -207,12 +207,13 @@ Always clearly explain in installer:
 - **Config Integration**: Menu [6] → Memory system with search/stats/cleanup
 
 ### ✅ Cost-Optimized Context Windows - v5.2.0
-**Feature**: Configurable message limits (5-50) with cost indicators
+**Problem**: Chat history grows infinitely → Each API call sends ALL previous messages → Exponential cost growth
+**Solution**: Configurable message limits (5-50) that truncate old history before each API call
 **Implementation**:
-- **Smart Context Management**: Prevents API cost explosion
-- **User Control**: Choose between ultra-low cost vs. memory
-- **Default Optimization**: 20 messages = ~$0.01 per request
-- **Flow Chart Documentation**: Clear cost/memory trade-offs
+- **Cost Protection**: Automatically limits tokens sent to API
+- **User Control**: Choose between ultra-low cost (5 msgs) vs. memory (50 msgs)
+- **Default Sweet Spot**: 20 messages = ~$0.01 per request (instead of exponentially growing)
+- **Transparent Limits**: Clear cost indicators show token impact
 
 ### ✅ Fixed Language & Dialect Selection
 **Problem**: German and Spanish dialect selection wasn't working in setup

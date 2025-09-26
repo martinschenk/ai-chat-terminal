@@ -13,7 +13,7 @@ A ChatGPT-powered terminal interface with integrated web search and AI-powered v
 - **Integrated Web Search** - Real-time information via ChatGPT search capabilities
 - **🧠 Smart Memory System** - Dual-layer memory: short-term context + long-term SQLite database
 - **🔍 Semantic Search** - Find past conversations using natural language queries
-- **💰 Cost-Optimized Context** - Configurable message limits (5-50) to control API costs
+- **💰 Cost-Optimized Context** - Prevents token cost explosion by limiting chat history sent to API
 - **Multi-Language Support** - 19 languages with regional dialects
 - **Customizable Commands** - Use `chat`, `ai`, `ask`, or custom aliases
 
@@ -159,12 +159,15 @@ Cost-optimized memory system with configurable message limits:
             │    Response     │
             └─────────────────┘
 
-💡 Context Window Settings:
-   • 5-10 messages   = Ultra-low cost (~$0.005/msg)
-   • 15-25 messages  = Balanced (~$0.01/msg)
-   • 30-50 messages  = High memory (~$0.025/msg)
+💡 How Chat History Affects Costs:
+   • Every API call sends ENTIRE chat history as context
+   • 5-10 messages  = 500-1000 tokens per request = Ultra-low cost (~$0.005/msg)
+   • 15-25 messages = 1500-2500 tokens per request = Balanced cost (~$0.01/msg)
+   • 30-50 messages = 3000-5000 tokens per request = Higher cost (~$0.025/msg)
+   • Without limits = Exponentially growing costs as conversation continues!
 
 🎯 Default: 20 messages (perfect balance of memory + cost)
+💰 Cost Protection: System automatically truncates old messages before each API call
 ```
 
 ### 🧠 AI-Powered Vector Database System
