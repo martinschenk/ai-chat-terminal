@@ -378,23 +378,14 @@ uninstall_terminal() {
         echo ""
         echo "${LANG_UNINSTALL_PROGRESS}"
 
-        # Get current command from config
-        local current_command="ai"
-        if [[ -f "$CONFIG_DIR/config" ]]; then
-            local config_command=$(grep "AI_CHAT_COMMAND=" "$CONFIG_DIR/config" | cut -d'"' -f2)
-            [[ ! -z "$config_command" ]] && current_command="$config_command"
-        fi
-
-        # Remove from shell configs
+        # Remove from shell configs - smart detection approach
         local configs=("$HOME/.zshrc" "$HOME/.bashrc" "$HOME/.profile")
         for config in "${configs[@]}"; do
             if [[ -f "$config" ]]; then
-                # Remove source lines
+                # Remove source lines for aichat
                 grep -v "source.*/\.aichat/aichat\.zsh" "$config" > "$config.tmp" && mv "$config.tmp" "$config"
-                # Remove specific command alias (handles any command, not just 'ai')
-                grep -v "alias.*${current_command}.*ai_chat_function" "$config" > "$config.tmp" && mv "$config.tmp" "$config"
-                # Remove legacy ai alias pattern for backwards compatibility
-                grep -v "alias.*ai.*ai_chat_function" "$config" > "$config.tmp" && mv "$config.tmp" "$config"
+                # Remove ANY alias that points to ai_chat_function (regardless of alias name)
+                grep -v "alias.*=.*ai_chat_function" "$config" > "$config.tmp" && mv "$config.tmp" "$config"
                 # Remove comments
                 grep -v "# AI Chat Terminal" "$config" > "$config.tmp" && mv "$config.tmp" "$config"
                 echo "  ✓ ${LANG_UNINSTALL_CLEANED} $config"
