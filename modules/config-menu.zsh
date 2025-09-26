@@ -422,9 +422,12 @@ EOF
         echo "${LANG_UNINSTALL_GOODBYE}"
         echo ""
         echo "${LANG_UNINSTALL_ANYKEY}"
-        read -n1 -r
+        read -r
         echo ""
         echo -e "${GREEN}Uninstall completed. Please restart your terminal or run: source ~/.zshrc${RESET}"
+        echo ""
+        echo "Exiting AI Chat Terminal..."
+        exit 0
     else
         echo -e "${GREEN}Cancelled.${RESET}"
         sleep 2
