@@ -109,20 +109,60 @@ Start chat, then type `/config` to open settings menu:
 │  Current Settings:
 │  ├─ Command: chat
 │  ├─ Language: en
+│  ├─ Context Window: 20 messages
 │  └─ ESC to exit: true
 ├─────────────────────────────────────
 │  [1] Change command character
 │  [2] Change language
 │  [3] Toggle ESC key exit
 │  [4] Change AI model
-│  [5] 🧹 Clear chat cache
-│  [6] ℹ️  About & Version
-│  [7] Back to chat
+│  [5] 💬 Set context window
+│  [6] 🧹 Clear chat cache
+│  [7] ℹ️  About & Version
+│  [8] Back to chat
 │
-│  [8] 🗑️  Uninstall completely
+│  [9] 🗑️  Uninstall completely
 └─────────────────────────────────────
 
-Select [1-8]:
+Select [1-9]:
+```
+
+### Smart Context Window Management
+Cost-optimized memory system with configurable message limits:
+
+```
+                   🧠 SMART MEMORY SYSTEM
+
+┌─────────────────────────────────────────────────────────┐
+│                  User Input                             │
+└────────────────────┬────────────────────────────────────┘
+                     │
+              ┌──────▼──────┐
+              │  Analyzer   │ (Check if relevant)
+              └──────┬──────┘
+                     │
+          ┌──────────▼──────────┐
+          │  Context Manager    │
+          │  • Limit to N msgs  │
+          │  • Keep last pairs  │
+          │  • Cost: ~$0.01     │
+          └──────────┬──────────┘
+                     │
+             ┌───────▼────────┐
+             │   ChatGPT API  │
+             │   Full Context │
+             └───────┬────────┘
+                     │
+            ┌────────▼────────┐
+            │    Response     │
+            └─────────────────┘
+
+💡 Context Window Settings:
+   • 5-10 messages   = Ultra-low cost (~$0.005/msg)
+   • 15-25 messages  = Balanced (~$0.01/msg)
+   • 30-50 messages  = High memory (~$0.025/msg)
+
+🎯 Default: 20 messages (perfect balance of memory + cost)
 ```
 
 ### Language Selection with Dialects

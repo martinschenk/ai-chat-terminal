@@ -20,6 +20,7 @@ show_config_menu() {
         local COMMAND_CHAR="${AI_CHAT_COMMAND:-ai}"
         local LANGUAGE="${AI_CHAT_LANGUAGE:-en}"
         local ENABLE_ESC="${AI_CHAT_ESC_EXIT:-true}"
+        local CONTEXT_WINDOW="${AI_CHAT_CONTEXT_WINDOW:-20}"
         # Use global SCRIPT_DIR from main script
 
         # Load language file for config menu
@@ -46,17 +47,19 @@ show_config_menu() {
         echo -e "${PURPLE}│${RESET}  ${LANG_CONFIG_CURRENT}"
         echo -e "${PURPLE}│${RESET}  ├─ ${LANG_CONFIG_COMMAND}: ${YELLOW}$COMMAND_CHAR${RESET}"
         echo -e "${PURPLE}│${RESET}  ├─ ${LANG_CONFIG_LANGUAGE}: ${YELLOW}$LANGUAGE${RESET}"
+        echo -e "${PURPLE}│${RESET}  ├─ Context Window: ${YELLOW}$CONTEXT_WINDOW messages${RESET}"
         echo -e "${PURPLE}│${RESET}  └─ ${LANG_CONFIG_ESC}: ${YELLOW}$ENABLE_ESC${RESET}"
         echo -e "${PURPLE}├─────────────────────────────────────${RESET}"
         echo -e "${PURPLE}│${RESET}  ${GREEN}[1]${RESET} ${LANG_CONFIG_OPT1}"
         echo -e "${PURPLE}│${RESET}  ${GREEN}[2]${RESET} ${LANG_CONFIG_OPT2}"
         echo -e "${PURPLE}│${RESET}  ${GREEN}[3]${RESET} ${LANG_CONFIG_OPT4}"
         echo -e "${PURPLE}│${RESET}  ${GREEN}[4]${RESET} ${LANG_CONFIG_OPT5}"
-        echo -e "${PURPLE}│${RESET}  ${GREEN}[5]${RESET} 🧹 ${LANG_CONFIG_OPT7}"
-        echo -e "${PURPLE}│${RESET}  ${GREEN}[6]${RESET} ℹ️  About & Version"
-        echo -e "${PURPLE}│${RESET}  ${GREEN}[7]${RESET} ${LANG_CONFIG_OPT6}"
+        echo -e "${PURPLE}│${RESET}  ${GREEN}[5]${RESET} 💬 Set context window"
+        echo -e "${PURPLE}│${RESET}  ${GREEN}[6]${RESET} 🧹 ${LANG_CONFIG_OPT7}"
+        echo -e "${PURPLE}│${RESET}  ${GREEN}[7]${RESET} ℹ️  About & Version"
+        echo -e "${PURPLE}│${RESET}  ${GREEN}[8]${RESET} ${LANG_CONFIG_OPT6}"
         echo -e "${PURPLE}│${RESET}"
-        echo -e "${PURPLE}│${RESET}  ${RED}[8]${RESET} 🗑️  ${LANG_CONFIG_OPT9}"
+        echo -e "${PURPLE}│${RESET}  ${RED}[9]${RESET} 🗑️  ${LANG_CONFIG_OPT9}"
         echo -e "${PURPLE}└─────────────────────────────────────${RESET}"
         echo ""
 
@@ -76,16 +79,19 @@ show_config_menu() {
             4)  # Change AI model
                 change_ai_model
                 ;;
-            5)  # Clear cache
+            5)  # Set context window
+                change_context_window
+                ;;
+            6)  # Clear cache
                 clear_chat_cache
                 ;;
-            6)  # About & Version
+            7)  # About & Version
                 show_about_info
                 ;;
-            7)  # Back to chat
+            8)  # Back to chat
                 return
                 ;;
-            8)  # Uninstall
+            9)  # Uninstall
                 uninstall_terminal
                 # If uninstall was cancelled, we continue the loop
                 # If uninstall succeeded, the script will have exited
@@ -138,6 +144,33 @@ change_language() {
             setup_default_language
             echo -e "${GREEN}✅ Language changed to: $new_lang (English fallback)${RESET}"
         fi
+        sleep 2
+    fi
+}
+
+# Change context window function
+change_context_window() {
+    echo -e "\n${CYAN}Set Context Window Size:${RESET}"
+    echo "Current: ${AI_CHAT_CONTEXT_WINDOW:-20} messages"
+    echo ""
+    echo "Recommended settings:"
+    echo "  ${GREEN}5-10${RESET}    = Very low cost (~\$0.005/msg)"
+    echo "  ${YELLOW}15-25${RESET}   = Balanced cost/memory (~\$0.01/msg)"
+    echo "  ${RED}30-50${RESET}   = Higher cost but more memory (~\$0.025/msg)"
+    echo ""
+    echo -n "Enter context window size (5-50): "
+    read -r new_window
+
+    if [[ "$new_window" =~ ^[0-9]+$ ]] && [[ "$new_window" -ge 5 ]] && [[ "$new_window" -le 50 ]]; then
+        sed -i '' "s/AI_CHAT_CONTEXT_WINDOW=.*/AI_CHAT_CONTEXT_WINDOW=\"$new_window\"/" "$CONFIG_FILE"
+        echo -e "${GREEN}✅ Context window changed to: $new_window messages${RESET}"
+
+        # Calculate rough cost estimate
+        local cost_estimate=$(echo "scale=3; $new_window * 0.0005" | bc 2>/dev/null || echo "~\$0.01")
+        echo -e "${CYAN}Estimated cost per message: ~\$$cost_estimate${RESET}"
+        sleep 3
+    else
+        echo -e "${RED}Invalid size. Must be 5-50 messages${RESET}"
         sleep 2
     fi
 }

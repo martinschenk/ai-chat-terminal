@@ -72,6 +72,7 @@ ai_chat_function() {
     local COMMAND_CHAR="${AI_CHAT_COMMAND:-ai}"
     local LANGUAGE="${AI_CHAT_LANGUAGE:-en}"
     local ENABLE_ESC="${AI_CHAT_ESC_EXIT:-true}"
+    local CONTEXT_WINDOW="${AI_CHAT_CONTEXT_WINDOW:-20}"
 
     # Load language file
     local LANG_FILE="$SCRIPT_DIR/lang/${LANGUAGE}.conf"
@@ -93,7 +94,33 @@ ai_chat_function() {
     # Ensure sgpt config exists
     mkdir -p ~/.config/shell_gpt
 
-    # Chat will be initialized on first use
+    # Function to limit chat history to context window
+    limit_chat_history() {
+        local chat_file="/tmp/chat_cache/$CHAT_NAME"
+        local limit="$1"
+
+        if [[ -f "$chat_file" ]] && [[ -s "$chat_file" ]]; then
+            # Parse JSON and keep only last N messages (pairs of user/assistant)
+            python3 -c "
+import json
+import sys
+
+try:
+    with open('$chat_file', 'r') as f:
+        messages = json.load(f)
+
+    # Keep only last $limit*2 messages (user+assistant pairs)
+    max_messages = $limit * 2
+    if len(messages) > max_messages:
+        messages = messages[-max_messages:]
+
+    with open('$chat_file', 'w') as f:
+        json.dump(messages, f)
+except:
+    pass  # If any error, keep original file
+"
+        fi
+    }
 
     # Colors
     local BLUE='\033[0;34m'
@@ -151,6 +178,9 @@ ai_chat_function() {
                 sgpt --chat "$CHAT_NAME" "Hello, I'm starting a new chat session." >/dev/null 2>&1 || true
             fi
         fi
+
+        # Limit chat history to context window before sending new message
+        limit_chat_history "$CONTEXT_WINDOW"
 
         if [[ "$IS_DATE_TIME_QUESTION" == "true" ]]; then
             # Disable web search for date/time questions
@@ -291,6 +321,7 @@ EOF
 AI_CHAT_COMMAND="$command_char"
 AI_CHAT_LANGUAGE="$language"
 AI_CHAT_ESC_EXIT="true"
+AI_CHAT_CONTEXT_WINDOW="20"
 EOF
 
     # Configure Shell-GPT
