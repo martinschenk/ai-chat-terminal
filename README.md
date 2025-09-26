@@ -30,94 +30,73 @@ After installation:
 
 Start by typing `chat` to enter the interactive terminal:
 
-### Development Examples
+### Memory Example
+Shows how the chat remembers previous context:
 ```
 /config = settings | ESC/exit = quit
 ─────────────────────────────────────────────────────
 
-👤 You ▶ docker port conflict fix?
+👤 You ▶ I need to dockerize my Node.js app
 🤖 AI ▶
-Kill the process using port 3000:
+Create a Dockerfile with node:18-alpine base image, copy package files, run npm install, then copy your app and expose the port.
+─────────────────────────────────────────────────────
+
+👤 You ▶ show me that dockerfile
+🤖 AI ▶
+FROM node:18-alpine
+WORKDIR /app
+COPY package*.json ./
+RUN npm install
+COPY . .
+EXPOSE 3000
+CMD ["npm", "start"]
+─────────────────────────────────────────────────────
+
+👤 You ▶ what if the port is already in use?
+🤖 AI ▶
+Change the EXPOSE line to a different port like 3001, or kill the process using port 3000:
 lsof -ti:3000 | xargs kill -9
-
-Or use a different port:
-docker run -p 3001:3000 your-app
-─────────────────────────────────────────────────────
-
-👤 You ▶ best Python linter?
-🤖 AI ▶
-For Python, I recommend:
-- ruff (fastest, modern)
-- black (formatting)
-- mypy (type checking)
-
-Install with: pip install ruff black mypy
-─────────────────────────────────────────────────────
-
-👤 You ▶ datetime?
-🤖 AI ▶
-Based on your local information, the current date and time is Saturday, September 27, 2025, at 00:26.
-─────────────────────────────────────────────────────
-
-👤 You ▶ latest React version?
-🤖 AI ▶
-As of September 27, 2025, React 19 RC is the latest version with Server Components, improved concurrent rendering, and better hydration performance.
-─────────────────────────────────────────────────────
-
-👤 You ▶ I'm building a React app with user authentication
-🤖 AI ▶
-For React authentication, I recommend using JWT tokens with a context provider pattern. You'll need login/logout functions and protected routes.
-─────────────────────────────────────────────────────
-
-👤 You ▶ show me the context code for that
-🤖 AI ▶
-Here's an AuthContext for your React authentication:
-
-const AuthContext = createContext()
-
-export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null)
-  const [loading, setLoading] = useState(true)
-
-  const login = async (email, password) => {
-    const response = await api.post('/login', { email, password })
-    setUser(response.data.user)
-    localStorage.setItem('token', response.data.token)
-  }
-
-  return (
-    <AuthContext.Provider value={{ user, login, logout }}>
-      {children}
-    </AuthContext.Provider>
-  )
-}
-─────────────────────────────────────────────────────
-
-👤 You ▶ how do I protect routes with this?
-🤖 AI ▶
-Create a ProtectedRoute component that uses your AuthContext:
-
-const ProtectedRoute = ({ children }) => {
-  const { user, loading } = useContext(AuthContext)
-
-  if (loading) return <div>Loading...</div>
-  if (!user) return <Navigate to="/login" />
-
-  return children
-}
-
-Then wrap your routes: <ProtectedRoute><Dashboard /></ProtectedRoute>
 ─────────────────────────────────────────────────────
 
 👤 You ▶
 ```
 
-### Quick Commands
-You can also ask direct questions without entering the chat:
-```bash
-chat "Fix this Docker error: port already in use"
-chat "Best practices for Python virtual environments"
-chat "How to optimize PostgreSQL queries?"
+### DateTime Example
+Shows local time awareness:
+```
+/config = settings | ESC/exit = quit
+─────────────────────────────────────────────────────
+
+👤 You ▶ datetime?
+🤖 AI ▶
+Current date and time: Saturday, September 27, 2025, at 00:26.
+─────────────────────────────────────────────────────
+
+👤 You ▶ is it late?
+🤖 AI ▶
+Yes, 00:26 is quite late for a Saturday night! Time for bed? 😴
+─────────────────────────────────────────────────────
+
+👤 You ▶
+```
+
+### Fun Example
+Shows personality and humor:
+```
+/config = settings | ESC/exit = quit
+─────────────────────────────────────────────────────
+
+👤 You ▶ explain regex in simple terms
+🤖 AI ▶
+Regex is like a search pattern with superpowers. /\d+/ finds numbers, /[a-z]+/ finds lowercase words. It's basically "find me this weird pattern in text."
+─────────────────────────────────────────────────────
+
+👤 You ▶ why is it so cryptic?
+🤖 AI ▶
+Because regex was invented by people who thought hieroglyphs weren't confusing enough! 😄 But once you learn it, it's incredibly powerful for text processing.
+─────────────────────────────────────────────────────
+
+👤 You ▶
 ```
 
 ### Configuration
@@ -144,6 +123,29 @@ Start chat, then type `/config` to open settings menu:
 ╚═══════════════════════════════════════╝
 
 Select [1-8]:
+```
+
+### Language Selection with Dialects
+Shows 19 languages including regional variants:
+```
+Select Your Language:
+  [1] 🇬🇧 English
+  [2] 🇩🇪 Deutsch
+  [3] 🇫🇷 Français
+  [4] 🇮🇹 Italiano
+  [5] 🇪🇸 Español
+  [6] 🇨🇳 中文 (Mandarin)
+  [7] 🇮🇳 हिन्दी (Hindi)
+Select [1-7]: 2
+
+Möchten Sie einen Dialekt?
+  [1] Hochdeutsch (Standard)
+  [2] Schwäbisch
+  [3] Bayerisch
+  [4] Sächsisch
+Select [1-4]: 2
+
+✓ Language set to: de-schwaebisch
 ```
 
 ## Configuration Options
