@@ -92,11 +92,8 @@ ai_chat_function() {
     # Ensure sgpt config exists
     mkdir -p ~/.config/shell_gpt
 
-    # Initialize chat session if needed
-    if [[ ! -f "$CACHE_DIR/${CHAT_NAME}" ]] || [[ ! -s "$CACHE_DIR/${CHAT_NAME}" ]]; then
-        rm -f "$CACHE_DIR/${CHAT_NAME}" 2>/dev/null
-        echo '[]' > "$CACHE_DIR/${CHAT_NAME}" 2>/dev/null
-    fi
+    # Initialize shell-gpt chat role properly
+    sgpt --chat "$CHAT_NAME" --no-cache "init" >/dev/null 2>&1 || true
 
     # Colors
     local BLUE='\033[0;34m'
