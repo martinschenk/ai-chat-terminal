@@ -56,9 +56,10 @@ show_config_menu() {
         echo -e "${PURPLE}║${RESET}  ${GREEN}[4]${RESET} ${LANG_CONFIG_OPT4}            ${PURPLE}║${RESET}"
         echo -e "${PURPLE}║${RESET}  ${GREEN}[5]${RESET} ${LANG_CONFIG_OPT5}                 ${PURPLE}║${RESET}"
         echo -e "${PURPLE}║${RESET}  ${GREEN}[6]${RESET} 🧹 ${LANG_CONFIG_OPT7}              ${PURPLE}║${RESET}"
-        echo -e "${PURPLE}║${RESET}  ${GREEN}[7]${RESET} ${LANG_CONFIG_OPT6}                   ${PURPLE}║${RESET}"
+        echo -e "${PURPLE}║${RESET}  ${GREEN}[7]${RESET} ℹ️  About & Version                ${PURPLE}║${RESET}"
+        echo -e "${PURPLE}║${RESET}  ${GREEN}[8]${RESET} ${LANG_CONFIG_OPT6}                   ${PURPLE}║${RESET}"
         echo -e "${PURPLE}║${RESET}                                       ${PURPLE}║${RESET}"
-        echo -e "${PURPLE}║${RESET}  ${RED}[8]${RESET} 🗑️  ${LANG_CONFIG_OPT9}        ${PURPLE}║${RESET}"
+        echo -e "${PURPLE}║${RESET}  ${RED}[9]${RESET} 🗑️  ${LANG_CONFIG_OPT9}        ${PURPLE}║${RESET}"
         echo -e "${PURPLE}╚═══════════════════════════════════════╝${RESET}"
         echo ""
 
@@ -84,10 +85,13 @@ show_config_menu() {
             6)  # Clear cache
                 clear_chat_cache
                 ;;
-            7)  # Back to chat
+            7)  # About & Version
+                show_about_info
+                ;;
+            8)  # Back to chat
                 return
                 ;;
-            8)  # Uninstall
+            9)  # Uninstall
                 uninstall_terminal
                 # If uninstall was cancelled, we continue the loop
                 # If uninstall succeeded, the script will have exited
@@ -344,4 +348,43 @@ EOF
         echo -e "${GREEN}Cancelled.${RESET}"
         sleep 2
     fi
+}
+
+# Show about and version information
+show_about_info() {
+    local CYAN='\\033[0;36m'
+    local GREEN='\\033[0;32m'
+    local YELLOW='\\033[1;33m'
+    local PURPLE='\\033[0;35m'
+    local BLUE='\\033[0;34m'
+    local RESET='\\033[0m'
+    local BOLD='\\033[1m'
+    local DIM='\\033[2m'
+
+    clear
+    echo -e "${BOLD}${CYAN}ℹ️  About AI Chat Terminal${RESET}\\n"
+
+    echo -e "${PURPLE}╔═══════════════════════════════════════╗${RESET}"
+    echo -e "${PURPLE}║${RESET}                                       ${PURPLE}║${RESET}"
+    echo -e "${PURPLE}║${RESET}  ${BOLD}AI Chat Terminal${RESET}                  ${PURPLE}║${RESET}"
+    echo -e "${PURPLE}║${RESET}  ${CYAN}Version: ${AI_CHAT_VERSION}${RESET}                      ${PURPLE}║${RESET}"
+    echo -e "${PURPLE}║${RESET}                                       ${PURPLE}║${RESET}"
+    echo -e "${PURPLE}║${RESET}  ${YELLOW}Author:${RESET} ${AI_CHAT_AUTHOR}           ${PURPLE}║${RESET}"
+    echo -e "${PURPLE}║${RESET}  ${YELLOW}License:${RESET} ${AI_CHAT_LICENSE} License              ${PURPLE}║${RESET}"
+    echo -e "${PURPLE}║${RESET}                                       ${PURPLE}║${RESET}"
+    echo -e "${PURPLE}║${RESET}  ${BLUE}Repository:${RESET}                        ${PURPLE}║${RESET}"
+    echo -e "${PURPLE}║${RESET}  ${DIM}${AI_CHAT_REPOSITORY}${RESET}"
+    echo -e "${PURPLE}║${RESET}                                       ${PURPLE}║${RESET}"
+    echo -e "${PURPLE}║${RESET}  ${GREEN}🤖 ChatGPT-powered terminal${RESET}        ${PURPLE}║${RESET}"
+    echo -e "${PURPLE}║${RESET}  ${GREEN}🔍 Integrated web search${RESET}            ${PURPLE}║${RESET}"
+    echo -e "${PURPLE}║${RESET}  ${GREEN}🌍 19 languages + dialects${RESET}         ${PURPLE}║${RESET}"
+    echo -e "${PURPLE}║${RESET}  ${GREEN}💬 Conversational memory${RESET}           ${PURPLE}║${RESET}"
+    echo -e "${PURPLE}║${RESET}                                       ${PURPLE}║${RESET}"
+    echo -e "${PURPLE}╚═══════════════════════════════════════╝${RESET}"
+    echo ""
+    echo -e "${DIM}Built on Shell-GPT by TheR1D${RESET}"
+    echo -e "${DIM}Copyright © 2024 Martin Schenk${RESET}"
+    echo ""
+    echo -e "${CYAN}Press any key to return...${RESET}"
+    read -r
 }

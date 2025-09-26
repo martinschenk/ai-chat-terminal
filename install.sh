@@ -1,5 +1,7 @@
 #!/bin/bash
-# AI Chat Terminal - Smart Installer v5.1.0
+# AI Chat Terminal - Smart Installer v5.2.0
+# Copyright (c) 2024 Martin Schenk
+# Licensed under MIT License - https://opensource.org/licenses/MIT
 # Enhanced onboarding with language-first approach
 
 set -e
@@ -24,7 +26,8 @@ echo -e "${CYAN}${BOLD}"
 echo "╔═══════════════════════════════════════╗"
 echo "║                                       ║"
 echo "║    🤖 AI Chat Terminal Installer     ║"
-echo "║          Version 5.1.0                ║"
+echo "║          Version 5.2.0                ║"
+echo "║       © 2024 Martin Schenk            ║"
 echo "║                                       ║"
 echo "╚═══════════════════════════════════════╝"
 echo -e "${RESET}\n"
@@ -200,10 +203,8 @@ echo "Next steps:"
 if [[ ! -z "$PRIMARY_SHELL_CONFIG" ]]; then
     config_name=$(basename "$PRIMARY_SHELL_CONFIG")
     echo -e "  ${CYAN}source ~/$config_name${RESET}  ${DIM}# or restart terminal${RESET}"
-    echo -e "${DIM}  # DEBUG: Updated $PRIMARY_SHELL_CONFIG for $SHELL${RESET}"
 else
     echo -e "  ${CYAN}Restart your terminal${RESET}"
-    echo -e "${DIM}  # DEBUG: No PRIMARY_SHELL_CONFIG set${RESET}"
 fi
 
 echo -e "  ${CYAN}chat${RESET}"

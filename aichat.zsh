@@ -1,6 +1,14 @@
 #!/bin/zsh
 # AI Chat Terminal - Main Chat Function
+# Copyright (c) 2024 Martin Schenk
+# Licensed under MIT License - https://opensource.org/licenses/MIT
 # Version 5.2.0 - Clean directory structure, web search, conflict detection
+
+# Version and attribution
+AI_CHAT_VERSION="5.2.0"
+AI_CHAT_AUTHOR="Martin Schenk"
+AI_CHAT_LICENSE="MIT"
+AI_CHAT_REPOSITORY="https://github.com/martinschenk/ai-chat-terminal"
 
 # Get the directory of this script (should be ~/.aichat)
 SCRIPT_DIR="$(cd "$(dirname "${(%):-%x}")" && pwd)"
