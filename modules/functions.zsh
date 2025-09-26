@@ -111,12 +111,8 @@ chat_loop() {
         local DIALECT_PROMPT=""
         get_dialect_prompt "$LANGUAGE"
 
-        # Check if query needs web search
-        if needs_web_search "$INPUT"; then
-            perform_web_search "$INPUT" "$DIALECT_PROMPT"
-        else
-            sgpt --chat "$CHAT_NAME" "${DIALECT_PROMPT}$INPUT"
-        fi
+        # Use ChatGPT with web search capabilities
+        sgpt --chat "$CHAT_NAME" "${DIALECT_PROMPT}$INPUT"
 
         echo -e "${DIM}─────────────────────────────────────────────────────${RESET}\n"
     done

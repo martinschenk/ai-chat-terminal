@@ -55,11 +55,10 @@ show_config_menu() {
         echo -e "${PURPLE}║${RESET}  ${GREEN}[3]${RESET} ${LANG_CONFIG_OPT3}                  ${PURPLE}║${RESET}"
         echo -e "${PURPLE}║${RESET}  ${GREEN}[4]${RESET} ${LANG_CONFIG_OPT4}            ${PURPLE}║${RESET}"
         echo -e "${PURPLE}║${RESET}  ${GREEN}[5]${RESET} ${LANG_CONFIG_OPT5}                 ${PURPLE}║${RESET}"
-        echo -e "${PURPLE}║${RESET}  ${GREEN}[6]${RESET} ${LANG_CONFIG_OPT6}                   ${PURPLE}║${RESET}"
-        echo -e "${PURPLE}║${RESET}  ${GREEN}[7]${RESET} 🧹 ${LANG_CONFIG_OPT7}              ${PURPLE}║${RESET}"
-        echo -e "${PURPLE}║${RESET}  ${GREEN}[8]${RESET} 🔍 ${LANG_CONFIG_OPT8}         ${PURPLE}║${RESET}"
+        echo -e "${PURPLE}║${RESET}  ${GREEN}[6]${RESET} 🧹 ${LANG_CONFIG_OPT7}              ${PURPLE}║${RESET}"
+        echo -e "${PURPLE}║${RESET}  ${GREEN}[7]${RESET} ${LANG_CONFIG_OPT6}                   ${PURPLE}║${RESET}"
         echo -e "${PURPLE}║${RESET}                                       ${PURPLE}║${RESET}"
-        echo -e "${PURPLE}║${RESET}  ${RED}[9]${RESET} 🗑️  ${LANG_CONFIG_OPT9}        ${PURPLE}║${RESET}"
+        echo -e "${PURPLE}║${RESET}  ${RED}[8]${RESET} 🗑️  ${LANG_CONFIG_OPT9}        ${PURPLE}║${RESET}"
         echo -e "${PURPLE}╚═══════════════════════════════════════╝${RESET}"
         echo ""
 
@@ -82,16 +81,13 @@ show_config_menu() {
             5)  # Change AI model
                 change_ai_model
                 ;;
-            6)  # Back to chat
-                return
-                ;;
-            7)  # Clear cache
+            6)  # Clear cache
                 clear_chat_cache
                 ;;
-            8)  # Configure web search
-                configure_web_search
+            7)  # Back to chat
+                return
                 ;;
-            9)  # Uninstall
+            8)  # Uninstall
                 uninstall_terminal
                 # If uninstall was cancelled, we continue the loop
                 # If uninstall succeeded, the script will have exited
@@ -194,35 +190,7 @@ change_ai_model() {
         echo "DEFAULT_OPENAI_MODEL=\"$new_model\"" >> "$ENV_FILE"
     fi
 
-    echo -e "${GREEN}✅ OpenAI Model changed to: $new_model${RESET}"
-
-    # Check if Perplexity is configured
-    if [[ ! -z "$PERPLEXITY_API_KEY" ]]; then
-        echo -e "\n${CYAN}Select Perplexity Model for Web Search:${RESET}"
-        echo "  [1] pplx-7b-online  ⭐ RECOMMENDED"
-        echo "  [2] pplx-70b-online"
-        echo "  [3] sonar-small-online"
-        echo "  [4] sonar-medium-online"
-        echo -n "Select [1-4] (default: 1): "
-        read -r pplx_choice
-
-        local new_pplx_model="pplx-7b-online"
-        case "$pplx_choice" in
-            2) new_pplx_model="pplx-70b-online" ;;
-            3) new_pplx_model="sonar-small-online" ;;
-            4) new_pplx_model="sonar-medium-online" ;;
-        esac
-
-        # Update Perplexity model in .env
-        if grep -q "DEFAULT_PERPLEXITY_MODEL" "$ENV_FILE"; then
-            sed -i '' "s/DEFAULT_PERPLEXITY_MODEL=.*/DEFAULT_PERPLEXITY_MODEL=\"$new_pplx_model\"/" "$ENV_FILE"
-        else
-            echo "DEFAULT_PERPLEXITY_MODEL=\"$new_pplx_model\"" >> "$ENV_FILE"
-        fi
-
-        echo -e "${GREEN}✅ Perplexity Model changed to: $new_pplx_model${RESET}"
-    fi
-
+    echo -e "${GREEN}✅ OpenAI Model changed to: $new_model (includes web search)${RESET}"
     sleep 2
 }
 
@@ -294,68 +262,7 @@ clear_chat_cache() {
     sleep 2
 }
 
-# Configure web search
-configure_web_search() {
-    echo -e "\n${CYAN}Web Search Configuration:${RESET}\n"
-
-    if [[ -z "$PERPLEXITY_API_KEY" ]]; then
-        echo "Enable real-time web search for current information!"
-        echo ""
-        echo "1. Get your API key at: https://perplexity.ai/settings/api"
-        echo "2. Free tier available!"
-        echo ""
-        echo -n "Enter your Perplexity API key (or press Enter to skip): "
-        read -r pplx_key
-
-        if [[ ! -z "$pplx_key" ]]; then
-            # Update .env file
-            if grep -q "PERPLEXITY_API_KEY" "$ENV_FILE"; then
-                sed -i '' "s/PERPLEXITY_API_KEY=.*/PERPLEXITY_API_KEY=\"$pplx_key\"/" "$ENV_FILE"
-            else
-                echo "PERPLEXITY_API_KEY=\"$pplx_key\"" >> "$ENV_FILE"
-            fi
-
-            # Select model
-            echo -e "\n${CYAN}Select Perplexity Model:${RESET}"
-            echo "  [1] pplx-7b-online  ⭐ RECOMMENDED"
-            echo "  [2] pplx-70b-online"
-            echo "  [3] sonar-small-online"
-            echo "  [4] sonar-medium-online"
-            echo -n "Select [1-4] (default: 1): "
-            read -r model_choice
-
-            local pplx_model="pplx-7b-online"
-            case "$model_choice" in
-                2) pplx_model="pplx-70b-online" ;;
-                3) pplx_model="sonar-small-online" ;;
-                4) pplx_model="sonar-medium-online" ;;
-            esac
-
-            # Update model in .env
-            if grep -q "DEFAULT_PERPLEXITY_MODEL" "$ENV_FILE"; then
-                sed -i '' "s/DEFAULT_PERPLEXITY_MODEL=.*/DEFAULT_PERPLEXITY_MODEL=\"$pplx_model\"/" "$ENV_FILE"
-            else
-                echo "DEFAULT_PERPLEXITY_MODEL=\"$pplx_model\"" >> "$ENV_FILE"
-            fi
-
-            echo -e "${GREEN}✅ Web search enabled!${RESET}"
-        fi
-    else
-        echo -e "${GREEN}✅ Web search is already configured!${RESET}"
-        echo ""
-        echo "Current model: ${DEFAULT_PERPLEXITY_MODEL:-pplx-7b-online}"
-        echo ""
-        echo -n "Remove web search? (y/N): "
-        read -r remove
-
-        if [[ "$remove" == "y" ]] || [[ "$remove" == "Y" ]]; then
-            sed -i '' '/PERPLEXITY_API_KEY/d' "$ENV_FILE"
-            sed -i '' '/DEFAULT_PERPLEXITY_MODEL/d' "$ENV_FILE"
-            echo -e "${YELLOW}Web search disabled.${RESET}"
-        fi
-    fi
-    sleep 2
-}
+# Note: Web search is now included in ChatGPT - no separate configuration needed
 
 # Uninstall function with translations
 uninstall_terminal() {

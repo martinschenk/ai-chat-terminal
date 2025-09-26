@@ -80,10 +80,13 @@ ai_chat_function() {
     local TIMEOUT_FILE="$CONFIG_DIR/last_time"
 
     # Initialize sgpt chat session if needed
-    local CACHE_DIR="/var/folders/wm/g387kdx54r79r8t48tfy9tgc0000gn/T/chat_cache"
+    local CACHE_DIR="/tmp/chat_cache"
     mkdir -p "$CACHE_DIR" 2>/dev/null
 
-    # Clear old invalid session if exists
+    # Ensure sgpt config exists
+    mkdir -p ~/.config/shell_gpt
+
+    # Initialize chat session if needed
     if [[ ! -f "$CACHE_DIR/${CHAT_NAME}" ]] || [[ ! -s "$CACHE_DIR/${CHAT_NAME}" ]]; then
         rm -f "$CACHE_DIR/${CHAT_NAME}" 2>/dev/null
         echo '[]' > "$CACHE_DIR/${CHAT_NAME}" 2>/dev/null
@@ -140,12 +143,8 @@ ai_chat_function() {
         local DIALECT_PROMPT=""
         get_dialect_prompt "$LANGUAGE"
 
-        # Check if query needs web search
-        if needs_web_search "$*"; then
-            perform_web_search "$*" "$DIALECT_PROMPT"
-        else
-            sgpt --chat "$CHAT_NAME" "${DIALECT_PROMPT}$*"
-        fi
+        # Use ChatGPT with web search capabilities
+        sgpt --chat "$CHAT_NAME" "${DIALECT_PROMPT}$*"
 
         echo -e "\n${DIM}─────────────────────────────────────────────────────${RESET}\n"
 
@@ -212,16 +211,9 @@ first_run_setup() {
     echo -e "\033[0;32m✓ Language set to: $language\033[0m\n"
 
     # Step 2: OpenAI API Key
-    echo -e "\033[1;33mStep 2/4: OpenAI API Key (Required)\033[0m"
+    echo -e "\033[1;33mStep 2/3: OpenAI API Key (Required)\033[0m"
     echo "────────────────────────────────────"
-    echo -e "\033[0;37m• Powers your AI chat conversations\033[0m"
-    echo -e "\033[0;37m• Costs: ~\$0.01-0.10 per conversation\033[0m"
-    echo -e "\033[0;37m• Minimum \$5 credit needed to start\033[0m"
-    echo ""
-    echo -e "\033[1mHow to get your API key:\033[0m"
-    echo -e "1. Visit: \033[0;36mhttps://platform.openai.com/api-keys\033[0m"
-    echo -e "2. Create account + add \$5 credit"
-    echo -e "3. Generate new API key"
+    echo -e "Get your key at: \033[0;36mhttps://platform.openai.com/api-keys\033[0m"
     echo ""
 
     local openai_key=""
@@ -236,28 +228,10 @@ first_run_setup() {
             openai_key=""
         fi
     done
-    echo -e "\033[0;32m✓ OpenAI API key configured\033[0m\n"
+    echo -e "\033[0;32m✓ OpenAI API key configured (includes web search)\033[0m\n"
 
-    # Step 3: Perplexity API Key (Optional)
-    echo -e "\033[1;33mStep 3/4: Perplexity API Key (Optional)\033[0m"
-    echo "────────────────────────────────────"
-    echo -e "\033[0;37m• Enables real-time web search\033[0m"
-    echo -e "\033[0;37m• Get current news, weather, stock prices\033[0m"
-    echo -e "\033[0;37m• Free tier available!\033[0m"
-    echo ""
-    echo -e "Get your key at: \033[0;36mhttps://www.perplexity.ai/settings/api\033[0m"
-    echo ""
-    echo -n "Enter Perplexity key (or press Enter to skip): "
-    read -r perplexity_key
-
-    if [[ ! -z "$perplexity_key" ]]; then
-        echo -e "\033[0;32m✓ Web search enabled!\033[0m\n"
-    else
-        echo -e "\033[2m⊘ Web search skipped (can add later via /config)\033[0m\n"
-    fi
-
-    # Step 4: Select OpenAI Model
-    echo -e "\033[1;33mStep 4/4: Select AI Model\033[0m"
+    # Step 3: Select OpenAI Model
+    echo -e "\033[1;33mStep 3/3: Select AI Model\033[0m"
     echo "────────────────────────────────────"
     echo ""
     echo -e "  [1] gpt-4o       \033[0;32m⭐ RECOMMENDED\033[0m - Best performance (\$2.50/1M tokens)"
@@ -279,8 +253,6 @@ first_run_setup() {
     esac
     echo -e "\033[0;32m✓ Model selected: $openai_model\033[0m\n"
 
-    # Set Perplexity model (default)
-    local perplexity_model="pplx-7b-online"
     local command_char="ai"
     # Create configuration files
     echo -e "\033[0;34mSaving configuration...\033[0m"
@@ -292,11 +264,9 @@ first_run_setup() {
 
 # API Keys
 OPENAI_API_KEY="$openai_key"
-PERPLEXITY_API_KEY="$perplexity_key"
 
 # Default Models
 DEFAULT_OPENAI_MODEL="$openai_model"
-DEFAULT_PERPLEXITY_MODEL="$perplexity_model"
 EOF
 
     chmod 600 "$ENV_FILE"
@@ -331,20 +301,14 @@ EOF
     echo -e "\033[1mConfiguration:\033[0m"
     echo -e "  • Language: \033[0;36m$language\033[0m"
     echo -e "  • AI Model: \033[0;36m$openai_model\033[0m"
-    if [[ ! -z "$perplexity_key" ]]; then
-        echo -e "  • Web Search: \033[0;32m✓ Enabled\033[0m"
-    else
-        echo -e "  • Web Search: \033[2m⊘ Disabled\033[0m"
-    fi
+    echo -e "  • Web Search: \033[0;32m✓ Enabled (ChatGPT)\033[0m"
     echo -e "  • Command: \033[0;36m$command_char\033[0m"
     echo ""
 
     echo -e "\033[1mTry it out:\033[0m"
     echo -e "  \033[0;32m$command_char\033[0m Hello!"
-    echo -e "  \033[0;32m$command_char\033[0m What's the weather?"
-    if [[ ! -z "$perplexity_key" ]]; then
-        echo -e "  \033[0;32m$command_char\033[0m What's in the news?"
-    fi
+    echo -e "  \033[0;32m$command_char\033[0m What's the weather today?"
+    echo -e "  \033[0;32m$command_char\033[0m What's in the news?"
     echo -e "  \033[0;32m$command_char\033[0m /config  \033[2m(to modify settings)\033[0m"
     echo ""
 
