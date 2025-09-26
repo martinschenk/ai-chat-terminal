@@ -29,14 +29,17 @@ class ChatMemorySystem:
 
         self.db_path = db_path
         self.db = sqlite3.connect(str(db_path))
-        self.db.enable_load_extension(True)
 
-        # Load sqlite-vec extension
+        # Check for vector extension support
+        self.vector_support = False
         try:
+            self.db.enable_load_extension(True)
+            # Load sqlite-vec extension
             sqlite_vec.load(self.db)
+            self.vector_support = True
         except Exception as e:
-            print(f"Error loading sqlite-vec: {e}")
-            sys.exit(1)
+            # Continue without vector search - basic memory still works
+            self.vector_support = False
 
         # Initialize embedding model (lazy loading)
         self._model = None
@@ -57,6 +60,7 @@ class ChatMemorySystem:
     def _create_tables(self):
         """Create tables if they don't exist"""
         try:
+            # Basic tables that always work
             self.db.executescript("""
                 -- Chat history table (mirrors shell-gpt format)
                 CREATE TABLE IF NOT EXISTS chat_history (
@@ -65,15 +69,7 @@ class ChatMemorySystem:
                     timestamp INTEGER NOT NULL,
                     role TEXT NOT NULL,  -- 'user' or 'assistant'
                     content TEXT NOT NULL,
-                    metadata JSON DEFAULT '{}'
-                );
-
-                -- Vector embeddings table
-                CREATE VIRTUAL TABLE IF NOT EXISTS chat_embeddings USING vec0(
-                    message_embedding FLOAT[384],
-                    session_id TEXT,
-                    timestamp INTEGER,
-                    message_type TEXT,
+                    metadata JSON DEFAULT '{}',
                     importance REAL DEFAULT 1.0
                 );
 
@@ -93,6 +89,19 @@ class ChatMemorySystem:
                 CREATE INDEX IF NOT EXISTS idx_chat_timestamp ON chat_history(timestamp);
                 CREATE INDEX IF NOT EXISTS idx_memory_session ON memory_summaries(session_id);
             """)
+
+            # Vector table only if extension is available
+            if self.vector_support:
+                self.db.execute("""
+                    CREATE VIRTUAL TABLE IF NOT EXISTS chat_embeddings USING vec0(
+                        message_embedding FLOAT[384],
+                        session_id TEXT,
+                        timestamp INTEGER,
+                        message_type TEXT,
+                        importance REAL DEFAULT 1.0
+                    )
+                """)
+
             self.db.commit()
         except Exception as e:
             print(f"Error creating tables: {e}")
@@ -106,25 +115,31 @@ class ChatMemorySystem:
         timestamp = int(time.time())
 
         try:
-            # Insert into chat history
-            cursor = self.db.execute(
-                "INSERT INTO chat_history (session_id, role, content, metadata, timestamp) VALUES (?, ?, ?, ?, ?)",
-                (session_id, role, content, json.dumps(metadata or {}), timestamp)
-            )
-            message_id = cursor.lastrowid
-
-            # Generate embedding
-            embedding = self.model.encode([content])[0]
-            embedding_list = embedding.tolist()
-
             # Calculate importance (simple heuristic)
             importance = self._calculate_importance(content, role)
 
-            # Insert embedding
-            self.db.execute(
-                "INSERT INTO chat_embeddings (rowid, message_embedding, session_id, timestamp, message_type, importance) VALUES (?, ?, ?, ?, ?, ?)",
-                (message_id, json.dumps(embedding_list), session_id, timestamp, role, importance)
+            # Insert into chat history
+            cursor = self.db.execute(
+                "INSERT INTO chat_history (session_id, role, content, metadata, timestamp, importance) VALUES (?, ?, ?, ?, ?, ?)",
+                (session_id, role, content, json.dumps(metadata or {}), timestamp, importance)
             )
+            message_id = cursor.lastrowid
+
+            # Only add embedding if vector support is available
+            if self.vector_support:
+                try:
+                    # Generate embedding
+                    embedding = self.model.encode([content])[0]
+                    embedding_list = embedding.tolist()
+
+                    # Insert embedding
+                    self.db.execute(
+                        "INSERT INTO chat_embeddings (rowid, message_embedding, session_id, timestamp, message_type, importance) VALUES (?, ?, ?, ?, ?, ?)",
+                        (message_id, json.dumps(embedding_list), session_id, timestamp, role, importance)
+                    )
+                except Exception as embedding_error:
+                    # If embedding fails, continue without it
+                    print(f"Warning: Could not generate embedding: {embedding_error}", file=sys.stderr)
 
             self.db.commit()
             return message_id
@@ -156,6 +171,10 @@ class ChatMemorySystem:
 
     def search_similar(self, query, session_id=None, limit=5, min_importance=0.5):
         """Search for semantically similar messages"""
+        if not self.vector_support:
+            # Fallback to basic text search without vectors
+            return self._basic_text_search(query, session_id, limit, min_importance)
+
         try:
             # Generate query embedding
             query_embedding = self.model.encode([query])[0]
@@ -188,7 +207,38 @@ class ChatMemorySystem:
             return results
 
         except Exception as e:
-            print(f"Error searching: {e}", file=sys.stderr)
+            print(f"Error in vector search, falling back to text search: {e}", file=sys.stderr)
+            return self._basic_text_search(query, session_id, limit, min_importance)
+
+    def _basic_text_search(self, query, session_id=None, limit=5, min_importance=0.5):
+        """Fallback text search when vector search is not available"""
+        try:
+            # Simple text search using SQLite FTS or LIKE
+            sql = """
+                SELECT
+                    content,
+                    role,
+                    timestamp,
+                    importance,
+                    0 as distance
+                FROM chat_history
+                WHERE content LIKE ?
+                  AND importance >= ?
+            """
+            params = [f"%{query}%", min_importance]
+
+            if session_id:
+                sql += " AND session_id = ?"
+                params.append(session_id)
+
+            sql += " ORDER BY timestamp DESC LIMIT ?"
+            params.append(limit)
+
+            results = self.db.execute(sql, params).fetchall()
+            return results
+
+        except Exception as e:
+            print(f"Error in text search: {e}", file=sys.stderr)
             return []
 
     def get_session_context(self, session_id, limit=10):
