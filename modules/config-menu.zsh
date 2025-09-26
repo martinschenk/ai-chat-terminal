@@ -269,12 +269,10 @@ uninstall_terminal() {
     clear
     echo -e "${RED}${BOLD}⚠️  ${LANG_CONFIG_OPT9}${RESET}"
     echo ""
-    echo "${LANG_UNINSTALL_WARNING}"
+    echo -e "${YELLOW}${LANG_UNINSTALL_WARNING}${RESET}"
     echo ""
     echo "• AI Chat Terminal (~/.aichat)"
     echo "• Shell configuration aliases"
-    echo ""
-    echo -e "${YELLOW}${LANG_UNINSTALL_WARNING}${RESET}"
     echo ""
     echo "${LANG_UNINSTALL_CONFIRM}"
     echo -n "> "
@@ -318,7 +316,7 @@ rm -rf "$HOME/.aichat" 2>/dev/null
 rm -f "/tmp/aichat_cleanup.sh" 2>/dev/null
 EOF
         chmod +x "/tmp/aichat_cleanup.sh"
-        nohup "/tmp/aichat_cleanup.sh" >/dev/null 2>&1 &
+        ( nohup "/tmp/aichat_cleanup.sh" >/dev/null 2>&1 & )
 
         echo ""
         echo -e "${GREEN}✓ ${LANG_UNINSTALL_SUCCESS}${RESET}"
@@ -330,10 +328,6 @@ EOF
         echo ""
         echo "${LANG_UNINSTALL_ANYKEY}"
         read -r
-        echo ""
-        echo -e "${GREEN}Uninstall completed. Please restart your terminal or run: source ~/.zshrc${RESET}"
-        echo ""
-        echo "Returning to normal terminal..."
         cd "$HOME"
         exec "$SHELL"
     else
