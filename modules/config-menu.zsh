@@ -237,7 +237,7 @@ change_command() {
         # Update config
         sed -i '' "s/AI_CHAT_COMMAND=.*/AI_CHAT_COMMAND=\"$new_cmd\"/" "$CONFIG_FILE"
 
-        # Update shell alias
+        # Update shell alias with noglob
         update_shell_config "$new_cmd"
 
         echo -e "${GREEN}✅ Command changed to: $new_cmd${RESET}"
@@ -312,7 +312,7 @@ uninstall_terminal() {
                 # Remove source lines for aichat
                 grep -v "source.*/\.aichat/aichat\.zsh" "$config" > "$config.tmp" && mv "$config.tmp" "$config"
                 # Remove ANY alias that points to ai_chat_function (regardless of alias name)
-                grep -v "alias.*=.*ai_chat_function" "$config" > "$config.tmp" && mv "$config.tmp" "$config"
+                grep -v "alias.*noglob.*ai_chat_function" "$config" > "$config.tmp" && mv "$config.tmp" "$config"
                 # Remove comments
                 grep -v "# AI Chat Terminal" "$config" > "$config.tmp" && mv "$config.tmp" "$config"
                 echo "  ✓ ${LANG_UNINSTALL_CLEANED} $config"

@@ -172,7 +172,7 @@ update_shell_config() {
         if [[ -f "$config_file" ]]; then
             grep -v "# AI Chat Terminal" "$config_file" > "$config_file.tmp" && mv "$config_file.tmp" "$config_file"
             grep -v "source.*aichat.zsh" "$config_file" > "$config_file.tmp" && mv "$config_file.tmp" "$config_file"
-            grep -v "alias.*=.*ai_chat_function" "$config_file" > "$config_file.tmp" && mv "$config_file.tmp" "$config_file"
+            grep -v "alias.*ai_chat_function" "$config_file" > "$config_file.tmp" && mv "$config_file.tmp" "$config_file"
         fi
     done
 
@@ -185,7 +185,7 @@ update_shell_config() {
         echo "" >> "$primary_config"
         echo "# AI Chat Terminal" >> "$primary_config"
         echo "source $INSTALL_DIR/aichat.zsh" >> "$primary_config"
-        echo "alias $command_name='ai_chat_function'" >> "$primary_config"
+        echo "alias $command_name='noglob ai_chat_function'" >> "$primary_config"
 
         echo -e "  ${GREEN}✓${RESET} Updated $(basename "$primary_config")"
         PRIMARY_SHELL_CONFIG="$primary_config"
