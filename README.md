@@ -296,28 +296,6 @@ Search: "Docker" → Finds: any message containing "Docker"
    • Recent important conversations
 ```
 
-### Language Selection with Dialects
-Shows 19 languages including regional variants:
-```
-Select Your Language:
-  [1] 🇬🇧 English
-  [2] 🇩🇪 Deutsch
-  [3] 🇫🇷 Français
-  [4] 🇮🇹 Italiano
-  [5] 🇪🇸 Español
-  [6] 🇨🇳 中文 (Mandarin)
-  [7] 🇮🇳 हिन्दी (Hindi)
-Select [1-7]: 2
-
-Möchten Sie einen Dialekt?
-  [1] Hochdeutsch (Standard)
-  [2] Schwäbisch
-  [3] Bayerisch
-  [4] Sächsisch
-Select [1-4]: 2
-
-✓ Language set to: de-schwaebisch
-```
 
 ## Configuration Options
 
@@ -357,6 +335,29 @@ The configuration menu provides these options:
 - **Regional**: Basque (Euskera)
 - **Asian**: Chinese (Mandarin) 🇨🇳, Hindi 🇮🇳
 - **And more** - Full list available during installation
+
+### Language Selection with Dialects
+Interactive language setup during installation:
+```
+Select Your Language:
+  [1] 🇬🇧 English
+  [2] 🇩🇪 Deutsch
+  [3] 🇫🇷 Français
+  [4] 🇮🇹 Italiano
+  [5] 🇪🇸 Español
+  [6] 🇨🇳 中文 (Mandarin)
+  [7] 🇮🇳 हिन्दी (Hindi)
+Select [1-7]: 2
+
+Möchten Sie einen Dialekt?
+  [1] Hochdeutsch (Standard)
+  [2] Schwäbisch
+  [3] Bayerisch
+  [4] Sächsisch
+Select [1-4]: 2
+
+✓ Language set to: de-schwaebisch
+```
 
 ## Troubleshooting
 
