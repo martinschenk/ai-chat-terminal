@@ -83,12 +83,12 @@ ai_chat_function() {
 
     # Chat system now uses Python with direct OpenAI API integration
 
-    # Colors
-    local BLUE='\033[0;34m'
-    local GREEN='\033[0;32m'
-    local YELLOW='\033[1;33m'
-    local PURPLE='\033[0;35m'
-    local CYAN='\033[0;36m'
+    # IDE-optimized colors for dark backgrounds
+    local USER_COLOR='\033[38;5;75m'     # Bright blue (#61AFEF) - like variables in VS Code
+    local AI_COLOR='\033[38;5;114m'      # Green (#98C379) - like strings/success
+    local COMMAND_COLOR='\033[38;5;204m' # Coral (#E06C75) - like keywords
+    local ACCENT_COLOR='\033[38;5;176m'  # Purple (#C678DD) - like functions
+    local YELLOW='\033[1;33m'            # Keep yellow for exit
     local RED='\033[0;31m'
     local RESET='\033[0m'
     local BOLD='\033[1m'
@@ -105,11 +105,11 @@ ai_chat_function() {
         fi
 
         # Direct question mode
-        echo -e "\n${CYAN}/config${RESET} = ${LANG_CHAT_SETTINGS:-settings} ${DIM}|${RESET} ${YELLOW}ESC${RESET}/${YELLOW}${LANG_CHAT_EXIT:-exit}${RESET} = ${LANG_CHAT_QUIT:-quit}"
-        echo -e "${DIM}─────────────────────────────────────────────────────${RESET}\n"
+        echo -e "\n${COMMAND_COLOR}/config${RESET} = ${LANG_CHAT_SETTINGS:-settings} ${DIM}|${RESET} ${YELLOW}ESC${RESET}/${YELLOW}${LANG_CHAT_EXIT:-exit}${RESET} = ${LANG_CHAT_QUIT:-quit}"
+        echo ""
 
-        echo -e "${BLUE}👤 ${LANG_LABEL_YOU}:${RESET} $*\n"
-        echo -e "${GREEN}🤖 ${LANG_LABEL_AI}:${RESET}"
+        echo -e "${USER_COLOR}👤 ${LANG_LABEL_YOU} ▶${RESET} $*"
+        echo -n -e "${AI_COLOR}🤖 ${LANG_LABEL_AI} ▶${RESET} "
 
         # Add dialect/language instruction if needed
         local DIALECT_PROMPT=""
@@ -150,7 +150,7 @@ TECHNICAL CONTEXT: You have access to personal information from previous convers
         # Send message using our Python chat system
         python3 "$SCRIPT_DIR/chat_system.py" "$CHAT_NAME" "$*" "$SYSTEM_PROMPT"
 
-        echo -e "\n${DIM}─────────────────────────────────────────────────────${RESET}\n"
+        echo ""  # Just one empty line, no separator
 
         # Continue in chat mode
         chat_loop
@@ -159,8 +159,8 @@ TECHNICAL CONTEXT: You have access to personal information from previous convers
 
     # Instant chat mode
     clear
-    echo -e "${CYAN}/config${RESET} = ${LANG_CHAT_SETTINGS:-settings} ${DIM}|${RESET} ${YELLOW}ESC${RESET}/${YELLOW}${LANG_CHAT_EXIT:-exit}${RESET} = ${LANG_CHAT_QUIT:-quit}"
-    echo -e "${DIM}─────────────────────────────────────────────────────${RESET}\n"
+    echo -e "${COMMAND_COLOR}/config${RESET} = ${LANG_CHAT_SETTINGS:-settings} ${DIM}|${RESET} ${YELLOW}ESC${RESET}/${YELLOW}${LANG_CHAT_EXIT:-exit}${RESET} = ${LANG_CHAT_QUIT:-quit}"
+    echo ""
 
     chat_loop
 }

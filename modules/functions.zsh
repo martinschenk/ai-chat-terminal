@@ -27,11 +27,12 @@ chat_loop() {
         source "$LANG_FILE"
     fi
 
-    # Colors
-    local BLUE='\033[0;34m'
-    local GREEN='\033[0;32m'
+    # Professional IDE colors - labels colored, text white (like ChatGPT/Claude)
+    local USER_COLOR='\033[38;5;75m'     # Bright blue (#61AFEF) - for 👤 Du ▶
+    local AI_COLOR='\033[38;5;114m'      # Green (#98C379) - for 🤖 KI ▶
+    local COMMAND_COLOR='\033[38;5;204m' # Coral (#E06C75) - for /config commands
+    local WHITE='\033[97m'               # Bright white for text content
     local YELLOW='\033[1;33m'
-    local CYAN='\033[0;36m'
     local RESET='\033[0m'
     local DIM='\033[2m'
 
@@ -42,7 +43,7 @@ chat_loop() {
     # Context window management is now handled in Python chat_system.py
 
     while true; do
-        echo -ne "${BLUE}👤 ${LANG_LABEL_YOU} ▶ ${RESET}"
+        echo -ne "${USER_COLOR}👤 ${LANG_LABEL_YOU} ▶ ${RESET}"
 
         # Handle ESC key detection
         if [[ "$ENABLE_ESC" == "true" ]] && [[ -t 0 ]]; then
@@ -90,15 +91,15 @@ chat_loop() {
                 show_config_menu
                 # After config, show header again
                 clear
-                echo -e "${CYAN}/config${RESET} = ${LANG_CHAT_SETTINGS:-settings} ${DIM}|${RESET} ${YELLOW}ESC${RESET}/${YELLOW}${LANG_CHAT_EXIT:-exit}${RESET} = ${LANG_CHAT_QUIT:-quit}"
-                echo -e "${DIM}─────────────────────────────────────────────────────${RESET}\n"
+                echo -e "${COMMAND_COLOR}/config${RESET} = ${LANG_CHAT_SETTINGS:-settings} ${DIM}|${RESET} ${YELLOW}ESC${RESET}/${YELLOW}${LANG_CHAT_EXIT:-exit}${RESET} = ${LANG_CHAT_QUIT:-quit}"
+                echo ""
                 continue
                 ;;
 
             clear|cls)
                 clear
-                echo -e "${CYAN}/config${RESET} = ${LANG_CHAT_SETTINGS:-settings} ${DIM}|${RESET} ${YELLOW}ESC${RESET}/${YELLOW}${LANG_CHAT_EXIT:-exit}${RESET} = ${LANG_CHAT_QUIT:-quit}"
-                echo -e "${DIM}─────────────────────────────────────────────────────${RESET}\n"
+                echo -e "${COMMAND_COLOR}/config${RESET} = ${LANG_CHAT_SETTINGS:-settings} ${DIM}|${RESET} ${YELLOW}ESC${RESET}/${YELLOW}${LANG_CHAT_EXIT:-exit}${RESET} = ${LANG_CHAT_QUIT:-quit}"
+                echo ""
                 continue
                 ;;
 
@@ -110,7 +111,11 @@ chat_loop() {
 
 
         # Process with AI
-        echo -e "${GREEN}🤖 ${LANG_LABEL_AI} ▶ ${RESET}"
+        echo -n -e "${AI_COLOR}🤖 ${LANG_LABEL_AI} ▶ ${RESET}"
+
+        # Show thinking spinner
+        show_spinner &
+        local SPINNER_PID=$!
 
         # Get dialect prompt
         local DIALECT_PROMPT=""
@@ -145,12 +150,29 @@ IMPORTANT: This is the user's own personal data stored locally. Use the search_p
         # Send message using our Python chat system
         AI_RESPONSE=$(python3 "$SCRIPT_DIR/chat_system.py" "$CHAT_NAME" "$INPUT" "$SYSTEM_PROMPT")
 
+        # Stop spinner cleanly
+        kill $SPINNER_PID 2>/dev/null
+        wait $SPINNER_PID 2>/dev/null
+        printf "\r${AI_COLOR}🤖 ${LANG_LABEL_AI} ▶ ${RESET}"
+
         # Display AI response
         echo "$AI_RESPONSE"
 
         # Memory saving is now handled automatically in chat_system.py
 
-        echo -e "${DIM}─────────────────────────────────────────────────────${RESET}\n"
+        echo ""
+    done
+}
+
+# Show a subtle thinking spinner
+show_spinner() {
+    local chars="⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏"
+    local delay=0.1
+    while true; do
+        for (( i=0; i<${#chars}; i++ )); do
+            printf "\r${AI_COLOR}🤖 ${LANG_LABEL_AI} ▶ ${RESET}${chars:$i:1}"
+            sleep $delay
+        done
     done
 }
 

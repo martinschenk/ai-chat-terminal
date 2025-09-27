@@ -449,29 +449,68 @@ Please answer their question in a natural, friendly way using this information."
 
                     # Check for function calls
                     if "tool_calls" in message and message["tool_calls"]:
-                        # print(f"[DEBUG] ✅ OpenAI wants to call function!", file=sys.stderr)
+                        print(f"[DEBUG] ✅ OpenAI wants to call function!", file=sys.stderr)
 
-                        # Process function calls
+                        # Build messages for second API call
+                        messages_with_function = [
+                            {"role": "system", "content": system_prompt},
+                            {"role": "user", "content": user_input},
+                            {"role": "assistant", "content": None, "tool_calls": message["tool_calls"]}
+                        ]
+
+                        # Process function calls and add results
                         for tool_call in message["tool_calls"]:
                             if tool_call["type"] == "function":
                                 func_name = tool_call["function"]["name"]
                                 func_args = json.loads(tool_call["function"]["arguments"])
-                                # print(f"[DEBUG] Function: {func_name}, Args: {func_args}", file=sys.stderr)
+                                print(f"[DEBUG] Function: {func_name}, Args: {func_args}", file=sys.stderr)
 
                                 if func_name == "search_personal_data":
                                     # Execute our search function
                                     search_result = self.search_db_with_user_query(func_args.get("query", ""))
-                                    # print(f"[DEBUG] Search result: {search_result}", file=sys.stderr)
+                                    print(f"[DEBUG] Search result: {search_result}", file=sys.stderr)
 
                                     if search_result:
-                                        # Add database indicator based on user's language
+                                        # Add database indicator
                                         db_indicator = self.get_db_indicator()
-                                        ai_response = f"{search_result}\n\n{db_indicator}"
+                                        function_response = f"{search_result}\n{db_indicator}"
                                     else:
                                         # Use localized "no info" message
                                         config = self.load_config()
-                                        no_info_msg = config.get("LANG_NO_INFO_STORED", "I don't have that information stored in my memory database.")
-                                        ai_response = no_info_msg
+                                        function_response = config.get("LANG_NO_INFO_STORED", "I don't have that information stored in my memory database.")
+
+                                    # Add function result to conversation
+                                    messages_with_function.append({
+                                        "role": "tool",
+                                        "tool_call_id": tool_call["id"],
+                                        "content": function_response
+                                    })
+
+                        # Second API call to get final response
+                        print(f"[DEBUG] Making second API call with function results...", file=sys.stderr)
+                        second_payload = {
+                            "model": selected_model,
+                            "messages": messages_with_function,
+                            "max_tokens": 2000,
+                            "temperature": 0.7
+                        }
+
+                        second_response = requests.post(
+                            "https://api.openai.com/v1/chat/completions",
+                            headers=headers,
+                            json=second_payload,
+                            timeout=60
+                        )
+
+                        if second_response.status_code == 200:
+                            second_data = second_response.json()
+                            if "choices" in second_data and second_data["choices"]:
+                                ai_response = second_data["choices"][0]["message"]["content"]
+                            else:
+                                ai_response = function_response  # Fallback to function result
+                        else:
+                            print(f"[DEBUG] Second API call failed: {second_response.status_code}", file=sys.stderr)
+                            ai_response = function_response  # Fallback to function result
 
                     elif "content" in message and message["content"]:
                         # Regular text response
@@ -540,9 +579,9 @@ def main():
         # Response already printed during streaming, no need to print again
         # print(response)  # Commented out to avoid duplication with streaming output
 
-        # Print stats to stderr for debugging
-        if not stats.get("error", False):
-            print(f"Tokens: {stats['total_tokens']} | Context: {stats['messages_in_context']} messages", file=sys.stderr)
+        # Print stats to stderr for debugging (disabled for clean UI)
+        # if not stats.get("error", False):
+        #     print(f"Tokens: {stats['total_tokens']} | Context: {stats['messages_in_context']} messages", file=sys.stderr)
 
     except FileNotFoundError as e:
         print(f"Configuration error: {e}", file=sys.stderr)
