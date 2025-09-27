@@ -197,7 +197,7 @@ AI Chat Terminal features a revolutionary dual-layer memory architecture with AI
 │  • 384-dimensional vector embeddings                   │
 │  • Understands meaning, not just keywords              │
 │  • Persistent storage (~1KB per message)               │
-│  • Automatic cleanup after 30+ days                    │
+│  • Smart cleanup: keeps important messages forever     │
 └─────────────────────────────────────────────────────────┘
 
 🔍 AI Search Examples (finds meaning, not just keywords):
@@ -238,6 +238,30 @@ Search: "Docker problems" → Finds: "container won't start", "image issues"
 Search: "Docker" → Finds: any message containing "Docker"
 
 # System never breaks, always provides some search functionality
+```
+
+#### 🧹 Smart Cleanup System
+
+**Intelligent memory management that keeps what matters:**
+
+```bash
+🎯 Automatic Triggers:
+   • 5000+ messages OR 50MB+ database size
+
+🧠 Smart Deletion Priority:
+   1. Low importance messages (< 1.5 score)
+   2. Oldest timestamps first
+   3. Never deletes: names, TODOs, important keywords
+
+📊 Cleanup Target:
+   • Reduces to 4500 messages (90% of limit)
+   • Maintains optimal performance
+   • Keeps important conversations forever
+
+🔒 Protected Content:
+   • Messages containing: "name", "heißt", "bin", "remember"
+   • High importance scores (> 1.5)
+   • Recent important conversations
 ```
 
 ### Language Selection with Dialects

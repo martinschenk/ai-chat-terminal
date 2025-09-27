@@ -153,9 +153,23 @@ Search: "Docker" → Finds: any message containing "Docker" (LIKE queries)
 
 ### Memory System Integration:
 - **Auto-save**: Every chat message saved in background (non-blocking)
-- **Config Menu**: [6] Memory system → Search, stats, cleanup
+- **Config Menu**: [6] Memory system → Search, stats, smart cleanup
 - **Search Examples**: "Docker issues", "Python debugging", "API problems"
 - **Smart Scoring**: Important messages (errors, TODOs) get higher scores
+
+### Smart Cleanup System (v5.3.0):
+```bash
+# Automatic triggers:
+- 5000+ messages OR 50MB+ database size
+- Target: 90% (reduces to 4500 messages)
+
+# Deletion priority (KISS approach):
+1. importance < 1.5 + oldest first
+2. NEVER delete: names, important keywords
+3. Protected: "name", "heißt", "bin", "remember"
+
+# Result: Important conversations kept forever, performance optimal
+```
 
 ## Critical Requirements
 

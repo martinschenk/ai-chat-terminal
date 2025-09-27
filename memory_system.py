@@ -253,29 +253,57 @@ class ChatMemorySystem:
             print(f"Error getting session context: {e}", file=sys.stderr)
             return []
 
-    def cleanup_old_data(self, days_to_keep=30):
-        """Clean up old data to manage database size"""
-        cutoff_time = int(time.time()) - (days_to_keep * 24 * 3600)
-
+    def cleanup_old_data(self, force=False):
+        """Smart cleanup: Keep important messages, limit by count/size"""
         try:
-            # Get IDs to delete
-            old_ids = self.db.execute(
-                "SELECT id FROM chat_history WHERE timestamp < ?",
-                (cutoff_time,)
-            ).fetchall()
+            stats = self.get_stats()
 
-            if old_ids:
-                old_ids_list = [row[0] for row in old_ids]
-                placeholders = ','.join(['?' for _ in old_ids_list])
+            # Check if cleanup needed
+            needs_cleanup = (
+                stats['total_messages'] >= 5000 or
+                stats['db_size_mb'] >= 50 or
+                force
+            )
 
-                # Delete from both tables
-                self.db.execute(f"DELETE FROM chat_embeddings WHERE rowid IN ({placeholders})", old_ids_list)
-                self.db.execute(f"DELETE FROM chat_history WHERE id IN ({placeholders})", old_ids_list)
+            if not needs_cleanup:
+                return 0
 
-                self.db.commit()
-                return len(old_ids_list)
+            # Target: 90% of limits (4500 messages or 45MB)
+            target_messages = 4500
+
+            # Get deletable messages (priority: low importance + old first)
+            deletable = self.db.execute("""
+                SELECT id FROM chat_history
+                WHERE importance < 1.5
+                  AND content NOT LIKE '%name%'
+                  AND content NOT LIKE '%heißt%'
+                  AND content NOT LIKE '%bin%'
+                  AND content NOT LIKE '%remember%'
+                ORDER BY importance ASC, timestamp ASC
+            """).fetchall()
+
+            # Calculate how many to delete
+            current_count = stats['total_messages']
+            to_delete_count = max(0, current_count - target_messages)
+            to_delete_count = min(to_delete_count, len(deletable))
+
+            if to_delete_count == 0:
+                return 0
+
+            # Delete oldest, least important messages
+            delete_ids = [row[0] for row in deletable[:to_delete_count]]
+            placeholders = ','.join(['?' for _ in delete_ids])
+
+            # Delete from both tables if vector support available
+            if self.vector_support:
+                self.db.execute(f"DELETE FROM chat_embeddings WHERE rowid IN ({placeholders})", delete_ids)
+            self.db.execute(f"DELETE FROM chat_history WHERE id IN ({placeholders})", delete_ids)
+
+            self.db.commit()
+            return len(delete_ids)
+
         except Exception as e:
-            print(f"Error cleaning up: {e}", file=sys.stderr)
+            print(f"Error in smart cleanup: {e}", file=sys.stderr)
             return 0
 
     def get_stats(self):
@@ -319,7 +347,7 @@ def main():
         print("  stats              - Show database statistics")
         print("  search <query>     - Search for similar messages")
         print("  add <session> <role> <content> - Add a message")
-        print("  cleanup [days]     - Clean up old data (default: 30 days)")
+        print("  cleanup [force]    - Smart cleanup (5000+ msgs or 50MB triggers)")
         return
 
     memory = ChatMemorySystem()
@@ -345,9 +373,12 @@ def main():
             print(f"Added message with ID: {message_id}")
 
         elif command == 'cleanup':
-            days = int(sys.argv[2]) if len(sys.argv) >= 3 else 30
-            deleted = memory.cleanup_old_data(days)
-            print(f"Deleted {deleted} old messages")
+            force = len(sys.argv) >= 3 and sys.argv[2].lower() == 'force'
+            deleted = memory.cleanup_old_data(force)
+            if deleted > 0:
+                print(f"Smart cleanup: Deleted {deleted} low-priority messages")
+            else:
+                print("No cleanup needed (under 5000 messages and 50MB)")
 
         else:
             print(f"Unknown command: {command}")

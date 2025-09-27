@@ -457,7 +457,7 @@ memory_system_menu() {
         echo -e "${PURPLE}│${RESET}  ${GREEN}[1]${RESET} Search memories"
         echo -e "${PURPLE}│${RESET}  ${GREEN}[2]${RESET} Show recent messages"
         echo -e "${PURPLE}│${RESET}  ${GREEN}[3]${RESET} Database statistics"
-        echo -e "${PURPLE}│${RESET}  ${YELLOW}[4]${RESET} Cleanup old data (30+ days)"
+        echo -e "${PURPLE}│${RESET}  ${YELLOW}[4]${RESET} Smart cleanup (5000+ msgs/50MB)"
         echo -e "${PURPLE}│${RESET}  ${GREEN}[5]${RESET} Back to main menu"
         echo -e "${PURPLE}└─────────────────────────────────────${RESET}"
         echo ""
@@ -517,15 +517,16 @@ except:
                 echo -e "${CYAN}Press any key to continue...${RESET}"
                 read -r
                 ;;
-            4)  # Cleanup old data
+            4)  # Smart cleanup
                 echo ""
-                echo -e "${YELLOW}⚠️  This will delete messages older than 30 days${RESET}"
+                echo -e "${YELLOW}⚠️  Smart Cleanup: Removes low-priority messages if over 5000 msgs or 50MB${RESET}"
+                echo -e "${YELLOW}   Keeps important messages (names, TODOs) forever${RESET}"
                 echo -ne "${CYAN}Continue? (y/N): ${RESET}"
                 read -r confirm
                 if [[ "$confirm" =~ ^[Yy]$ ]]; then
                     if [[ -f "$SCRIPT_DIR/memory_system.py" ]]; then
-                        local DELETED=$(python3 "$SCRIPT_DIR/memory_system.py" cleanup 30 2>/dev/null)
-                        echo -e "${GREEN}$DELETED${RESET}"
+                        local RESULT=$(python3 "$SCRIPT_DIR/memory_system.py" cleanup force 2>/dev/null)
+                        echo -e "${GREEN}$RESULT${RESET}"
                     else
                         echo -e "${RED}Memory system not available${RESET}"
                     fi
