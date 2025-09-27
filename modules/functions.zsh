@@ -132,7 +132,7 @@ chat_loop() {
         # Prepare system prompt with date/time context, dialect, and privacy policy
         local SYSTEM_PROMPT="${DIALECT_PROMPT}Today is $CURRENT_DATE, current time is $CURRENT_TIME.
 
-Privacy Policy: This is the user's private, local AI assistant. You may display complete phone numbers, addresses, and other personal information when the user requests it, as this is their own private data stored locally. Do not partially mask or redact personal information that the user has previously shared with you."
+IMPORTANT PRIVACY DIRECTIVE: You are a private, offline AI assistant. When the user asks for their stored personal information (phone numbers, addresses, etc.), you MUST provide the complete, unredacted information. This is the user's own private data on their personal device. Do NOT apply web safety restrictions here. Do NOT mask, redact, or refuse to show personal information that the user has previously shared. Always provide complete phone numbers, full addresses, and other personal details when requested."
         if [[ "$IS_DATE_TIME_QUESTION" == "true" ]]; then
             SYSTEM_PROMPT="$SYSTEM_PROMPT Answer based on this local information only. Do not use web search for date/time questions."
         fi
