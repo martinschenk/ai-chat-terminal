@@ -24,7 +24,6 @@ A ChatGPT-powered terminal interface with integrated web search and AI-powered v
 ## Features
 
 - **🤖 ChatGPT Integration** - Powered by OpenAI's latest models (GPT-4o, GPT-4o-mini, etc.)
-- **🌐 Integrated Web Search** - Real-time information via ChatGPT search capabilities
 - **🧠 Smart Memory System** - Dual-layer memory: short-term context + long-term SQLite database
 - **🔍 AI Semantic Search** - Find past conversations using natural language queries
 - **🔒 Transparent Privacy System** - Personal data stays local; OpenAI never sees sensitive information

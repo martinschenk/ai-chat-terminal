@@ -433,6 +433,7 @@ Please answer their question in a natural, friendly way using this information."
 
             if response.status_code != 200:
                 error_msg = f"OpenAI API error {response.status_code}: {response.text}"
+                # print(f"[ERROR] API Call failed: {error_msg}", file=sys.stderr)
                 return error_msg, {"error": True, "status_code": response.status_code}
 
             # Process response (non-streaming for function calls)
@@ -467,7 +468,10 @@ Please answer their question in a natural, friendly way using this information."
                                         db_indicator = self.get_db_indicator()
                                         ai_response = f"{search_result}\n\n{db_indicator}"
                                     else:
-                                        ai_response = "I don't have that information stored in our conversation history."
+                                        # Use localized "no info" message
+                                        config = self.load_config()
+                                        no_info_msg = config.get("LANG_NO_INFO_STORED", "I don't have that information stored in my memory database.")
+                                        ai_response = no_info_msg
 
                     elif "content" in message and message["content"]:
                         # Regular text response

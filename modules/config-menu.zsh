@@ -47,6 +47,7 @@ show_config_menu() {
         echo -e "${PURPLE}│${RESET}  ${LANG_CONFIG_CURRENT}"
         echo -e "${PURPLE}│${RESET}  ├─ ${LANG_CONFIG_COMMAND}: ${YELLOW}$COMMAND_CHAR${RESET}"
         echo -e "${PURPLE}│${RESET}  ├─ ${LANG_CONFIG_LANGUAGE}: ${YELLOW}$LANGUAGE${RESET}"
+        echo -e "${PURPLE}│${RESET}  ├─ AI Model: ${YELLOW}${AI_CHAT_MODEL}${RESET}"
         echo -e "${PURPLE}│${RESET}  ├─ ${LANG_CONFIG_CONTEXT_WINDOW:-Context Window}: ${YELLOW}$CONTEXT_WINDOW ${LANG_CONTEXT_MESSAGES:-messages}${RESET}"
         echo -e "${PURPLE}│${RESET}  └─ ${LANG_CONFIG_ESC}: ${YELLOW}$ENABLE_ESC${RESET}"
         echo -e "${PURPLE}├─────────────────────────────────────${RESET}"
@@ -242,14 +243,14 @@ change_ai_model() {
         *) echo -e "${RED}${LANG_SELECT_INVALID:-Invalid choice}${RESET}"; sleep 2; return ;;
     esac
 
-    # Update .env file
-    if grep -q "DEFAULT_OPENAI_MODEL" "$ENV_FILE"; then
-        sed -i '' "s/DEFAULT_OPENAI_MODEL=.*/DEFAULT_OPENAI_MODEL=\"$new_model\"/" "$ENV_FILE"
+    # Update config file (the one chat_system.py actually reads from!)
+    if grep -q "AI_CHAT_MODEL" "$CONFIG_FILE"; then
+        sed -i '' "s/AI_CHAT_MODEL=.*/AI_CHAT_MODEL=\"$new_model\"/" "$CONFIG_FILE"
     else
-        echo "DEFAULT_OPENAI_MODEL=\"$new_model\"" >> "$ENV_FILE"
+        echo "AI_CHAT_MODEL=\"$new_model\"" >> "$CONFIG_FILE"
     fi
 
-    echo -e "${GREEN}✅ OpenAI Model changed to: $new_model (includes web search)${RESET}"
+    echo -e "${GREEN}✅ OpenAI Model changed to: $new_model${RESET}"
     sleep 2
 }
 

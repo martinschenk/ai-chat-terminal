@@ -1,7 +1,7 @@
 # AI Chat Terminal - Claude Code Instructions
 
 ## Project Overview
-AI Chat Terminal is a native Python CLI tool with direct OpenAI API integration that brings ChatGPT + Web Search + AI Vector Database to the terminal with 19 language support and regional dialects.
+AI Chat Terminal is a native Python CLI tool with direct OpenAI API integration that brings ChatGPT + AI Vector Database to the terminal with 19 language support and regional dialects.
 
 **GitHub**: https://github.com/martinschenk/ai-chat-terminal
 **Current Version**: 5.4.0 (Enhanced Function Calling & Privacy System - Sept 2025)
