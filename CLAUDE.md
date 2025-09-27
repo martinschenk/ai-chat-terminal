@@ -24,6 +24,46 @@ AI Chat Terminal is a native Python CLI tool with direct OpenAI API integration 
 - **Graceful Degradation**: Falls back to text search if AI unavailable
 - **Zero Setup**: Database auto-created, works on any macOS/Linux system
 
+## 🧠 Function Calling System Flow
+
+### Normal Questions (e.g. "Wann hatte Beethoven Geburtstag?")
+```
+User Input → OpenAI API → Direct Response → User
+```
+- No function calling triggered
+- No database search
+- Standard ChatGPT response
+
+### Private/Security Questions (e.g. "Wie ist meine Kreditkartennummer?")
+```
+User Input → OpenAI API (with Function Definition)
+         ↓
+   Function Call Signal ("search_personal_data")
+         ↓
+   Database Search with User Query
+         ↓
+   ┌─ Case A: Data Found ─────────────┐    ┌─ Case B: Nothing Found ──────┐
+   │                                  │    │                              │
+   │ OpenAI API (2nd call with data)  │    │ "Nicht in Datenbank         │
+   │           ↓                      │    │  gespeichert" (NO 2nd call) │
+   │ Formatted Natural Response       │    │           ↓                  │
+   │           ↓                      │    │ Localized "Not Stored" Msg   │
+   └─ User ──────────────────────────┘    └─ User ──────────────────────┘
+```
+
+### Function Detection Keywords
+OpenAI automatically detects requests for:
+- **Personal Info**: "meine Kreditkartennummer", "mein Passwort", "meine Adresse"
+- **Security Data**: "API Key", "Token", "Login", "Account"
+- **Private Details**: "Geburtstag", "Telefonnummer", "Bank", "PIN"
+- **Memory Queries**: "Wann habe ich...", "Was war mein...", "Wie heißt..."
+
+### Privacy Guarantee
+- Personal data NEVER sent to OpenAI in initial request
+- Only generic queries analyzed for function calling need
+- Actual sensitive data only processed locally
+- Second API call only if data exists and user consents
+
 ## 📁 Project Structure & Installation Locations
 
 ### Development Project Location

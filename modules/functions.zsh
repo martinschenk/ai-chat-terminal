@@ -113,8 +113,8 @@ chat_loop() {
         # Process with AI
         echo -n -e "${AI_COLOR}🤖 ${LANG_LABEL_AI} ▶ ${RESET}"
 
-        # Start spinner using a separate function to isolate job control
-        start_spinner "$LANG_LABEL_AI"
+        # Show thinking indicator
+        echo -n "Thinking..."
 
         # Get dialect prompt
         local DIALECT_PROMPT=""
@@ -149,9 +149,7 @@ CRITICAL: ALWAYS use the search_personal_data function for ANY question about pe
         # Send message using our Python chat system
         AI_RESPONSE=$(python3 "$SCRIPT_DIR/chat_system.py" "$CHAT_NAME" "$INPUT" "$SYSTEM_PROMPT")
 
-        # Stop spinner cleanly
-        stop_spinner
-        printf '\e[?25h'  # Show cursor again
+        # Clear thinking indicator and show response prompt
         printf "\r${AI_COLOR}🤖 ${LANG_LABEL_AI} ▶ ${RESET}"
 
         # Display AI response
@@ -163,44 +161,7 @@ CRITICAL: ALWAYS use the search_personal_data function for ANY question about pe
     done
 }
 
-# Start spinner in background using file-based communication
-start_spinner() {
-    local label="${1:-AI}"
-    local spinner_pid_file="/tmp/spinner_pid_$$"
-    local ai_color='\033[38;5;114m'  # Green - for 🤖 KI ▶
-    local reset='\033[0m'
-
-    # Create spinner in completely isolated subshell
-    (
-        # Hide cursor
-        printf '\e[?25l'
-
-        # Spinner loop
-        local chars="⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏"
-        local delay=0.1
-        local i=0
-        while [ -f "$spinner_pid_file" ]; do
-            printf "\r${ai_color}🤖 ${label} ▶ ${reset}${chars:$((i % ${#chars})):1}"
-            sleep $delay
-            i=$((i + 1))
-        done
-    ) &
-
-    # Store the PID
-    echo $! > "$spinner_pid_file"
-}
-
-# Stop spinner cleanly
-stop_spinner() {
-    local spinner_pid_file="/tmp/spinner_pid_$$"
-
-    if [ -f "$spinner_pid_file" ]; then
-        local spinner_pid=$(cat "$spinner_pid_file")
-        rm -f "$spinner_pid_file"  # This stops the loop
-        kill "$spinner_pid" 2>/dev/null || true
-        wait "$spinner_pid" 2>/dev/null || true
-    fi
-}
+# Spinner functions removed - now using simple "Thinking..." text
 
 # Get dialect prompt based on language
 get_dialect_prompt() {

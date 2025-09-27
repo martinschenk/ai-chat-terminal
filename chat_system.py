@@ -471,27 +471,34 @@ Please answer their question in a natural, friendly way using this information."
                                 if func_name == "search_personal_data":
                                     # Execute our search function
                                     query = func_args.get("query", "")
-                                    print(f"[DEBUG] Function called with query: '{query}'", file=sys.stderr)
+                                    # print(f"[DEBUG] Function called with query: '{query}'", file=sys.stderr)
                                     search_result = self.search_db_with_user_query(query)
-                                    print(f"[DEBUG] Search result type: {type(search_result)}, value: {repr(search_result)}", file=sys.stderr)
+                                    # print(f"[DEBUG] Search result type: {type(search_result)}, value: {repr(search_result)}", file=sys.stderr)
 
                                     if search_result and search_result.strip():
                                         # Add database indicator
                                         db_indicator = self.get_db_indicator()
                                         function_response = f"{search_result}\n{db_indicator}"
-                                        print(f"[DEBUG] Will make second API call with data: {search_result[:50]}...", file=sys.stderr)
+                                        # print(f"[DEBUG] Will make second API call with data: {search_result[:50]}...", file=sys.stderr)
                                     else:
                                         # Use localized "no info" message and don't make second API call
-                                        print(f"[DEBUG] No search result found - returning no-info message directly", file=sys.stderr)
+                                        # print(f"[DEBUG] No search result found - returning no-info message directly", file=sys.stderr)
                                         try:
                                             config = self.load_config()
                                             ai_response = config.get("LANG_NO_INFO_STORED", "I don't have that information stored in my memory database.")
                                         except Exception as e:
-                                            print(f"[DEBUG] Config loading failed: {e}", file=sys.stderr)
+                                            # print(f"[DEBUG] Config loading failed: {e}", file=sys.stderr)
                                             ai_response = "I don't have that information stored in my memory database."
-                                        print(f"[DEBUG] Final ai_response: {ai_response}", file=sys.stderr)
+                                        # print(f"[DEBUG] Final ai_response: {ai_response}", file=sys.stderr)
                                         # Return immediately to prevent any further processing
-                                        return ai_response
+                                        return ai_response, {
+                                            "error": False,
+                                            "input_tokens": 0,
+                                            "output_tokens": self.count_tokens(ai_response),
+                                            "total_tokens": self.count_tokens(ai_response),
+                                            "model": self.model,
+                                            "messages_in_context": len(messages)
+                                        }
 
                         # Only make second API call if we have actual data
                         if search_result and search_result.strip():
