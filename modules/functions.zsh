@@ -45,7 +45,10 @@ chat_loop() {
 
         # Add to memory system (background, don't block chat)
         if [[ -f "$SCRIPT_DIR/memory_system.py" ]]; then
-            python3 "$SCRIPT_DIR/memory_system.py" add "$session_id" "$role" "$content" &>/dev/null &
+            {
+                python3 "$SCRIPT_DIR/memory_system.py" add "$session_id" "$role" "$content" &>/dev/null
+            } &
+            disown
         fi
     }
 
