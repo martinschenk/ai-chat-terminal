@@ -1,10 +1,10 @@
 # AI Chat Terminal - Claude Code Instructions
 
 ## Project Overview
-AI Chat Terminal is a native Python CLI tool with direct OpenAI API integration that brings ChatGPT + AI Vector Database to the terminal with 19 language support and regional dialects.
+AI Chat Terminal is a native Python CLI tool with direct OpenAI API integration that brings ChatGPT with local memory and vector database to the terminal, supporting 19 languages with regional dialects.
 
 **GitHub**: https://github.com/martinschenk/ai-chat-terminal
-**Current Version**: 5.4.1 (Perfect Language Architecture & Function Calling - Sept 2025)
+**Current Version**: 5.4.1 (Language Architecture & Function Calling - Sept 2025)
 
 ## 🚨 Task Priority System
 **IMPORTANT**: Always work on the most urgent issues first:
@@ -15,8 +15,8 @@ AI Chat Terminal is a native Python CLI tool with direct OpenAI API integration 
 **Workflow**: Use `gh issue list --repo martinschenk/ai-chat-terminal --state open` to check priority and always start with highest priority items.
 
 **🎯 Major Features (v5.4.1):**
-- **Perfect Language Architecture**: English system prompts + DIALECT_PROMPT for output language
-- **Enhanced Function Calling**: Personal notebook approach bypasses OpenAI content restrictions
+- **Language Architecture**: English system prompts + DIALECT_PROMPT for output language
+- **Function Calling**: Personal notebook approach bypasses OpenAI content restrictions
 - **Transparent Privacy System**: OpenAI Function Calling ensures personal data never leaves local system
 - **Native OpenAI Integration**: Direct API calls without shell-gpt dependency
 - **Dual-Layer Memory**: Short-term context (5-50 msgs) + Long-term SQLite database
@@ -65,7 +65,7 @@ OpenAI automatically detects requests for:
 - Actual sensitive data only processed locally
 - Second API call only if data exists and user consents
 
-## 🌍 Perfect Language Architecture (v5.4.1)
+## 🌍 Language Architecture (v5.4.1)
 
 ### Design Principle: English Source of Truth + DIALECT_PROMPT Translation
 
@@ -91,7 +91,7 @@ DIALECT_PROMPT="[SYSTEM: Antworte auf Deutsch]"
 - ✅ **Easy Maintenance**: Only UI strings need translation
 - ✅ **Consistent Logic**: Same AI behavior across languages
 - ✅ **No Content Restrictions**: "Personal notebook" approach bypasses OpenAI limitations
-- ✅ **Perfect Responses**: Native-quality responses in user's language
+- ✅ **Native Responses**: Responses in user's language
 
 ### Language Loading Architecture:
 ```python

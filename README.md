@@ -1,8 +1,6 @@
 # AI Chat Terminal
 
-A ChatGPT-powered terminal interface with integrated web search and AI-powered vector database.
-
-**🚀 Transform your terminal into an intelligent AI assistant with memory that never forgets!**
+A ChatGPT-powered terminal interface with local memory and vector database.
 
 [![Version](https://img.shields.io/badge/version-5.4.1-blue.svg)](https://github.com/martinschenk/ai-chat-terminal)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
@@ -26,8 +24,8 @@ A ChatGPT-powered terminal interface with integrated web search and AI-powered v
 - **🤖 ChatGPT Integration** - Powered by OpenAI's latest models (GPT-4o, GPT-4o-mini, etc.)
 - **🧠 Smart Memory System** - Dual-layer memory: short-term context + long-term SQLite database
 - **🔍 AI Semantic Search** - Find past conversations using natural language queries
-- **🔒 Perfect Privacy System** - Personal data stays local; "personal notebook" bypasses OpenAI restrictions
-- **🌍 Perfect Language Architecture** - English system prompts + native responses in your language
+- **🔒 Privacy System** - Personal data stays local; "personal notebook" bypasses OpenAI restrictions
+- **🌍 Language Architecture** - English system prompts + native responses in your language
 - **🌐 Cross-Language Search** - Query in any language, find content in any other with multilingual E5 model
 - **🗣️ Language Detection** - Automatic detection and storage per message for all 19 supported languages
 - **💰 Cost-Optimized Context** - Prevents token cost explosion by limiting chat history sent to API
@@ -364,16 +362,16 @@ Result: "My Visa card is 1234-5678-9012-3456"
 ```
 
 **Key Benefits:**
-- ✅ **Zero false refusals**: OpenAI never blocks access to YOUR data
+- ✅ **Reduced false refusals**: OpenAI rarely blocks access to your data
 - ✅ **Natural responses**: AI formats the answer professionally
 - ✅ **Language support**: Works with all 19 supported languages
 - ✅ **Smart routing**: Public questions go direct, private questions search local DB
-- ✅ **Complete privacy**: Sensitive data never transmitted to OpenAI servers
+- ✅ **Privacy**: Sensitive data never transmitted to OpenAI servers
 
 ## 🆕 What's New in v5.4.1 (September 2025)
 
-### 🌍 Perfect Language Architecture
-**Revolutionary multilingual design that just works:**
+### 🌍 Language Architecture
+**Improved multilingual design:**
 
 - **English System Prompts**: Universal compatibility, easy maintenance
 - **DIALECT_PROMPT Translation**: `[SYSTEM: Antworte auf Deutsch]` controls output language
@@ -393,14 +391,14 @@ Result: "My Visa card is 1234-5678-9012-3456"
 ✅ English prompts + German responses
 ✅ All strings from language files
 ✅ Credit cards work: "Deine Kreditkartennummer ist 12345"
-✅ Perfect native responses in all 19 languages
+✅ Native responses in all 19 languages
 ```
 
-### 🧠 Enhanced Function Calling
-- **Personal Data Access**: Store and retrieve ANY information (credit cards, passwords, etc.)
-- **Zero Refusals**: "Personal notebook" approach eliminates OpenAI safety blocks
+### 🧠 Function Calling Improvements
+- **Personal Data Access**: Store and retrieve information (credit cards, passwords, etc.)
+- **Reduced Refusals**: "Personal notebook" approach reduces OpenAI safety blocks
 - **Native Language Responses**: Function results formatted in your selected language
-- **Clean Production UI**: No debug messages, professional terminal experience
+- **Clean UI**: No debug messages, professional terminal experience
 
 
 ## Configuration Options
