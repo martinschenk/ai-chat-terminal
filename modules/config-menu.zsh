@@ -66,7 +66,43 @@ show_config_menu() {
         echo ""
 
         echo -ne "${CYAN}${LANG_CONFIG_SELECT_OPTION:-Select [1-10]:} ${RESET}"
-        read -r choice
+
+        # Handle ESC key detection in config menu
+        local choice=""
+        if [[ "$ENABLE_ESC" == "true" ]] && [[ -t 0 ]]; then
+            # Save current terminal settings
+            OLD_STTY=$(stty -g)
+            stty raw -echo min 1 time 0 2>/dev/null
+
+            while true; do
+                char=$(dd bs=1 count=1 2>/dev/null)
+
+                if [[ $char == $'\e' ]]; then
+                    # ESC pressed - return to terminal
+                    stty "$OLD_STTY" 2>/dev/null
+                    echo -e "\n\n${YELLOW}👋 ${LANG_MSG_GOODBYE:-Goodbye!}${RESET}\n"
+                    return
+                elif [[ $char == $'\r' ]] || [[ $char == $'\n' ]]; then
+                    # Enter pressed
+                    stty "$OLD_STTY" 2>/dev/null
+                    echo
+                    break
+                elif [[ $char == $'\177' ]] || [[ $char == $'\b' ]]; then
+                    # Backspace
+                    if [[ -n "$choice" ]]; then
+                        choice="${choice%?}"
+                        echo -ne "\b \b"
+                    fi
+                else
+                    # Normal character
+                    choice="${choice}${char}"
+                    echo -n "$char"
+                fi
+            done
+        else
+            # Simple read without ESC
+            read -r choice
+        fi
 
         case $choice in
             1)  # Change command
@@ -414,36 +450,33 @@ EOF
 
 # Show about and version information
 show_about_info() {
-    local CYAN='\\033[0;36m'
-    local GREEN='\\033[0;32m'
-    local YELLOW='\\033[1;33m'
-    local PURPLE='\\033[0;35m'
-    local BLUE='\\033[0;34m'
-    local RESET='\\033[0m'
-    local BOLD='\\033[1m'
-    local DIM='\\033[2m'
+    local CYAN='\033[0;36m'
+    local GREEN='\033[0;32m'
+    local YELLOW='\033[1;33m'
+    local BLUE='\033[0;34m'
+    local RESET='\033[0m'
+    local BOLD='\033[1m'
+    local DIM='\033[2m'
 
     clear
-    echo -e "${BOLD}${CYAN}ℹ️  About AI Chat Terminal${RESET}\\n"
+    echo -e "${CYAN}ℹ️  About AI Chat Terminal${RESET}\n"
 
-    echo -e "${PURPLE}╔═══════════════════════════════════════╗${RESET}"
-    echo -e "${PURPLE}║${RESET}                                       ${PURPLE}║${RESET}"
-    echo -e "${PURPLE}║${RESET}  ${BOLD}AI Chat Terminal${RESET}                  ${PURPLE}║${RESET}"
-    echo -e "${PURPLE}║${RESET}  ${CYAN}Version: ${AI_CHAT_VERSION}${RESET}                      ${PURPLE}║${RESET}"
-    echo -e "${PURPLE}║${RESET}                                       ${PURPLE}║${RESET}"
-    echo -e "${PURPLE}║${RESET}  ${YELLOW}Author:${RESET} ${AI_CHAT_AUTHOR}           ${PURPLE}║${RESET}"
-    echo -e "${PURPLE}║${RESET}  ${YELLOW}License:${RESET} ${AI_CHAT_LICENSE} License              ${PURPLE}║${RESET}"
-    echo -e "${PURPLE}║${RESET}                                       ${PURPLE}║${RESET}"
-    echo -e "${PURPLE}║${RESET}  ${BLUE}Repository:${RESET}                        ${PURPLE}║${RESET}"
-    echo -e "${PURPLE}║${RESET}  ${DIM}${AI_CHAT_REPOSITORY}${RESET}"
-    echo -e "${PURPLE}║${RESET}                                       ${PURPLE}║${RESET}"
-    echo -e "${PURPLE}║${RESET}  ${GREEN}🤖 ChatGPT-powered terminal${RESET}        ${PURPLE}║${RESET}"
-    echo -e "${PURPLE}║${RESET}  ${GREEN}🔍 Integrated web search${RESET}            ${PURPLE}║${RESET}"
-    echo -e "${PURPLE}║${RESET}  ${GREEN}🌍 19 languages + dialects${RESET}         ${PURPLE}║${RESET}"
-    echo -e "${PURPLE}║${RESET}  ${GREEN}💬 Conversational memory${RESET}           ${PURPLE}║${RESET}"
-    echo -e "${PURPLE}║${RESET}                                       ${PURPLE}║${RESET}"
-    echo -e "${PURPLE}╚═══════════════════════════════════════╝${RESET}"
+    echo -e "${CYAN}${BOLD}AI Chat Terminal${RESET}"
+    echo -e "${DIM}Version: ${RESET}${AI_CHAT_VERSION}"
     echo ""
+
+    echo -e "${YELLOW}Author:${RESET} ${AI_CHAT_AUTHOR}"
+    echo -e "${YELLOW}License:${RESET} ${AI_CHAT_LICENSE}"
+    echo -e "${YELLOW}Repository:${RESET} ${DIM}${AI_CHAT_REPOSITORY}${RESET}"
+    echo ""
+
+    echo -e "${GREEN}Features:${RESET}"
+    echo -e "  • ${GREEN}ChatGPT-powered terminal${RESET}"
+    echo -e "  • ${GREEN}AI Vector Database memory${RESET}"
+    echo -e "  • ${GREEN}19 languages + dialects${RESET}"
+    echo -e "  • ${GREEN}Function calling support${RESET}"
+    echo ""
+
     echo -e "${DIM}Built on Shell-GPT by TheR1D${RESET}"
     echo -e "${DIM}Copyright © 2025 Martin Schenk${RESET}"
     echo ""
@@ -505,7 +538,43 @@ memory_system_menu() {
         echo ""
 
         echo -ne "${CYAN}Select [1-5]: ${RESET}"
-        read -r choice
+
+        # Handle ESC key detection in memory menu
+        local choice=""
+        if [[ "$ENABLE_ESC" == "true" ]] && [[ -t 0 ]]; then
+            # Save current terminal settings
+            OLD_STTY=$(stty -g)
+            stty raw -echo min 1 time 0 2>/dev/null
+
+            while true; do
+                char=$(dd bs=1 count=1 2>/dev/null)
+
+                if [[ $char == $'\e' ]]; then
+                    # ESC pressed - return to terminal
+                    stty "$OLD_STTY" 2>/dev/null
+                    echo -e "\n\n${YELLOW}👋 ${LANG_MSG_GOODBYE:-Goodbye!}${RESET}\n"
+                    return
+                elif [[ $char == $'\r' ]] || [[ $char == $'\n' ]]; then
+                    # Enter pressed
+                    stty "$OLD_STTY" 2>/dev/null
+                    echo
+                    break
+                elif [[ $char == $'\177' ]] || [[ $char == $'\b' ]]; then
+                    # Backspace
+                    if [[ -n "$choice" ]]; then
+                        choice="${choice%?}"
+                        echo -ne "\b \b"
+                    fi
+                else
+                    # Normal character
+                    choice="${choice}${char}"
+                    echo -n "$char"
+                fi
+            done
+        else
+            # Simple read without ESC
+            read -r choice
+        fi
 
         case $choice in
             1)  # Search memories

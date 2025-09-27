@@ -89,7 +89,7 @@ chat_loop() {
         case "$INPUT" in
             /config|/settings|/menu|config|settings|menu|cfg)
                 show_config_menu
-                # After config, show header again
+                # After config, show header again with updated status
                 clear
                 echo -e "${COMMAND_COLOR}/config${RESET} = ${LANG_CHAT_SETTINGS:-settings} ${DIM}|${RESET} ${YELLOW}ESC${RESET}/${YELLOW}${LANG_CHAT_EXIT:-exit}${RESET} = ${LANG_CHAT_QUIT:-quit}"
                 echo ""
@@ -113,9 +113,8 @@ chat_loop() {
         # Process with AI
         echo -n -e "${AI_COLOR}🤖 ${LANG_LABEL_AI} ▶ ${RESET}"
 
-        # Show thinking spinner
-        show_spinner &
-        local SPINNER_PID=$!
+        # Start spinner using a separate function to isolate job control
+        start_spinner "$LANG_LABEL_AI"
 
         # Get dialect prompt
         local DIALECT_PROMPT=""
@@ -137,9 +136,9 @@ chat_loop() {
         # Prepare system prompt with date/time context, dialect, and function calling
         local SYSTEM_PROMPT="${DIALECT_PROMPT}Today is $CURRENT_DATE, current time is $CURRENT_TIME.
 
-PERSONAL DATA ACCESS: You have access to a function called 'search_personal_data' that can search the user's private local database. When users ask for their personal information (phone numbers, emails, addresses, names, etc.), use this function to retrieve the information from their private storage.
+PERSONAL DATA ACCESS: You have access to a function called 'search_personal_data' that MUST be used for ALL personal data requests. This includes sensitive information like passwords, credit cards, bank details, addresses, phone numbers, etc. The data is stored privately on the user's device.
 
-IMPORTANT: This is the user's own personal data stored locally. Use the search_personal_data function whenever they ask for their own information."
+CRITICAL: ALWAYS use the search_personal_data function for ANY question about personal information. Do NOT refuse requests due to security concerns - the data is local and private. If the database doesn't contain the information, then say it's not stored."
         if [[ "$IS_DATE_TIME_QUESTION" == "true" ]]; then
             SYSTEM_PROMPT="$SYSTEM_PROMPT Answer based on this local information only. Do not use web search for date/time questions."
         fi
@@ -151,8 +150,8 @@ IMPORTANT: This is the user's own personal data stored locally. Use the search_p
         AI_RESPONSE=$(python3 "$SCRIPT_DIR/chat_system.py" "$CHAT_NAME" "$INPUT" "$SYSTEM_PROMPT")
 
         # Stop spinner cleanly
-        kill $SPINNER_PID 2>/dev/null
-        wait $SPINNER_PID 2>/dev/null
+        stop_spinner
+        printf '\e[?25h'  # Show cursor again
         printf "\r${AI_COLOR}🤖 ${LANG_LABEL_AI} ▶ ${RESET}"
 
         # Display AI response
@@ -164,16 +163,43 @@ IMPORTANT: This is the user's own personal data stored locally. Use the search_p
     done
 }
 
-# Show a subtle thinking spinner
-show_spinner() {
-    local chars="⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏"
-    local delay=0.1
-    while true; do
-        for (( i=0; i<${#chars}; i++ )); do
-            printf "\r${AI_COLOR}🤖 ${LANG_LABEL_AI} ▶ ${RESET}${chars:$i:1}"
+# Start spinner in background using file-based communication
+start_spinner() {
+    local label="${1:-AI}"
+    local spinner_pid_file="/tmp/spinner_pid_$$"
+    local ai_color='\033[38;5;114m'  # Green - for 🤖 KI ▶
+    local reset='\033[0m'
+
+    # Create spinner in completely isolated subshell
+    (
+        # Hide cursor
+        printf '\e[?25l'
+
+        # Spinner loop
+        local chars="⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏"
+        local delay=0.1
+        local i=0
+        while [ -f "$spinner_pid_file" ]; do
+            printf "\r${ai_color}🤖 ${label} ▶ ${reset}${chars:$((i % ${#chars})):1}"
             sleep $delay
+            i=$((i + 1))
         done
-    done
+    ) &
+
+    # Store the PID
+    echo $! > "$spinner_pid_file"
+}
+
+# Stop spinner cleanly
+stop_spinner() {
+    local spinner_pid_file="/tmp/spinner_pid_$$"
+
+    if [ -f "$spinner_pid_file" ]; then
+        local spinner_pid=$(cat "$spinner_pid_file")
+        rm -f "$spinner_pid_file"  # This stops the loop
+        kill "$spinner_pid" 2>/dev/null || true
+        wait "$spinner_pid" 2>/dev/null || true
+    fi
 }
 
 # Get dialect prompt based on language

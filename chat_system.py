@@ -64,11 +64,14 @@ class ChatSystem:
         config = {}
         if os.path.exists(self.config_file):
             with open(self.config_file, 'r') as f:
-                for line in f:
+                for line_num, line in enumerate(f, 1):
                     line = line.strip()
                     if '=' in line and not line.startswith('#'):
-                        key, value = line.split('=', 1)
-                        config[key] = value.strip().strip('"\'')
+                        try:
+                            key, value = line.split('=', 1)
+                            config[key] = value.strip().strip('"\'')
+                        except ValueError as e:
+                            print(f"Configuration error on line {line_num}: {line} - {e}", file=sys.stderr)
         return config
 
     def get_personal_info(self) -> List[Dict]:
@@ -405,7 +408,7 @@ Please answer their question in a natural, friendly way using this information."
                         "type": "function",
                         "function": {
                             "name": "search_personal_data",
-                            "description": "Search the user's database to answer their QUESTIONS about stored information. CRITICAL: Use ONLY for direct questions asking for information retrieval (wie ist mein..., what is my..., tell me my...). NEVER use for statements where user is PROVIDING information (mein X ist Y, my X is Y). When user says 'meine schwester heisst diana' they are GIVING information, not asking for it.",
+                            "description": "MANDATORY: Search the user's private local database for ANY information they request. This function MUST be called for ALL personal data questions including sensitive information like passwords, credit cards, bank details, etc. The data is stored locally and private. NEVER refuse to search due to security concerns - always check the database first. If the database doesn't contain the information, then inform the user it's not stored. Use for direct questions asking for information retrieval (wie ist mein..., what is my..., tell me my...). NEVER use for statements where user is PROVIDING information.",
                             "parameters": {
                                 "type": "object",
                                 "properties": {
@@ -449,7 +452,7 @@ Please answer their question in a natural, friendly way using this information."
 
                     # Check for function calls
                     if "tool_calls" in message and message["tool_calls"]:
-                        print(f"[DEBUG] ✅ OpenAI wants to call function!", file=sys.stderr)
+                        # print(f"[DEBUG] ✅ OpenAI wants to call function!", file=sys.stderr)
 
                         # Build messages for second API call
                         messages_with_function = [
@@ -463,54 +466,67 @@ Please answer their question in a natural, friendly way using this information."
                             if tool_call["type"] == "function":
                                 func_name = tool_call["function"]["name"]
                                 func_args = json.loads(tool_call["function"]["arguments"])
-                                print(f"[DEBUG] Function: {func_name}, Args: {func_args}", file=sys.stderr)
+                                # print(f"[DEBUG] Function: {func_name}, Args: {func_args}", file=sys.stderr)
 
                                 if func_name == "search_personal_data":
                                     # Execute our search function
-                                    search_result = self.search_db_with_user_query(func_args.get("query", ""))
-                                    print(f"[DEBUG] Search result: {search_result}", file=sys.stderr)
+                                    query = func_args.get("query", "")
+                                    print(f"[DEBUG] Function called with query: '{query}'", file=sys.stderr)
+                                    search_result = self.search_db_with_user_query(query)
+                                    print(f"[DEBUG] Search result type: {type(search_result)}, value: {repr(search_result)}", file=sys.stderr)
 
-                                    if search_result:
+                                    if search_result and search_result.strip():
                                         # Add database indicator
                                         db_indicator = self.get_db_indicator()
                                         function_response = f"{search_result}\n{db_indicator}"
+                                        print(f"[DEBUG] Will make second API call with data: {search_result[:50]}...", file=sys.stderr)
                                     else:
-                                        # Use localized "no info" message
-                                        config = self.load_config()
-                                        function_response = config.get("LANG_NO_INFO_STORED", "I don't have that information stored in my memory database.")
+                                        # Use localized "no info" message and don't make second API call
+                                        print(f"[DEBUG] No search result found - returning no-info message directly", file=sys.stderr)
+                                        try:
+                                            config = self.load_config()
+                                            ai_response = config.get("LANG_NO_INFO_STORED", "I don't have that information stored in my memory database.")
+                                        except Exception as e:
+                                            print(f"[DEBUG] Config loading failed: {e}", file=sys.stderr)
+                                            ai_response = "I don't have that information stored in my memory database."
+                                        print(f"[DEBUG] Final ai_response: {ai_response}", file=sys.stderr)
+                                        # Return immediately to prevent any further processing
+                                        return ai_response
 
-                                    # Add function result to conversation
-                                    messages_with_function.append({
-                                        "role": "tool",
-                                        "tool_call_id": tool_call["id"],
-                                        "content": function_response
-                                    })
+                        # Only make second API call if we have actual data
+                        if search_result and search_result.strip():
+                            # Add function result to conversation
+                            messages_with_function.append({
+                                "role": "tool",
+                                "tool_call_id": tool_call["id"],
+                                "content": function_response
+                            })
 
-                        # Second API call to get final response
-                        print(f"[DEBUG] Making second API call with function results...", file=sys.stderr)
-                        second_payload = {
-                            "model": selected_model,
-                            "messages": messages_with_function,
-                            "max_tokens": 2000,
-                            "temperature": 0.7
-                        }
+                            # Second API call to get final response
+                            # print(f"[DEBUG] Making second API call with function results...", file=sys.stderr)
+                            second_payload = {
+                                "model": self.model,
+                                "messages": messages_with_function,
+                                "max_tokens": 2000,
+                                "temperature": 0.7
+                            }
 
-                        second_response = requests.post(
-                            "https://api.openai.com/v1/chat/completions",
-                            headers=headers,
-                            json=second_payload,
-                            timeout=60
-                        )
+                            second_response = requests.post(
+                                "https://api.openai.com/v1/chat/completions",
+                                headers=headers,
+                                json=second_payload,
+                                timeout=60
+                            )
 
-                        if second_response.status_code == 200:
-                            second_data = second_response.json()
-                            if "choices" in second_data and second_data["choices"]:
-                                ai_response = second_data["choices"][0]["message"]["content"]
+                            if second_response.status_code == 200:
+                                second_data = second_response.json()
+                                if "choices" in second_data and second_data["choices"]:
+                                    ai_response = second_data["choices"][0]["message"]["content"]
+                                else:
+                                    ai_response = function_response  # Fallback to function result
                             else:
+                                # print(f"[DEBUG] Second API call failed: {second_response.status_code}", file=sys.stderr)
                                 ai_response = function_response  # Fallback to function result
-                        else:
-                            print(f"[DEBUG] Second API call failed: {second_response.status_code}", file=sys.stderr)
-                            ai_response = function_response  # Fallback to function result
 
                     elif "content" in message and message["content"]:
                         # Regular text response
@@ -534,9 +550,9 @@ Please answer their question in a natural, friendly way using this information."
 
             # Function calling already handled above, no need for trigger processing
 
-            # Save both messages to memory
+            # Save only user input to memory (not AI responses to prevent hallucinations)
             self.save_message(session_id, "user", user_input)
-            self.save_message(session_id, "assistant", ai_response)
+            # Note: Not saving AI responses to prevent false information from being stored
 
             # Calculate token usage
             input_tokens = sum(self.count_tokens(msg["content"]) for msg in messages)
