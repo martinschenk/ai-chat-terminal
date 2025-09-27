@@ -180,6 +180,43 @@ class ChatSystem:
         """Rough token count estimation (1 token ≈ 4 characters)"""
         return len(text) // 4
 
+    def get_db_indicator(self) -> str:
+        """Get database source indicator from language file"""
+        try:
+            # Get language from config
+            language = self.config.get("AI_CHAT_LANGUAGE", "en")
+
+            # Find base language for dialect inheritance
+            base_lang = language.split('-')[0] if '-' in language else language
+
+            # Try to read from language file
+            lang_file = os.path.join(self.config_dir, "lang", f"{language}.conf")
+            if not os.path.exists(lang_file):
+                lang_file = os.path.join(self.config_dir, "lang", f"{base_lang}.conf")
+            if not os.path.exists(lang_file):
+                lang_file = os.path.join(self.config_dir, "lang", "en.conf")
+
+            # Read LANG_DB_SOURCE from language file
+            if os.path.exists(lang_file):
+                with open(lang_file, 'r', encoding='utf-8') as f:
+                    for line in f:
+                        line = line.strip()
+                        if line.startswith('LANG_DB_SOURCE='):
+                            # Extract value (remove quotes)
+                            value = line.split('=', 1)[1].strip()
+                            if value.startswith('"') and value.endswith('"'):
+                                value = value[1:-1]
+                            elif value.startswith("'") and value.endswith("'"):
+                                value = value[1:-1]
+                            return value
+
+            # Fallback if not found
+            return "🗄️ Source: Local database"
+
+        except Exception as e:
+            print(f"Warning: Could not load DB indicator: {e}", file=sys.stderr)
+            return "🗄️ Source: Local database"
+
     def handle_db_search_triggers(self, ai_response: str, user_input: str = "") -> str:
         """Handle DB search triggers in AI response"""
         # Check if response contains search trigger
@@ -211,7 +248,7 @@ class ChatSystem:
             return ai_response
 
     def search_db_with_user_query(self, user_input: str) -> str:
-        """Search database using the user's original question"""
+        """Search database using the user's original question and extract answer with OpenAI"""
         if not user_input.strip():
             return None
 
@@ -246,50 +283,76 @@ class ChatSystem:
                 cursor.execute(f"""
                     SELECT content, role, timestamp FROM chat_history
                     WHERE ({where_clause})
-                    ORDER BY timestamp DESC LIMIT 10
+                    ORDER BY timestamp DESC LIMIT 5
                 """, params)
 
                 rows = cursor.fetchall()
 
                 if rows:
-                    # Look for specific data patterns in the results
-                    for content, role, timestamp in rows:
+                    # Collect relevant content (up to 3 entries)
+                    found_contents = [row[0] for row in rows[:3]]
+                    conn.close()
 
-                        # Phone number pattern
-                        phone_match = re.search(r'\b\d{6,}\b', content)
-                        if phone_match and any(word in user_input.lower() for word in ['telefon', 'phone', 'nummer']):
-                            conn.close()
-                            return phone_match.group()
+                    # Smart optimization: Skip extraction for short, clear results
+                    if len(found_contents) == 1:
+                        content = found_contents[0].strip()
+                        # If it's short and not a question, return directly
+                        if len(content) < 100 and not content.endswith('?'):
+                            return content
 
-                        # Name pattern
-                        name_patterns = [
-                            r'(?:name|heiße|bin)\s+(?:ist\s+)?(\w+)',
-                            r'ich\s+bin\s+(\w+)',
-                            r'my\s+name\s+is\s+(\w+)'
-                        ]
-                        if any(word in user_input.lower() for word in ['name', 'heiße', 'called']):
-                            for pattern in name_patterns:
-                                name_match = re.search(pattern, content, re.IGNORECASE)
-                                if name_match:
-                                    conn.close()
-                                    return name_match.group(1)
-
-                        # Email pattern
-                        email_match = re.search(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b', content)
-                        if email_match and 'email' in user_input.lower():
-                            conn.close()
-                            return email_match.group()
-
-                    # If no specific pattern found, return most relevant content
-                    if rows:
-                        conn.close()
-                        return rows[0][0]  # Most recent relevant message
+                    # Use OpenAI to extract the specific answer
+                    return self.extract_answer_from_content(user_input, found_contents)
 
             conn.close()
             return None
 
         except Exception as e:
             print(f"Warning: DB search failed: {e}", file=sys.stderr)
+            return None
+
+    def extract_answer_from_content(self, user_question: str, db_contents: list) -> str:
+        """Use OpenAI to extract specific answer from database content"""
+        try:
+            # Prepare extraction prompt
+            content_text = "\n".join(f"- {content}" for content in db_contents)
+
+            prompt = f"""The user asks: "{user_question}"
+
+From their personal database:
+{content_text}
+
+Please answer their question in a natural, friendly way using this information."""
+
+            # Make extraction API call (use cheapest model)
+            headers = {
+                "Authorization": f"Bearer {self.api_key}",
+                "Content-Type": "application/json"
+            }
+
+            payload = {
+                "model": "gpt-3.5-turbo",  # Fastest model for extraction
+                "messages": [{"role": "user", "content": prompt}],
+                "max_tokens": 80,  # Enough for complete natural sentences
+                "temperature": 0  # Deterministic for extractions
+            }
+
+            response = requests.post(
+                self.api_url,
+                headers=headers,
+                json=payload,
+                timeout=15
+            )
+
+            if response.status_code == 200:
+                data = response.json()
+                if "choices" in data and data["choices"]:
+                    extracted = data["choices"][0]["message"]["content"].strip()
+                    return extracted if extracted else None
+
+            return None
+
+        except Exception as e:
+            print(f"Warning: Extraction failed: {e}", file=sys.stderr)
             return None
 
     def send_message(self, session_id: str, user_input: str, system_prompt: str = "") -> Tuple[str, Dict]:
@@ -342,21 +405,16 @@ class ChatSystem:
                         "type": "function",
                         "function": {
                             "name": "search_personal_data",
-                            "description": "Search for personal information in the user's private local database",
+                            "description": "Search the user's database to answer their QUESTIONS about stored information. Use ONLY for questions like 'what is my...', 'how is my...', 'tell me my...'. Never use for statements like 'my X is Y' or when user is providing new information.",
                             "parameters": {
                                 "type": "object",
                                 "properties": {
                                     "query": {
                                         "type": "string",
-                                        "description": "The search query to find personal information"
-                                    },
-                                    "data_type": {
-                                        "type": "string",
-                                        "enum": ["phone", "email", "name", "address", "general"],
-                                        "description": "Type of personal data being requested"
+                                        "description": "The user's original question to search in local database"
                                     }
                                 },
-                                "required": ["query", "data_type"]
+                                "required": ["query"]
                             }
                         }
                     }
@@ -405,7 +463,9 @@ class ChatSystem:
                                     # print(f"[DEBUG] Search result: {search_result}", file=sys.stderr)
 
                                     if search_result:
-                                        ai_response = f"Your {func_args.get('data_type', 'information')}: {search_result}"
+                                        # Add database indicator based on user's language
+                                        db_indicator = self.get_db_indicator()
+                                        ai_response = f"{search_result}\n\n{db_indicator}"
                                     else:
                                         ai_response = "I don't have that information stored in our conversation history."
 
