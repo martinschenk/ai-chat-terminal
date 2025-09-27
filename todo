@@ -1,6 +1,16 @@
 #!/bin/bash
 # AI Chat Terminal - Smart GitHub Issue Creator
 # Creates GitHub issues from German/English input with AI analysis
+#
+# Usage:
+#   ./todo "Single line issue description"
+#   ./todo     (then enter multiline text, end with Ctrl+D)
+#
+# Features:
+# - Supports multiline text and special characters
+# - AI analyzes and categorizes issues automatically
+# - Translates German input to English
+# - Creates professional GitHub issues with proper labels
 
 set -e
 
@@ -31,13 +41,22 @@ if ! gh auth status >/dev/null 2>&1; then
     exit 1
 fi
 
-# Get user input (everything after 'todo')
-USER_INPUT="$*"
+# Get user input - handle multiline text and special characters
+if [ $# -eq 0 ]; then
+    echo -e "${YELLOW}📝 Enter your idea or bug report (end with Ctrl+D on empty line):${RESET}"
+    echo -e "${BLUE}Supports multiline text and special characters${RESET}"
+    echo ""
 
-if [ -z "$USER_INPUT" ]; then
-    echo -e "${RED}Error: Please provide an idea or bug report${RESET}"
-    echo "Usage: todo Your idea or bug description here"
-    exit 1
+    # Read multiline input until EOF (Ctrl+D)
+    USER_INPUT=$(cat)
+
+    if [ -z "$USER_INPUT" ]; then
+        echo -e "${RED}Error: No input provided${RESET}"
+        exit 1
+    fi
+else
+    # Use command line arguments if provided
+    USER_INPUT="$*"
 fi
 
 # Get OpenAI API key from AI Chat Terminal config
@@ -60,6 +79,9 @@ fi
 
 echo -e "${BLUE}🤖 Analyzing your input with AI...${RESET}"
 
+# Escape user input for JSON
+USER_INPUT_ESCAPED=$(echo "$USER_INPUT" | jq -R -s .)
+
 # Create AI prompt for analysis
 AI_PROMPT="You are a GitHub issue assistant. Analyze the following user input and create a professional GitHub issue.
 
@@ -71,7 +93,7 @@ Instructions:
 5. Write a detailed body with Description, Use Case, and Technical Details if applicable
 6. Suggest appropriate labels from: bug, enhancement, documentation, question, priority-high, priority-medium, priority-low, priority-critical, memory-system, ui-ux, performance, security
 
-User input: \"$USER_INPUT\"
+User input: $USER_INPUT_ESCAPED
 
 Respond ONLY with valid JSON in this exact format:
 {
@@ -135,7 +157,7 @@ fi
 echo -e "${YELLOW}📝 Creating GitHub issue:${RESET}"
 echo -e "${GREEN}Title:${RESET} $TITLE"
 echo -e "${GREEN}Type:${RESET} $TYPE"
-echo -e "${GREEN}Priority:${RESET} $priority"
+echo -e "${GREEN}Priority:${RESET} $PRIORITY"
 echo -e "${GREEN}Labels:${RESET} $LABELS"
 echo ""
 
