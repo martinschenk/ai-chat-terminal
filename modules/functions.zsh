@@ -47,7 +47,9 @@ chat_loop() {
         if [[ -f "$SCRIPT_DIR/memory_system.py" ]]; then
             # Disable job notifications temporarily
             setopt LOCAL_OPTIONS NO_NOTIFY NO_MONITOR
-            python3 "$SCRIPT_DIR/memory_system.py" add "$session_id" "$role" "$content" &>/dev/null &
+            # Log memory system calls for debugging (optional)
+            echo "$(date '+%Y-%m-%d %H:%M:%S') Memory: $role -> $session_id" >> ~/.aichat/debug.log 2>/dev/null || true
+            python3 "$SCRIPT_DIR/memory_system.py" add "$session_id" "$role" "$content" 2>>~/.aichat/debug.log &
         fi
     }
 
