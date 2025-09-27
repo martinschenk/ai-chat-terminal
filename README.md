@@ -79,70 +79,95 @@ curl -sL https://raw.githubusercontent.com/martinschenk/ai-chat-terminal/main/in
 
 Start by typing `chat` to enter the interactive terminal:
 
-### Memory Example
-Shows how the chat remembers previous context:
+### Personal Memory Example
+Shows how AI remembers your preferences and details:
 ```
 /config = settings | ESC/exit = quit
 ─────────────────────────────────────────────────────
 
-👤 You ▶ I need to dockerize my Node.js app
+👤 You ▶ My name is Sarah and I prefer coffee over tea
 🤖 AI ▶
-Create a Dockerfile with node:18-alpine base image, copy package files, run npm install, then copy your app and expose the port.
+Nice to meet you, Sarah! I'll remember that you prefer coffee over tea.
+Is there a particular type of coffee you enjoy most?
 ─────────────────────────────────────────────────────
 
-👤 You ▶ show me that dockerfile
+👤 You ▶ I love Ethiopian coffee
 🤖 AI ▶
-FROM node:18-alpine
-WORKDIR /app
-COPY package*.json ./
-RUN npm install
-COPY . .
-EXPOSE 3000
-CMD ["npm", "start"]
+Ethiopian coffee is excellent! Known for its bright, fruity flavors.
+I'll remember that Sarah loves Ethiopian coffee.
 ─────────────────────────────────────────────────────
 
-👤 You ▶ what if the port is already in use?
+# Days later...
+
+👤 You ▶ what should I drink this morning?
 🤖 AI ▶
-Change the EXPOSE line to a different port like 3001, or kill the process using port 3000:
-lsof -ti:3000 | xargs kill -9
+Good morning, Sarah! Since you love Ethiopian coffee, how about brewing
+a nice cup to start your day? The bright flavors should wake you up nicely!
 ─────────────────────────────────────────────────────
 
 👤 You ▶
 ```
 
-### DateTime Example
-Shows local time awareness:
+### Everyday Help Example
+AI assistance with daily tasks and planning:
 ```
 /config = settings | ESC/exit = quit
 ─────────────────────────────────────────────────────
 
-👤 You ▶ datetime?
+👤 You ▶ I need to plan a birthday party for my 8-year old
 🤖 AI ▶
-Current date and time: Saturday, September 27, 2025, at 00:26.
+Fun! Here's a simple party plan for an 8-year-old:
+
+🎂 **Food**: Pizza, cake, juice boxes, fruit
+🎮 **Activities**: Musical chairs, treasure hunt, crafts station
+🎁 **Party favors**: Small toys, stickers, candy bags
+⏰ **Duration**: 2-3 hours is perfect for this age
+
+What's their favorite theme or character?
 ─────────────────────────────────────────────────────
 
-👤 You ▶ is it late?
+👤 You ▶ She loves unicorns!
 🤖 AI ▶
-Yes, 00:26 is quite late for a Saturday night! Time for bed? 😴
+Perfect! Unicorn theme ideas:
+- Pink/purple decorations with rainbow colors
+- Unicorn cake or cupcakes with horns
+- "Pin the horn on the unicorn" game
+- Unicorn headbands as party favors
+- Face painting with glitter and rainbows
+
+Would you like specific recipes or decoration ideas?
 ─────────────────────────────────────────────────────
 
 👤 You ▶
 ```
 
-### Fun Example
-Shows personality and humor:
+### Quick Help Example
+Get instant answers to everyday questions:
 ```
 /config = settings | ESC/exit = quit
 ─────────────────────────────────────────────────────
 
-👤 You ▶ explain regex in simple terms
+👤 You ▶ what's a good recipe for chocolate chip cookies?
 🤖 AI ▶
-Regex is like a search pattern with superpowers. /\d+/ finds numbers, /[a-z]+/ finds lowercase words. It's basically "find me this weird pattern in text."
+Here's a simple recipe:
+
+**Ingredients:**
+- 2¼ cups flour
+- 1 cup butter, softened
+- ¾ cup each: brown & white sugar
+- 2 eggs, 2 tsp vanilla
+- 1 tsp baking soda, 1 tsp salt
+- 2 cups chocolate chips
+
+**Steps:** Mix wet ingredients, add dry ingredients, fold in chips,
+bake at 375°F for 9-11 minutes. Makes about 48 cookies!
 ─────────────────────────────────────────────────────
 
-👤 You ▶ why is it so cryptic?
+👤 You ▶ how do I know when they're done?
 🤖 AI ▶
-Because regex was invented by people who thought hieroglyphs weren't confusing enough! 😄 But once you learn it, it's incredibly powerful for text processing.
+Look for golden brown edges but centers still look slightly underbaked.
+They'll continue cooking on the hot pan for a few minutes after removing
+from oven. This gives you that perfect chewy texture!
 ─────────────────────────────────────────────────────
 
 👤 You ▶
