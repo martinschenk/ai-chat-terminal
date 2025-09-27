@@ -2,20 +2,51 @@
 
 A ChatGPT-powered terminal interface with integrated web search and AI-powered vector database.
 
+**🚀 Transform your terminal into an intelligent AI assistant with memory that never forgets!**
+
 [![Version](https://img.shields.io/badge/version-5.3.0-blue.svg)](https://github.com/martinschenk/ai-chat-terminal)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-macOS%20|%20Linux-lightgrey.svg)](https://github.com/martinschenk/ai-chat-terminal)
 
+## Table of Contents
+
+- [Features](#features)
+- [Quick Start](#quick-start)
+- [Installation](#installation)
+- [Usage Examples](#usage-examples)
+- [Smart Memory System](#-ai-powered-vector-database-system)
+- [Configuration](#configuration-options)
+- [Requirements](#requirements)
+- [Supported Languages](#supported-languages)
+- [Troubleshooting](#troubleshooting)
+- [Contributing](#contributing)
 
 ## Features
 
-- **ChatGPT Integration** - Powered by OpenAI's latest models (GPT-4o, GPT-4o-mini, etc.)
-- **Integrated Web Search** - Real-time information via ChatGPT search capabilities
+- **🤖 ChatGPT Integration** - Powered by OpenAI's latest models (GPT-4o, GPT-4o-mini, etc.)
+- **🌐 Integrated Web Search** - Real-time information via ChatGPT search capabilities
 - **🧠 Smart Memory System** - Dual-layer memory: short-term context + long-term SQLite database
-- **🔍 Semantic Search** - Find past conversations using natural language queries
+- **🔍 AI Semantic Search** - Find past conversations using natural language queries
 - **💰 Cost-Optimized Context** - Prevents token cost explosion by limiting chat history sent to API
-- **Multi-Language Support** - 19 languages with regional dialects
-- **Customizable Commands** - Use `chat`, `ai`, `ask`, or custom aliases
+- **🌍 Multi-Language Support** - 19 languages with regional dialects
+- **⚙️ Customizable Commands** - Use `chat`, `ai`, `ask`, or custom aliases
+- **🛡️ Zero Configuration** - Works out of the box on any macOS/Linux system
+
+## Quick Start
+
+**1-minute setup:**
+```bash
+# Install
+curl -sL https://raw.githubusercontent.com/martinschenk/ai-chat-terminal/main/install.sh | bash
+
+# Reload shell
+source ~/.zshrc
+
+# Start chatting
+chat
+```
+
+Then enter your [OpenAI API key](https://platform.openai.com/api-keys) and start chatting!
 
 ## Installation
 
@@ -23,12 +54,13 @@ A ChatGPT-powered terminal interface with integrated web search and AI-powered v
 curl -sL https://raw.githubusercontent.com/martinschenk/ai-chat-terminal/main/install.sh | bash
 ```
 
-After installation:
-1. Run `source ~/.zshrc` to reload your shell
-2. Run `chat` to start the initial setup
+**After installation:**
+1. Reload your shell: `source ~/.zshrc` (or restart terminal)
+2. Start the chat: `chat`
 3. Enter your OpenAI API key when prompted
+4. **Optional**: Choose gpt-3.5-turbo for 10x lower costs than GPT-4
 
-## Usage
+## Usage Examples
 
 Start by typing `chat` to enter the interactive terminal:
 
@@ -304,16 +336,27 @@ The configuration menu provides these options:
 
 ## Requirements
 
-- **OpenAI API Key** (required) - Get yours at [platform.openai.com/api-keys](https://platform.openai.com/api-keys)
+### Required
+- **OpenAI API Key** - Get yours at [platform.openai.com/api-keys](https://platform.openai.com/api-keys)
 - **Python 3** (usually pre-installed on macOS/Linux)
-- **Shell-GPT** (automatically installed)
-- **Memory System Dependencies** (automatically installed):
-  - `sentence-transformers` (~80MB, for semantic search)
-  - `sqlite-vec` (for vector embeddings in SQLite)
+- **Minimum $5 OpenAI credit** (gpt-3.5-turbo recommended for cost efficiency)
+
+### Auto-Installed Dependencies
+- **Shell-GPT** - Core chat functionality
+- **sentence-transformers** (~80MB) - AI semantic search
+- **sqlite-vec** - Vector embeddings in SQLite
+- **jq** - JSON processing
 
 ## Supported Languages
 
-English, German (+ Schwäbisch, Bayerisch, Sächsisch), Spanish (+ Mexican, Argentinian, Colombian, etc.), French, Italian, Catalan, Basque, Galician, Chinese (Mandarin), Hindi, and more.
+**19 languages with regional dialects:**
+- **English** 🇬🇧
+- **German** 🇩🇪 (+ Schwäbisch, Bayerisch, Sächsisch)
+- **Spanish** 🇪🇸 (+ Mexican, Argentinian, Colombian, Venezuelan, Chilean, Andaluz)
+- **Romance Languages**: French 🇫🇷, Italian 🇮🇹, Catalan, Galician
+- **Regional**: Basque (Euskera)
+- **Asian**: Chinese (Mandarin) 🇨🇳, Hindi 🇮🇳
+- **And more** - Full list available during installation
 
 ## Troubleshooting
 
@@ -328,9 +371,16 @@ Ensure your OpenAI account has sufficient credit. Start `chat` then use `/config
 pip3 install --user shell-gpt
 ```
 
+### Memory System Not Working
+If vector search features aren't available:
+```bash
+pip3 install --user sentence-transformers sqlite-vec
+```
+The system will automatically fall back to text search if needed.
+
 ## Uninstall
 
-Start `chat`, then type `/config` and select option 8 (Uninstall).
+Start `chat`, then type `/config` and select option 10 (Uninstall).
 
 ## Contributing
 
