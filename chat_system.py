@@ -382,7 +382,7 @@ class ChatSystem:
 
             try:
                 data = response.json()
-                print(f"[DEBUG] Raw API response: {json.dumps(data, indent=2)[:500]}...", file=sys.stderr)
+                # print(f"[DEBUG] Raw API response: {json.dumps(data, indent=2)[:500]}...", file=sys.stderr)
 
                 if "choices" in data and data["choices"]:
                     choice = data["choices"][0]
@@ -390,20 +390,19 @@ class ChatSystem:
 
                     # Check for function calls
                     if "tool_calls" in message and message["tool_calls"]:
-                        print(f"[DEBUG] ✅ OpenAI wants to call function!", file=sys.stderr)
+                        # print(f"[DEBUG] ✅ OpenAI wants to call function!", file=sys.stderr)
 
                         # Process function calls
                         for tool_call in message["tool_calls"]:
                             if tool_call["type"] == "function":
                                 func_name = tool_call["function"]["name"]
                                 func_args = json.loads(tool_call["function"]["arguments"])
-
-                                print(f"[DEBUG] Function: {func_name}, Args: {func_args}", file=sys.stderr)
+                                # print(f"[DEBUG] Function: {func_name}, Args: {func_args}", file=sys.stderr)
 
                                 if func_name == "search_personal_data":
                                     # Execute our search function
                                     search_result = self.search_db_with_user_query(func_args.get("query", ""))
-                                    print(f"[DEBUG] Search result: {search_result}", file=sys.stderr)
+                                    # print(f"[DEBUG] Search result: {search_result}", file=sys.stderr)
 
                                     if search_result:
                                         ai_response = f"Your {func_args.get('data_type', 'information')}: {search_result}"
@@ -424,11 +423,9 @@ class ChatSystem:
                 print(ai_response)
 
             except json.JSONDecodeError as e:
-                print(f"[DEBUG] JSON decode error: {e}", file=sys.stderr)
                 ai_response = "Error: Invalid JSON response from API"
                 print(ai_response)
             except Exception as e:
-                print(f"[DEBUG] Unexpected error: {e}", file=sys.stderr)
                 ai_response = f"Error: {e}"
                 print(ai_response)
 

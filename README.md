@@ -339,16 +339,16 @@ Search: "Docker" → Finds: any message containing "Docker"
 | OpenAI Sees | Stays Local Only |
 |-------------|------------------|
 | ✅ "What's my phone number?" | ❌ Actual phone number |
-| ✅ Template: `{{SEARCH_DB}}` | ❌ Your personal data |
+| ✅ Function call: `search_personal_data()` | ❌ Your personal data |
 | ✅ System instructions | ❌ Database contents |
 | ✅ Public conversation context | ❌ Sensitive information |
 
 **Technical Implementation:**
-- **Step 1**: User asks for sensitive info
-- **Step 2**: OpenAI gets question + template system (no personal data)
-- **Step 3**: OpenAI responds with `{{SEARCH_DB}}` instead of refusing
-- **Step 4**: Our system searches local database with original question
-- **Step 5**: Template gets replaced with actual data from your local storage
+- **Step 1**: User asks for sensitive info ("What's my phone number?")
+- **Step 2**: OpenAI calls `search_personal_data` function (official OpenAI feature)
+- **Step 3**: Our system searches local SQLite database using function parameters
+- **Step 4**: Function returns data from local storage only
+- **Step 5**: OpenAI formats response with retrieved data
 
 **Why this matters:**
 - Your phone numbers, emails, addresses stay on YOUR computer only
