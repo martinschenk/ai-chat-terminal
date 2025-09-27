@@ -120,8 +120,10 @@ git add VERSION && git commit -m "release: vx.x.x" && git push
 
 ### Key Components
 - **memory_system.py**: Core AI vector database logic
-- **sentence-transformers**: Converts text → 384-dimensional embeddings
+- **multilingual-e5-small**: Converts text → 384-dimensional embeddings (100 languages)
 - **sqlite-vec**: Vector similarity search in SQLite
+- **Language Detection**: Automatic detection and storage per message
+- **Cross-Language Search**: Query in any language, find content in any other
 - **Graceful Degradation**: Text search fallback if AI unavailable
 
 ### What "Graceful Degradation" Means:
@@ -151,11 +153,30 @@ Search: "Docker" → Finds: any message containing "Docker" (LIKE queries)
 # User sees no difference in installation - everything "just works"
 ```
 
+### Language-Aware Features (NEW v5.3.0):
+```bash
+# Cross-Language Search Magic
+User sets UI to English, but chats in German:
+Query: "Docker problems" → Finds: "Docker Container Probleme"
+
+# Language Detection per Message
+- Automatically detects language for each message
+- Stores language metadata in database
+- Uses keywords from ALL language files for importance scoring
+
+# Universal Human Memory Keywords
+- Personal info: "my name", "mein Name", "mi nombre", "我的名字"
+- Preferences: "I prefer", "ich bevorzuge", "prefiero", "我喜欢"
+- Context: "as I mentioned", "wie ich sagte", "como dije", "正如我提到的"
+- 150+ keywords per language covering identity, preferences, life events
+```
+
 ### Memory System Integration:
 - **Auto-save**: Every chat message saved in background (non-blocking)
 - **Config Menu**: [6] Memory system → Search, stats, smart cleanup
 - **Search Examples**: "Docker issues", "Python debugging", "API problems"
 - **Smart Scoring**: Important messages (errors, TODOs) get higher scores
+- **Multilingual Support**: Works seamlessly across all 19 supported languages
 
 ### Smart Cleanup System (v5.3.0):
 ```bash

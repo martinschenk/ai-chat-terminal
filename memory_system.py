@@ -65,51 +65,117 @@ class ChatMemorySystem:
         except Exception:
             return 'en'  # Fallback to English
 
-    def _load_language_keywords(self):
-        """Load importance keywords and name patterns from language file"""
+    def _detect_message_language(self, content):
+        """Detect language of a message by checking against keywords from all language files"""
         try:
-            language = self._get_current_language()
             config_dir = Path.home() / '.aichat'
-            lang_file = config_dir / 'lang' / f'{language}.conf'
+            lang_dir = config_dir / 'lang'
+
+            if not lang_dir.exists():
+                return self._get_current_language()
+
+            # Language scoring - count keyword matches per language
+            language_scores = {}
+
+            for lang_file in lang_dir.glob('*.conf'):
+                lang_code = lang_file.stem
+                # Skip dialect files for detection (use base languages only)
+                if '-' in lang_code:
+                    continue
+
+                try:
+                    with open(lang_file, 'r', encoding='utf-8') as f:
+                        file_content = f.read()
+
+                    # Get keywords and patterns for this language
+                    keywords = []
+                    patterns = []
+
+                    keyword_match = re.search(r'MEMORY_IMPORTANT_KEYWORDS="([^"]+)"', file_content)
+                    if keyword_match:
+                        keywords = [k.strip() for k in keyword_match.group(1).split(',') if k.strip()]
+
+                    pattern_match = re.search(r'MEMORY_NAME_PATTERNS="([^"]+)"', file_content)
+                    if pattern_match:
+                        patterns = [p.strip() for p in pattern_match.group(1).split(',') if p.strip()]
+
+                    # Count matches in the content
+                    score = 0
+                    content_lower = content.lower()
+
+                    for keyword in keywords + patterns:
+                        if keyword.lower() in content_lower:
+                            score += 1
+
+                    if score > 0:
+                        language_scores[lang_code] = score
+
+                except Exception:
+                    # Skip this language file if error
+                    continue
+
+            # Return language with highest score, or current UI language if no matches
+            if language_scores:
+                return max(language_scores, key=language_scores.get)
+            else:
+                return self._get_current_language()
+
+        except Exception:
+            return self._get_current_language()
+
+    def _load_all_language_keywords(self):
+        """Load importance keywords and name patterns from ALL language files"""
+        try:
+            config_dir = Path.home() / '.aichat'
+            lang_dir = config_dir / 'lang'
 
             # Default English keywords (fallback)
-            default_keywords = ['important', 'remember', 'save', 'note', 'TODO', 'bug', 'error', 'problem', 'urgent', 'FIXME', 'BUG', 'URGENT']
-            default_patterns = ['name', 'Name', 'called', 'am', 'is']
+            all_keywords = set(['important', 'remember', 'save', 'note', 'TODO', 'bug', 'error', 'problem', 'urgent', 'FIXME', 'BUG', 'URGENT'])
+            all_patterns = set(['name', 'Name', 'called', 'am', 'is'])
 
-            if not lang_file.exists():
-                return default_keywords, default_patterns
+            if not lang_dir.exists():
+                return list(all_keywords), list(all_patterns)
 
-            keywords = default_keywords.copy()
-            patterns = default_patterns.copy()
+            # Load keywords from all language files
+            for lang_file in lang_dir.glob('*.conf'):
+                try:
+                    with open(lang_file, 'r', encoding='utf-8') as f:
+                        content = f.read()
 
-            with open(lang_file, 'r', encoding='utf-8') as f:
-                content = f.read()
+                    # Extract MEMORY_IMPORTANT_KEYWORDS
+                    keyword_match = re.search(r'MEMORY_IMPORTANT_KEYWORDS="([^"]+)"', content)
+                    if keyword_match:
+                        lang_keywords = keyword_match.group(1).split(',')
+                        all_keywords.update([k.strip() for k in lang_keywords if k.strip()])
 
-                # Extract MEMORY_IMPORTANT_KEYWORDS
-                keyword_match = re.search(r'MEMORY_IMPORTANT_KEYWORDS="([^"]+)"', content)
-                if keyword_match:
-                    lang_keywords = keyword_match.group(1).split(',')
-                    keywords = [k.strip() for k in lang_keywords if k.strip()]
+                    # Extract MEMORY_NAME_PATTERNS
+                    pattern_match = re.search(r'MEMORY_NAME_PATTERNS="([^"]+)"', content)
+                    if pattern_match:
+                        lang_patterns = pattern_match.group(1).split(',')
+                        all_patterns.update([p.strip() for p in lang_patterns if p.strip()])
 
-                # Extract MEMORY_NAME_PATTERNS
-                pattern_match = re.search(r'MEMORY_NAME_PATTERNS="([^"]+)"', content)
-                if pattern_match:
-                    lang_patterns = pattern_match.group(1).split(',')
-                    patterns = [p.strip() for p in lang_patterns if p.strip()]
+                except Exception:
+                    # Skip this language file if error
+                    continue
 
-            return keywords, patterns
+            return list(all_keywords), list(all_patterns)
 
         except Exception as e:
             print(f"Warning: Could not load language keywords: {e}", file=sys.stderr)
             # Return English defaults
             return ['important', 'remember', 'save', 'note', 'TODO', 'bug', 'error', 'problem', 'urgent'], ['name', 'Name', 'called', 'am', 'is']
 
+    def _load_language_keywords(self):
+        """Load importance keywords and name patterns from current language file (legacy method)"""
+        # For backwards compatibility, now calls the new method
+        return self._load_all_language_keywords()
+
     @property
     def model(self):
         """Lazy load the embedding model to save startup time"""
         if self._model is None:
             try:
-                self._model = SentenceTransformer('all-MiniLM-L6-v2')
+                self._model = SentenceTransformer('intfloat/multilingual-e5-small')
             except Exception as e:
                 print(f"Error loading embedding model: {e}")
                 sys.exit(1)
@@ -128,7 +194,8 @@ class ChatMemorySystem:
                     role TEXT NOT NULL,  -- 'user' or 'assistant'
                     content TEXT NOT NULL,
                     metadata JSON DEFAULT '{}',
-                    importance REAL DEFAULT 1.0
+                    importance REAL DEFAULT 1.0,
+                    language TEXT DEFAULT 'en'
                 );
 
                 -- Memory summaries for long-term storage
@@ -156,9 +223,25 @@ class ChatMemorySystem:
                         session_id TEXT,
                         timestamp INTEGER,
                         message_type TEXT,
-                        importance REAL DEFAULT 1.0
+                        importance REAL DEFAULT 1.0,
+                        language TEXT DEFAULT 'en'
                     )
                 """)
+
+            # Add language column to existing databases (migration)
+            try:
+                self.db.execute("ALTER TABLE chat_history ADD COLUMN language TEXT DEFAULT 'en'")
+            except sqlite3.OperationalError:
+                # Column already exists, ignore
+                pass
+
+            # For vector table migration (if exists)
+            if self.vector_support:
+                try:
+                    self.db.execute("ALTER TABLE chat_embeddings ADD COLUMN language TEXT DEFAULT 'en'")
+                except sqlite3.OperationalError:
+                    # Column already exists or table doesn't exist, ignore
+                    pass
 
             self.db.commit()
         except Exception as e:
@@ -173,27 +256,33 @@ class ChatMemorySystem:
         timestamp = int(time.time())
 
         try:
+            # Detect language for this message
+            detected_language = self._detect_message_language(content)
+
             # Calculate importance (simple heuristic)
             importance = self._calculate_importance(content, role)
 
             # Insert into chat history
             cursor = self.db.execute(
-                "INSERT INTO chat_history (session_id, role, content, metadata, timestamp, importance) VALUES (?, ?, ?, ?, ?, ?)",
-                (session_id, role, content, json.dumps(metadata or {}), timestamp, importance)
+                "INSERT INTO chat_history (session_id, role, content, metadata, timestamp, importance, language) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                (session_id, role, content, json.dumps(metadata or {}), timestamp, importance, detected_language)
             )
             message_id = cursor.lastrowid
 
             # Only add embedding if vector support is available
             if self.vector_support:
                 try:
+                    # Add "passage:" prefix for E5 model (messages are stored content)
+                    prefixed_content = f"passage: {content}"
+
                     # Generate embedding
-                    embedding = self.model.encode([content])[0]
+                    embedding = self.model.encode([prefixed_content])[0]
                     embedding_list = embedding.tolist()
 
                     # Insert embedding
                     self.db.execute(
-                        "INSERT INTO chat_embeddings (rowid, message_embedding, session_id, timestamp, message_type, importance) VALUES (?, ?, ?, ?, ?, ?)",
-                        (message_id, json.dumps(embedding_list), session_id, timestamp, role, importance)
+                        "INSERT INTO chat_embeddings (rowid, message_embedding, session_id, timestamp, message_type, importance, language) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                        (message_id, json.dumps(embedding_list), session_id, timestamp, role, importance, detected_language)
                     )
                 except Exception as embedding_error:
                     # If embedding fails, continue without it
@@ -235,8 +324,11 @@ class ChatMemorySystem:
             return self._basic_text_search(query, session_id, limit, min_importance)
 
         try:
+            # Add "query:" prefix for E5 model
+            prefixed_query = f"query: {query}"
+
             # Generate query embedding
-            query_embedding = self.model.encode([query])[0]
+            query_embedding = self.model.encode([prefixed_query])[0]
             query_json = json.dumps(query_embedding.tolist())
 
             # Build SQL query

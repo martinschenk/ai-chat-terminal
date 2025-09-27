@@ -27,6 +27,8 @@ A ChatGPT-powered terminal interface with integrated web search and AI-powered v
 - **🌐 Integrated Web Search** - Real-time information via ChatGPT search capabilities
 - **🧠 Smart Memory System** - Dual-layer memory: short-term context + long-term SQLite database
 - **🔍 AI Semantic Search** - Find past conversations using natural language queries
+- **🌐 Cross-Language Search** - Query in any language, find content in any other with multilingual E5 model
+- **🗣️ Language Detection** - Automatic detection and storage per message for all 19 supported languages
 - **💰 Cost-Optimized Context** - Prevents token cost explosion by limiting chat history sent to API
 - **🌍 Multi-Language Support** - 19 languages with regional dialects
 - **⚙️ Customizable Commands** - Use `chat`, `ai`, `ask`, or custom aliases
@@ -218,7 +220,7 @@ Cost-optimized memory system with configurable message limits:
 
 ### 🧠 AI-Powered Vector Database System
 
-AI Chat Terminal features a revolutionary dual-layer memory architecture with AI-powered semantic search:
+AI Chat Terminal features a revolutionary dual-layer memory architecture with multilingual AI-powered semantic search:
 
 ```
                    🧠 DUAL-LAYER MEMORY SYSTEM
@@ -238,8 +240,10 @@ AI Chat Terminal features a revolutionary dual-layer memory architecture with AI
 ┌────────────────────▼────────────────────────────────────┐
 │                 LONG-TERM MEMORY                        │
 │           (SQLite + Vector Embeddings)                 │
-│  • AI semantic search with sentence-transformers       │
+│  • AI semantic search with multilingual E5 model      │
 │  • 384-dimensional vector embeddings                   │
+│  • Cross-language search across 19 supported languages│
+│  • Language detection per message                      │
 │  • Understands meaning, not just keywords              │
 │  • Persistent storage (~1KB per message)               │
 │  • Smart cleanup: keeps important messages forever     │
@@ -250,17 +254,25 @@ AI Chat Terminal features a revolutionary dual-layer memory architecture with AI
    • "Python bugs" → finds "script errors", "debugging sessions"
    • "API failures" → finds "timeout errors", "connection issues"
 
-🤖 How Vector Search Works:
+🌐 Cross-Language Search Magic:
+   • Query in English: "Docker problems" → finds German: "Docker Container Probleme"
+   • Query in German: "Python Fehler" → finds English: "Python script errors"
+   • UI in English, chat in German → search works perfectly across languages
+
+🤖 How Multilingual Vector Search Works:
    • Each message converted to 384 numbers (embedding)
-   • AI model (all-MiniLM-L6-v2) understands context
+   • AI model (multilingual-e5-small) understands context across 19 languages
    • Search finds similar meanings, not just exact words
+   • Language detection per message enables cross-language search
    • Falls back to text search if AI unavailable
 
 💾 What's Stored in Database:
    • Message content and metadata (JSON)
    • Conversation timestamps and session IDs
    • AI-generated importance scores (0.0-2.0)
+   • Language detection per message (19 supported languages)
    • 384-dimensional vector embeddings per message
+   • Universal human memory keywords (150+ per language)
    • Automatic background saves (non-blocking)
 ```
 

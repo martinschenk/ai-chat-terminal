@@ -307,6 +307,8 @@ uninstall_terminal() {
     echo ""
     echo "• AI Chat Terminal (~/.aichat)"
     echo "• Shell configuration aliases"
+    echo "• Chat history & memory database"
+    echo "• All personal data and conversations"
     echo ""
     echo "${LANG_UNINSTALL_CONFIRM}"
     echo -n "> "
@@ -339,6 +341,12 @@ uninstall_terminal() {
             fi
         done
 
+        # Remove chat cache and temporary files
+        if [[ -d "/tmp/chat_cache" ]]; then
+            rm -rf "/tmp/chat_cache" 2>/dev/null
+            echo "  ✓ ${LANG_UNINSTALL_CLEANED} /tmp/chat_cache"
+        fi
+
         # Remove main installation directory (deferred to avoid deleting ourselves)
         echo "  ✓ ${LANG_UNINSTALL_REMOVED} ~/.aichat (will be removed after exit)"
 
@@ -346,7 +354,10 @@ uninstall_terminal() {
         cat > "/tmp/aichat_cleanup.sh" << 'EOF'
 #!/bin/bash
 sleep 1
+# Remove entire .aichat directory including memory database
 rm -rf "$HOME/.aichat" 2>/dev/null
+# Clean up any remaining temporary files
+rm -rf "/tmp/chat_cache" 2>/dev/null
 rm -f "/tmp/aichat_cleanup.sh" 2>/dev/null
 EOF
         chmod +x "/tmp/aichat_cleanup.sh"
