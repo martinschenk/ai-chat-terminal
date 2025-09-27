@@ -390,6 +390,27 @@ The improved uninstall function (start ai, then type /config → [9]):
 - **NEW**: Verify date/time context injection works in all modes
 - **NEW**: Test documentation examples match actual terminal behavior
 
+## 🚨 TEMPORARY DEBUG FEATURES (TODO: Remove when fixed)
+
+### Debug Logging (Sept 27, 2025)
+**Issue**: Background job notifications `[4] 25734 done` appearing in chat
+**Debug Solution**: Added logging to `~/.aichat/debug.log`
+- **Location**: `modules/functions.zsh:51-52`
+- **What it logs**: Memory system calls with timestamps
+- **Format**: `YYYY-MM-DD HH:MM:SS Memory: role -> session_id`
+- **Stderr**: Python errors redirected to debug.log
+- **TODO**: Remove debug logging once background job issue is resolved
+- **Commits**: e69980c (add logging), f1528c1 (setopt fix), cfab1d7 (disown attempt)
+
+```bash
+# View logs:
+tail -f ~/.aichat/debug.log
+cat ~/.aichat/debug.log
+
+# Clean logs:
+rm ~/.aichat/debug.log
+```
+
 ## Development Philosophy
 - **Honest marketing** - No inflated user numbers
 - **Cost transparency** - Always explain API costs upfront
