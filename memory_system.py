@@ -9,6 +9,7 @@ import json
 import time
 import sys
 import os
+import re
 from pathlib import Path
 
 try:
@@ -45,6 +46,63 @@ class ChatMemorySystem:
         self._model = None
 
         self._create_tables()
+
+    def _get_current_language(self):
+        """Get current language from config file"""
+        try:
+            config_dir = Path.home() / '.aichat'
+            config_file = config_dir / 'config'
+
+            if config_file.exists():
+                with open(config_file, 'r') as f:
+                    content = f.read()
+                    # Look for AI_CHAT_LANGUAGE="xx" pattern
+                    match = re.search(r'AI_CHAT_LANGUAGE="([^"]+)"', content)
+                    if match:
+                        return match.group(1)
+
+            return 'en'  # Default to English
+        except Exception:
+            return 'en'  # Fallback to English
+
+    def _load_language_keywords(self):
+        """Load importance keywords and name patterns from language file"""
+        try:
+            language = self._get_current_language()
+            config_dir = Path.home() / '.aichat'
+            lang_file = config_dir / 'lang' / f'{language}.conf'
+
+            # Default English keywords (fallback)
+            default_keywords = ['important', 'remember', 'save', 'note', 'TODO', 'bug', 'error', 'problem', 'urgent', 'FIXME', 'BUG', 'URGENT']
+            default_patterns = ['name', 'Name', 'called', 'am', 'is']
+
+            if not lang_file.exists():
+                return default_keywords, default_patterns
+
+            keywords = default_keywords.copy()
+            patterns = default_patterns.copy()
+
+            with open(lang_file, 'r', encoding='utf-8') as f:
+                content = f.read()
+
+                # Extract MEMORY_IMPORTANT_KEYWORDS
+                keyword_match = re.search(r'MEMORY_IMPORTANT_KEYWORDS="([^"]+)"', content)
+                if keyword_match:
+                    lang_keywords = keyword_match.group(1).split(',')
+                    keywords = [k.strip() for k in lang_keywords if k.strip()]
+
+                # Extract MEMORY_NAME_PATTERNS
+                pattern_match = re.search(r'MEMORY_NAME_PATTERNS="([^"]+)"', content)
+                if pattern_match:
+                    lang_patterns = pattern_match.group(1).split(',')
+                    patterns = [p.strip() for p in lang_patterns if p.strip()]
+
+            return keywords, patterns
+
+        except Exception as e:
+            print(f"Warning: Could not load language keywords: {e}", file=sys.stderr)
+            # Return English defaults
+            return ['important', 'remember', 'save', 'note', 'TODO', 'bug', 'error', 'problem', 'urgent'], ['name', 'Name', 'called', 'am', 'is']
 
     @property
     def model(self):
@@ -160,8 +218,9 @@ class ChatMemorySystem:
         if len(content) > 100:
             importance += 0.2
 
-        # Keywords that suggest importance
-        important_keywords = ['important', 'remember', 'save', 'note', 'TODO', 'bug', 'error', 'problem']
+        # Load keywords dynamically from language files
+        important_keywords, _ = self._load_language_keywords()
+
         for keyword in important_keywords:
             if keyword.lower() in content.lower():
                 importance += 0.3
@@ -271,14 +330,33 @@ class ChatMemorySystem:
             # Target: 90% of limits (4500 messages or 45MB)
             target_messages = 4500
 
-            # Get deletable messages (priority: low importance + old first)
-            deletable = self.db.execute("""
+            # Load protected patterns dynamically from language files
+            important_keywords, name_patterns = self._load_language_keywords()
+
+            # Build protected patterns from language file + universal patterns
+            protected_patterns = []
+
+            # Add name patterns with wildcards
+            for pattern in name_patterns:
+                protected_patterns.append(f'%{pattern}%')
+
+            # Add important keywords as protected patterns
+            for keyword in important_keywords:
+                protected_patterns.append(f'%{keyword}%')
+
+            # Add universal symbols
+            protected_patterns.extend(['%!!!%', '%TODO%', '%FIXME%', '%BUG%'])
+
+            # Build dynamic query with all protected patterns
+            conditions = ["importance < 1.5"]
+            for pattern in protected_patterns:
+                conditions.append(f"content NOT LIKE '{pattern}'")
+
+            where_clause = " AND ".join(conditions)
+
+            deletable = self.db.execute(f"""
                 SELECT id FROM chat_history
-                WHERE importance < 1.5
-                  AND content NOT LIKE '%name%'
-                  AND content NOT LIKE '%heißt%'
-                  AND content NOT LIKE '%bin%'
-                  AND content NOT LIKE '%remember%'
+                WHERE {where_clause}
                 ORDER BY importance ASC, timestamp ASC
             """).fetchall()
 
