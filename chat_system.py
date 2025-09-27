@@ -72,6 +72,21 @@ class ChatSystem:
                             config[key] = value.strip().strip('"\'')
                         except ValueError as e:
                             print(f"Configuration error on line {line_num}: {line} - {e}", file=sys.stderr)
+
+        # Load language-specific strings
+        language = config.get('AI_CHAT_LANGUAGE', 'en')
+        lang_file = os.path.join(self.config_dir, 'lang', f'{language}.conf')
+        if os.path.exists(lang_file):
+            with open(lang_file, 'r') as f:
+                for line in f:
+                    line = line.strip()
+                    if '=' in line and not line.startswith('#'):
+                        try:
+                            key, value = line.split('=', 1)
+                            config[key] = value.strip().strip('"\'')
+                        except ValueError:
+                            pass  # Skip malformed language lines
+
         return config
 
     def get_personal_info(self) -> List[Dict]:
@@ -488,7 +503,7 @@ Please answer their question in a natural, friendly way using this information."
                                             ai_response = config.get("LANG_NO_INFO_STORED", "I don't have that information stored in my memory database.")
                                         except Exception as e:
                                             # print(f"[DEBUG] Config loading failed: {e}", file=sys.stderr)
-                                            ai_response = "Ich habe diese Information nicht in meiner Speicher-Datenbank gespeichert."
+                                            ai_response = "I don't have that information stored in my memory database."
                                         # print(f"[DEBUG] Final ai_response: {ai_response}", file=sys.stderr)
                                         # Print the response BEFORE returning
                                         print(ai_response, flush=True)
