@@ -71,6 +71,55 @@ class ChatSystem:
                         config[key] = value.strip().strip('"\'')
         return config
 
+    def get_personal_info(self) -> List[Dict]:
+        """Get personal information from ALL sessions for context"""
+        if not os.path.exists(self.db_file):
+            return []
+
+        try:
+            conn = sqlite3.connect(self.db_file)
+            cursor = conn.cursor()
+
+            # Search for messages containing personal information keywords
+            personal_keywords = [
+                'telefon', 'phone', 'nummer', 'number', 'mein name', 'my name',
+                'ich heiße', 'ich bin', 'I am', 'called', 'adresse', 'address',
+                'email', 'geburtstag', 'birthday', 'wohne', 'live'
+            ]
+
+            # Create search conditions for personal info
+            conditions = []
+            params = []
+            for keyword in personal_keywords:
+                conditions.append("content LIKE ?")
+                params.append(f"%{keyword}%")
+
+            where_clause = " OR ".join(conditions)
+
+            cursor.execute(f"""
+                SELECT role, content, timestamp FROM chat_history
+                WHERE ({where_clause})
+                ORDER BY timestamp DESC
+                LIMIT 20
+            """, params)
+
+            rows = cursor.fetchall()
+            conn.close()
+
+            # Format for OpenAI context
+            personal_info = []
+            for role, content, timestamp in rows:
+                personal_info.append({
+                    "role": role,
+                    "content": content
+                })
+
+            return personal_info
+
+        except Exception as e:
+            print(f"Warning: Could not load personal info: {e}", file=sys.stderr)
+            return []
+
     def get_chat_history(self, session_id: str, limit: int = None) -> List[Dict]:
         """Get chat history from memory database"""
         if limit is None:
@@ -144,7 +193,17 @@ class ChatSystem:
                     "content": system_prompt
                 })
 
-            # Add chat history
+            # Add personal information from all sessions first (for context)
+            personal_info = self.get_personal_info()
+            if personal_info:
+                # Add a separator to distinguish personal info from current session
+                messages.append({
+                    "role": "system",
+                    "content": "Personal information from previous conversations:"
+                })
+                messages.extend(personal_info[-10:])  # Last 10 personal info messages
+
+            # Add current session chat history
             history = self.get_chat_history(session_id)
             messages.extend(history)
 
