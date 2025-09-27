@@ -111,25 +111,55 @@ show_config_menu() {
 # Change language function
 change_language() {
     echo -e "\n${CYAN}${LANG_SELECT_LANGUAGE:-Select Your Language:}${RESET}"
+    echo ""
+    echo -e "${BOLD}Main Languages:${RESET}"
     echo "  [1] 🇬🇧 English"
     echo "  [2] 🇩🇪 Deutsch"
-    echo "  [3] 🇫🇷 Français"
-    echo "  [4] 🇮🇹 Italiano"
-    echo "  [5] 🇪🇸 Español"
+    echo "  [3] 🇪🇸 Español"
+    echo "  [4] 🇫🇷 Français"
+    echo "  [5] 🇮🇹 Italiano"
     echo "  [6] 🇨🇳 中文 (Mandarin)"
     echo "  [7] 🇮🇳 हिन्दी (Hindi)"
-    echo -n "Select [1-7]: "
+    echo ""
+    echo -e "${BOLD}Regional Languages:${RESET}"
+    echo "  [8] 🏴 Euskera (Basque)"
+    echo "  [9] 🏴 Català (Catalan)"
+    echo "  [10] 🏴 Galego (Galician)"
+    echo ""
+    echo -e "${BOLD}Dialects:${RESET}"
+    echo "  [11] 🇩🇪 Schwäbisch"
+    echo "  [12] 🇩🇪 Bayerisch"
+    echo "  [13] 🇩🇪 Sächsisch"
+    echo "  [14] 🇲🇽 Español Mexicano"
+    echo "  [15] 🇦🇷 Español Argentino"
+    echo "  [16] 🇨🇴 Español Colombiano"
+    echo "  [17] 🇻🇪 Español Venezolano"
+    echo "  [18] 🇨🇱 Español Chileno"
+    echo "  [19] 🇪🇸 Español Andaluz"
+    echo -n "Select [1-19]: "
     read -r lang_choice
 
     local new_lang=""
     case "$lang_choice" in
         1) new_lang="en" ;;
         2) new_lang="de" ;;
-        3) new_lang="fr" ;;
-        4) new_lang="it" ;;
-        5) new_lang="es" ;;
+        3) new_lang="es" ;;
+        4) new_lang="fr" ;;
+        5) new_lang="it" ;;
         6) new_lang="zh" ;;
         7) new_lang="hi" ;;
+        8) new_lang="eu" ;;
+        9) new_lang="ca" ;;
+        10) new_lang="gl" ;;
+        11) new_lang="de-schwaebisch" ;;
+        12) new_lang="de-bayerisch" ;;
+        13) new_lang="de-saechsisch" ;;
+        14) new_lang="es-mexicano" ;;
+        15) new_lang="es-argentino" ;;
+        16) new_lang="es-colombiano" ;;
+        17) new_lang="es-venezolano" ;;
+        18) new_lang="es-chileno" ;;
+        19) new_lang="es-andaluz" ;;
         *) echo -e "${RED}${LANG_SELECT_INVALID:-Invalid choice}${RESET}"; sleep 2; return ;;
     esac
 

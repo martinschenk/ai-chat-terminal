@@ -16,6 +16,7 @@ SCRIPT_DIR="$(cd "$(dirname "${(%):-%x}")" && pwd)"
 # Source modular components from modules directory
 source "$SCRIPT_DIR/modules/functions.zsh"
 source "$SCRIPT_DIR/modules/config-menu.zsh"
+source "$SCRIPT_DIR/modules/language-utils.zsh"
 
 # Function to load .env file
 load_env() {
@@ -74,14 +75,8 @@ ai_chat_function() {
     local ENABLE_ESC="${AI_CHAT_ESC_EXIT:-true}"
     local CONTEXT_WINDOW="${AI_CHAT_CONTEXT_WINDOW:-20}"
 
-    # Load language file
-    local LANG_FILE="$SCRIPT_DIR/lang/${LANGUAGE}.conf"
-    if [[ ! -f "$LANG_FILE" ]]; then
-        # Fallback to embedded English
-        setup_default_language
-    else
-        source "$LANG_FILE"
-    fi
+    # Load language file with inheritance support
+    load_language_with_inheritance "$LANGUAGE"
 
     # Chat configuration - use session name that works with shell-gpt
     local CHAT_NAME="${COMMAND_CHAR}_session"
@@ -182,8 +177,11 @@ first_run_setup() {
     echo "  [5] 🇪🇸 Español"
     echo "  [6] 🇨🇳 中文 (Mandarin)"
     echo "  [7] 🇮🇳 हिन्दी (Hindi)"
+    echo "  [8] 🏴 Euskera (Basque)"
+    echo "  [9] 🏴 Català (Catalan)"
+    echo "  [10] 🏴 Galego (Galician)"
     echo ""
-    echo -n "Select [1-7] (default: 1): "
+    echo -n "Select [1-10] (default: 1): "
     read -r lang_choice
 
     local language="en"
@@ -202,6 +200,9 @@ first_run_setup() {
             ;;
         6) language="zh" ;;
         7) language="hi" ;;
+        8) language="eu" ;;
+        9) language="ca" ;;
+        10) language="gl" ;;
         *) language="en" ;;
     esac
     echo -e "\033[0;32m✓ Language set to: $language\033[0m\n"
@@ -342,7 +343,7 @@ handle_german_selection() {
 
 handle_spanish_selection() {
     echo ""
-    echo "¿Qué variante prefieres?"
+    echo "¿Qué variante de español prefieres?"
     echo "  [1] 🇪🇸 Español (Estándar)"
     echo "  [2] 🇲🇽 Mexicano"
     echo "  [3] 🇦🇷 Argentino"
@@ -350,10 +351,7 @@ handle_spanish_selection() {
     echo "  [5] 🇻🇪 Venezolano"
     echo "  [6] 🇨🇱 Chileno"
     echo "  [7] 🇪🇸 Andaluz"
-    echo "  [8] Català"
-    echo "  [9] Euskera"
-    echo "  [10] Galego"
-    echo -n "Selección [1-10]: "
+    echo -n "Selección [1-7]: "
     read -r variant
 
     case "$variant" in
@@ -363,9 +361,6 @@ handle_spanish_selection() {
         5) selected_lang="es-venezolano" ;;
         6) selected_lang="es-chileno" ;;
         7) selected_lang="es-andaluz" ;;
-        8) selected_lang="ca" ;;
-        9) selected_lang="eu" ;;
-        10) selected_lang="gl" ;;
         *) selected_lang="es" ;;
     esac
 }
