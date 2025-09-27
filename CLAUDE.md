@@ -4,7 +4,7 @@
 AI Chat Terminal is a native Python CLI tool with direct OpenAI API integration that brings ChatGPT + AI Vector Database to the terminal with 19 language support and regional dialects.
 
 **GitHub**: https://github.com/martinschenk/ai-chat-terminal
-**Current Version**: 5.4.0 (Enhanced Function Calling & Privacy System - Sept 2025)
+**Current Version**: 5.4.1 (Perfect Language Architecture & Function Calling - Sept 2025)
 
 ## 🚨 Task Priority System
 **IMPORTANT**: Always work on the most urgent issues first:
@@ -14,8 +14,9 @@ AI Chat Terminal is a native Python CLI tool with direct OpenAI API integration 
 
 **Workflow**: Use `gh issue list --repo martinschenk/ai-chat-terminal --state open` to check priority and always start with highest priority items.
 
-**🎯 Major Features (v5.4.0):**
-- **Enhanced Function Calling**: Precise triggers for questions vs statements with 80-token natural responses
+**🎯 Major Features (v5.4.1):**
+- **Perfect Language Architecture**: English system prompts + DIALECT_PROMPT for output language
+- **Enhanced Function Calling**: Personal notebook approach bypasses OpenAI content restrictions
 - **Transparent Privacy System**: OpenAI Function Calling ensures personal data never leaves local system
 - **Native OpenAI Integration**: Direct API calls without shell-gpt dependency
 - **Dual-Layer Memory**: Short-term context (5-50 msgs) + Long-term SQLite database
@@ -63,6 +64,49 @@ OpenAI automatically detects requests for:
 - Only generic queries analyzed for function calling need
 - Actual sensitive data only processed locally
 - Second API call only if data exists and user consents
+
+## 🌍 Perfect Language Architecture (v5.4.1)
+
+### Design Principle: English Source of Truth + DIALECT_PROMPT Translation
+
+**Core Philosophy:**
+- **System Prompts**: Always English (OpenAI understands universally)
+- **UI Translations**: From language files only (de.conf, es.conf, etc.)
+- **Output Language**: Controlled by DIALECT_PROMPT (`[SYSTEM: Antworte auf Deutsch]`)
+- **No Hardcoding**: Zero hardcoded translations in code
+
+### How It Works:
+```bash
+# System Prompt (Always English):
+"You are a helpful AI assistant with access to a private local memory database..."
+
+# Language Control (Dynamic):
+DIALECT_PROMPT="[SYSTEM: Antworte auf Deutsch]"
+
+# Result: German responses with English internal logic
+```
+
+### Benefits:
+- ✅ **Universal Compatibility**: One system prompt for all 19 languages
+- ✅ **Easy Maintenance**: Only UI strings need translation
+- ✅ **Consistent Logic**: Same AI behavior across languages
+- ✅ **No Content Restrictions**: "Personal notebook" approach bypasses OpenAI limitations
+- ✅ **Perfect Responses**: Native-quality responses in user's language
+
+### Language Loading Architecture:
+```python
+def load_config():
+    # 1. Load basic config (AI_CHAT_LANGUAGE=de)
+    # 2. Load language file (lang/de.conf)
+    # 3. Merge both configurations
+    # 4. Return combined config with translations
+```
+
+### Function Calling Language Support:
+- **Questions**: Any language supported by OpenAI
+- **Database Search**: Language-agnostic
+- **Responses**: Formatted in user's selected language
+- **Error Messages**: From language files (LANG_NO_INFO_STORED)
 
 ## 📁 Project Structure & Installation Locations
 
