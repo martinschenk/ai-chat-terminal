@@ -37,49 +37,9 @@ chat_loop() {
 
     local INPUT=""
 
-    # Memory system integration
-    add_to_memory() {
-        local session_id="$1"
-        local role="$2"
-        local content="$3"
+    # Memory system is now integrated directly in chat_system.py
 
-        # Add to memory system (background, don't block chat)
-        if [[ -f "$SCRIPT_DIR/memory_system.py" ]]; then
-            # Disable job notifications temporarily
-            setopt LOCAL_OPTIONS NO_NOTIFY NO_MONITOR
-            # Log memory system calls for debugging (optional)
-            echo "$(date '+%Y-%m-%d %H:%M:%S') Memory: $role -> $session_id" >> ~/.aichat/debug.log 2>/dev/null || true
-            python3 "$SCRIPT_DIR/memory_system.py" add "$session_id" "$role" "$content" 2>>~/.aichat/debug.log &
-        fi
-    }
-
-    # Function to limit chat history to context window (same as in main script)
-    limit_chat_history() {
-        local chat_file="/tmp/chat_cache/$CHAT_NAME"
-        local limit="$1"
-
-        if [[ -f "$chat_file" ]] && [[ -s "$chat_file" ]]; then
-            # Parse JSON and keep only last N messages (pairs of user/assistant)
-            python3 -c "
-import json
-import sys
-
-try:
-    with open('$chat_file', 'r') as f:
-        messages = json.load(f)
-
-    # Keep only last $limit*2 messages (user+assistant pairs)
-    max_messages = $limit * 2
-    if len(messages) > max_messages:
-        messages = messages[-max_messages:]
-
-    with open('$chat_file', 'w') as f:
-        json.dump(messages, f)
-except:
-    pass  # If any error, keep original file
-"
-        fi
-    }
+    # Context window management is now handled in Python chat_system.py
 
     while true; do
         echo -ne "${BLUE}👤 ${LANG_LABEL_YOU} ▶ ${RESET}"
@@ -169,40 +129,22 @@ except:
         local CURRENT_DATE=$(date '+%A, %B %d, %Y')
         local CURRENT_TIME=$(date '+%H:%M')
 
-        # Initialize chat if this is the first message or repair corrupted session
-        if ! sgpt --list-chats 2>/dev/null | grep -q "^$CHAT_NAME$"; then
-            sgpt --chat "$CHAT_NAME" "Hello! This is a new chat session. Please remember our conversation." >/dev/null 2>&1 || true
-        else
-            # Test if chat session is corrupted and repair if needed
-            if ! sgpt --chat "$CHAT_NAME" "test" >/dev/null 2>&1; then
-                echo "Repairing corrupted chat session..." >&2
-                rm -f "/tmp/chat_cache/$CHAT_NAME" 2>/dev/null
-                sgpt --chat "$CHAT_NAME" "Hello, I'm starting a new chat session." >/dev/null 2>&1 || true
-            fi
+        # Prepare system prompt with date/time context and dialect
+        local SYSTEM_PROMPT="${DIALECT_PROMPT}Today is $CURRENT_DATE, current time is $CURRENT_TIME."
+        if [[ "$IS_DATE_TIME_QUESTION" == "true" ]]; then
+            SYSTEM_PROMPT="$SYSTEM_PROMPT Answer based on this local information only. Do not use web search for date/time questions."
         fi
-
-        # Add user message to memory (before processing)
-        add_to_memory "$CHAT_NAME" "user" "$INPUT"
-
-        # Limit chat history to context window before sending new message
-        limit_chat_history "$CONTEXT_WINDOW"
 
         # Store AI response for memory system
         local AI_RESPONSE=""
 
-        if [[ "$IS_DATE_TIME_QUESTION" == "true" ]]; then
-            # Disable web search for date/time questions
-            AI_RESPONSE=$(sgpt --chat "$CHAT_NAME" --no-functions "${DIALECT_PROMPT}Today is $CURRENT_DATE, current time is $CURRENT_TIME. Answer based on this local information only. $INPUT")
-        else
-            # Normal mode with web search capabilities
-            AI_RESPONSE=$(sgpt --chat "$CHAT_NAME" "${DIALECT_PROMPT}Today is $CURRENT_DATE, current time is $CURRENT_TIME. $INPUT")
-        fi
+        # Send message using our Python chat system
+        AI_RESPONSE=$(python3 "$SCRIPT_DIR/chat_system.py" "$CHAT_NAME" "$INPUT" "$SYSTEM_PROMPT")
 
         # Display AI response
         echo "$AI_RESPONSE"
 
-        # Add AI response to memory (after displaying)
-        add_to_memory "$CHAT_NAME" "assistant" "$AI_RESPONSE"
+        # Memory saving is now handled automatically in chat_system.py
 
         echo -e "${DIM}─────────────────────────────────────────────────────${RESET}\n"
     done

@@ -86,40 +86,7 @@ ai_chat_function() {
     # Chat configuration - use session name that works with shell-gpt
     local CHAT_NAME="${COMMAND_CHAR}_session"
 
-    # Initialize sgpt chat session if needed
-    local CACHE_DIR="/tmp/chat_cache"
-    mkdir -p "$CACHE_DIR" 2>/dev/null
-
-    # Ensure sgpt config exists
-    mkdir -p ~/.config/shell_gpt
-
-    # Function to limit chat history to context window
-    limit_chat_history() {
-        local chat_file="/tmp/chat_cache/$CHAT_NAME"
-        local limit="$1"
-
-        if [[ -f "$chat_file" ]] && [[ -s "$chat_file" ]]; then
-            # Parse JSON and keep only last N messages (pairs of user/assistant)
-            python3 -c "
-import json
-import sys
-
-try:
-    with open('$chat_file', 'r') as f:
-        messages = json.load(f)
-
-    # Keep only last $limit*2 messages (user+assistant pairs)
-    max_messages = $limit * 2
-    if len(messages) > max_messages:
-        messages = messages[-max_messages:]
-
-    with open('$chat_file', 'w') as f:
-        json.dump(messages, f)
-except:
-    pass  # If any error, keep original file
-"
-        fi
-    }
+    # Chat system now uses Python with direct OpenAI API integration
 
     # Colors
     local BLUE='\033[0;34m'
@@ -166,28 +133,14 @@ except:
         local CURRENT_DATE=$(date '+%A, %B %d, %Y')
         local CURRENT_TIME=$(date '+%H:%M')
 
-        # Initialize chat if this is the first message or repair corrupted session
-        if ! sgpt --list-chats 2>/dev/null | grep -q "^$CHAT_NAME$"; then
-            sgpt --chat "$CHAT_NAME" "Hello! This is a new chat session. Please remember our conversation." >/dev/null 2>&1 || true
-        else
-            # Test if chat session is corrupted and repair if needed
-            if ! sgpt --chat "$CHAT_NAME" "test" >/dev/null 2>&1; then
-                echo "Repairing corrupted chat session..." >&2
-                rm -f "/tmp/chat_cache/$CHAT_NAME" 2>/dev/null
-                sgpt --chat "$CHAT_NAME" "Hello, I'm starting a new chat session." >/dev/null 2>&1 || true
-            fi
-        fi
-
-        # Limit chat history to context window before sending new message
-        limit_chat_history "$CONTEXT_WINDOW"
-
+        # Prepare system prompt with date/time context and dialect
+        local SYSTEM_PROMPT="${DIALECT_PROMPT}Today is $CURRENT_DATE, current time is $CURRENT_TIME."
         if [[ "$IS_DATE_TIME_QUESTION" == "true" ]]; then
-            # Disable web search for date/time questions
-            sgpt --chat "$CHAT_NAME" --no-functions "${DIALECT_PROMPT}Today is $CURRENT_DATE, current time is $CURRENT_TIME. Answer based on this local information only. $*"
-        else
-            # Normal mode with web search capabilities
-            sgpt --chat "$CHAT_NAME" "${DIALECT_PROMPT}Today is $CURRENT_DATE, current time is $CURRENT_TIME. $*"
+            SYSTEM_PROMPT="$SYSTEM_PROMPT Answer based on this local information only. Do not use web search for date/time questions."
         fi
+
+        # Send message using our Python chat system
+        python3 "$SCRIPT_DIR/chat_system.py" "$CHAT_NAME" "$*" "$SYSTEM_PROMPT"
 
         echo -e "\n${DIM}─────────────────────────────────────────────────────${RESET}\n"
 
@@ -323,16 +276,8 @@ AI_CHAT_ESC_EXIT="true"
 AI_CHAT_CONTEXT_WINDOW="20"
 EOF
 
-    # Configure Shell-GPT
-    mkdir -p ~/.config/shell_gpt
-    cat > ~/.config/shell_gpt/.sgptrc << EOF
-DEFAULT_MODEL=$openai_model
-CHAT_CACHE_LENGTH=20
-CHAT_CACHE_PATH=/tmp/chat_cache
-REQUEST_TIMEOUT=60
-DEFAULT_COLOR=green
-# Note: OPENAI_API_KEY is loaded from ~/.aichat/.env for security
-EOF
+    # Store model selection in config for our Python chat system
+    echo "AI_CHAT_MODEL=\"$openai_model\"" >> "$CONFIG_FILE"
 
     # Load language file for localized success message
     local LANG_FILE="$CONFIG_DIR/lang/${language}.conf"
@@ -463,11 +408,11 @@ perform_web_search() {
             echo "$response"
         else
             # Fallback to regular GPT
-            sgpt --chat "$CHAT_NAME" "${dialect_prompt}$query"
+            python3 "$SCRIPT_DIR/chat_system.py" "$CHAT_NAME" "$query" "$dialect_prompt"
         fi
     else
         # No Perplexity key, use regular GPT
-        sgpt --chat "$CHAT_NAME" "${dialect_prompt}$query"
+        python3 "$SCRIPT_DIR/chat_system.py" "$CHAT_NAME" "$query" "$dialect_prompt"
     fi
 }
 

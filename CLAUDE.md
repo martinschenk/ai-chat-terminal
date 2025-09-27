@@ -1,12 +1,13 @@
 # AI Chat Terminal - Claude Code Instructions
 
 ## Project Overview
-AI Chat Terminal is a Shell-GPT based CLI tool that brings ChatGPT + Web Search + AI Vector Database to the terminal with 19 language support and regional dialects.
+AI Chat Terminal is a native Python CLI tool with direct OpenAI API integration that brings ChatGPT + Web Search + AI Vector Database to the terminal with 19 language support and regional dialects.
 
 **GitHub**: https://github.com/martinschenk/ai-chat-terminal
-**Current Version**: 5.3.0 (Smart Memory System with Vector Database - Sept 2025)
+**Current Version**: 5.4.0 (Native OpenAI API Integration - Sept 2025)
 
-**🎯 Major Features (v5.3.0):**
+**🎯 Major Features (v5.4.0):**
+- **Native OpenAI Integration**: Direct API calls without shell-gpt dependency
 - **Dual-Layer Memory**: Short-term context (5-50 msgs) + Long-term SQLite database
 - **AI Vector Search**: Semantic search with sentence-transformers (384D embeddings)
 - **Cost Optimization**: Configurable context windows with cost indicators
@@ -28,10 +29,11 @@ AI Chat Terminal is a Shell-GPT based CLI tool that brings ChatGPT + Web Search 
 │   ├── de.conf         # German with Schwäbisch, Bayerisch, Sächsisch
 │   ├── es.conf         # Spanish with Mexican, Argentinian, etc.
 │   └── ...
-├── memory_system.py    # AI Vector Database (NEW v5.3.0)
+├── memory_system.py    # AI Vector Database (v5.3.0)
+├── chat_system.py      # Native OpenAI API Integration (NEW v5.4.0)
 ├── CLAUDE.md           # This file
 ├── README.md           # Marketing/docs
-└── VERSION             # Current version number (5.3.0)
+└── VERSION             # Current version number (5.4.0)
 ```
 
 ### User Installation Location (when installed from GitHub)
@@ -47,7 +49,8 @@ AI Chat Terminal is a Shell-GPT based CLI tool that brings ChatGPT + Web Search 
 │   ├── es.conf                 # Spanish + variants
 │   ├── fr.conf, it.conf, ...   # Other languages
 │   └── zh.conf, hi.conf        # Chinese, Hindi
-├── memory_system.py            # AI Vector Database (NEW)
+├── memory_system.py            # AI Vector Database
+├── chat_system.py              # Native OpenAI API Integration (NEW v5.4.0)
 ├── memory.db                   # SQLite database (auto-created)
 ├── config                      # User configuration
 └── .env                        # API keys (secure)
@@ -221,7 +224,7 @@ Always clearly explain in installer:
 ## Dependencies
 
 ### Required
-- **shell-gpt**: Auto-installed via pip3
+- **OpenAI Python SDK**: Auto-installed via pip3
 - **Python 3**: Usually pre-installed on macOS/Linux
 - **curl**: For downloads
 - **OpenAI API key**: User must provide
@@ -231,7 +234,19 @@ Always clearly explain in installer:
 
 ## 🆕 Recent Major Improvements (Sept 2025)
 
-### ✅ Smart Memory System - v5.3.0 (NEW!)
+### ✅ Native OpenAI Integration - v5.4.0 (NEW!)
+**Feature**: Replaced shell-gpt with direct OpenAI Python SDK integration
+**Implementation**:
+- **chat_system.py**: New Python module for direct API calls
+- **No Dependencies**: Removed shell-gpt, sgpt commands entirely
+- **Better Error Handling**: Native Python error management
+- **Background Job Fix**: Eliminated `[4] 25734 done` notifications
+- **Chat Role Fix**: No more "Could not determine chat role" errors
+- **Memory Integration**: Automatic saving to memory.db
+- **Cost Tracking**: Token counting and usage statistics
+- **Streaming Support**: Real-time response display
+
+### ✅ Smart Memory System - v5.3.0
 **Feature**: Revolutionary AI-powered vector database for semantic search
 **Implementation**:
 - **SQLite + Vector Embeddings**: sentence-transformers (384D) + sqlite-vec
@@ -374,7 +389,7 @@ The improved uninstall function (start ai, then type /config → [9]):
 4. **Deferred Cleanup**: Uses background script to avoid self-deletion issues
 
 ## Attribution
-**Built on Shell-GPT** - Always credit TheR1D/shell_gpt in README and docs.
+**Native Python Implementation** - Direct OpenAI API integration without external dependencies.
 
 ## Maintenance Tasks
 - Monitor GitHub issues for user feedback
@@ -390,26 +405,6 @@ The improved uninstall function (start ai, then type /config → [9]):
 - **NEW**: Verify date/time context injection works in all modes
 - **NEW**: Test documentation examples match actual terminal behavior
 
-## 🚨 TEMPORARY DEBUG FEATURES (TODO: Remove when fixed)
-
-### Debug Logging (Sept 27, 2025)
-**Issue**: Background job notifications `[4] 25734 done` appearing in chat
-**Debug Solution**: Added logging to `~/.aichat/debug.log`
-- **Location**: `modules/functions.zsh:51-52`
-- **What it logs**: Memory system calls with timestamps
-- **Format**: `YYYY-MM-DD HH:MM:SS Memory: role -> session_id`
-- **Stderr**: Python errors redirected to debug.log
-- **TODO**: Remove debug logging once background job issue is resolved
-- **Commits**: e69980c (add logging), f1528c1 (setopt fix), cfab1d7 (disown attempt)
-
-```bash
-# View logs:
-tail -f ~/.aichat/debug.log
-cat ~/.aichat/debug.log
-
-# Clean logs:
-rm ~/.aichat/debug.log
-```
 
 ## Development Philosophy
 - **Honest marketing** - No inflated user numbers

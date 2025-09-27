@@ -58,7 +58,7 @@ Then enter your [OpenAI API key](https://platform.openai.com/api-keys) and start
 - **Minimum $5 OpenAI credit** (gpt-3.5-turbo recommended for cost efficiency)
 
 ### Auto-Installed Dependencies
-- **Shell-GPT** - Core chat functionality
+- **OpenAI Python SDK** - Direct API integration
 - **sentence-transformers** (~80MB) - AI semantic search
 - **sqlite-vec** - Vector embeddings in SQLite
 - **jq** - JSON processing
@@ -187,7 +187,7 @@ AI Chat Terminal features a revolutionary dual-layer memory architecture with mu
 
 ┌─────────────────────────────────────────────────────────┐
 │                 SHORT-TERM MEMORY                       │
-│               (Shell-GPT Context)                       │
+│               (Python Chat System)                     │
 │  • Last 5-50 messages (configurable)                   │
 │  • Fast API responses                                   │
 │  • Cost optimized                                      │
@@ -340,9 +340,9 @@ If `chat` conflicts with existing commands, the installer will suggest alternati
 ### API Key Issues
 Ensure your OpenAI account has sufficient credit. Start `chat` then use `/config` to update your API key.
 
-### Shell-GPT Not Found
+### OpenAI SDK Not Found
 ```bash
-pip3 install --user shell-gpt
+pip3 install --user openai requests
 ```
 
 ### Memory System Not Working
@@ -369,4 +369,4 @@ MIT License - see [LICENSE](LICENSE) file.
 
 ## Attribution
 
-Built on [Shell-GPT](https://github.com/TheR1D/shell_gpt) by TheR1D.
+Direct OpenAI API integration with native Python implementation.

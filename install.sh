@@ -1,8 +1,7 @@
 #!/bin/bash
-# AI Chat Terminal - Smart Installer v5.2.1
-# Copyright (c) 2025 Martin Schenk
+# AI Chat Terminal - Smart Installer v5.4.0
 # Licensed under MIT License - https://opensource.org/licenses/MIT
-# Enhanced onboarding with language-first approach
+# Native OpenAI API integration without shell-gpt dependency
 
 set -e
 
@@ -26,8 +25,7 @@ echo -e "${CYAN}${BOLD}"
 echo "╔═══════════════════════════════════════╗"
 echo "║                                       ║"
 echo "║    🤖 AI Chat Terminal Installer     ║"
-echo "║          Version 5.2.1                ║"
-echo "║       © 2025 Martin Schenk            ║"
+echo "║          Version 5.4.0                ║"
 echo "║                                       ║"
 echo "╚═══════════════════════════════════════╝"
 echo -e "${RESET}\n"
@@ -82,9 +80,11 @@ echo -n "  • Config menu module... "
 curl -sL "$BASE_URL/modules/config-menu.zsh" -o "$INSTALL_DIR/modules/config-menu.zsh"
 echo -e "${GREEN}✓${RESET}"
 
-echo -n "  • Memory system... "
+echo -n "  • Chat & Memory system... "
 curl -sL "$BASE_URL/memory_system.py" -o "$INSTALL_DIR/memory_system.py"
 chmod +x "$INSTALL_DIR/memory_system.py"
+curl -sL "$BASE_URL/chat_system.py" -o "$INSTALL_DIR/chat_system.py"
+chmod +x "$INSTALL_DIR/chat_system.py"
 echo -e "${GREEN}✓${RESET}"
 
 # Download language files
@@ -114,14 +114,12 @@ if ! command -v python3 &> /dev/null; then
     fi
 fi
 
-# Install shell-gpt if not installed
-if ! command -v sgpt &> /dev/null; then
-    echo -e "${YELLOW}  Installing shell-gpt...${RESET}"
-    pip3 install --user shell-gpt
-    echo -e "${GREEN}  ✓ shell-gpt installed${RESET}"
-else
-    echo -e "${GREEN}  ✓ shell-gpt already installed${RESET}"
-fi
+# Install OpenAI Python SDK and requests
+pip3 install --user openai requests &>/dev/null || {
+    echo -e "${YELLOW}  Installing OpenAI SDK...${RESET}"
+    pip3 install --user openai requests
+}
+echo -e "${GREEN}  ✓ OpenAI SDK ready${RESET}"
 
 # Install jq if not installed (for JSON parsing)
 if ! command -v jq &> /dev/null; then
