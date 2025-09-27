@@ -490,6 +490,8 @@ Please answer their question in a natural, friendly way using this information."
                                             # print(f"[DEBUG] Config loading failed: {e}", file=sys.stderr)
                                             ai_response = "I don't have that information stored in my memory database."
                                         # print(f"[DEBUG] Final ai_response: {ai_response}", file=sys.stderr)
+                                        # Print the response BEFORE returning
+                                        print(ai_response, flush=True)
                                         # Return immediately to prevent any further processing
                                         return ai_response, {
                                             "error": False,
@@ -545,8 +547,8 @@ Please answer their question in a natural, friendly way using this information."
                 else:
                     ai_response = "No choices in API response"
 
-                # Print the response
-                print(ai_response)
+                # Print the response with proper flushing
+                print(ai_response, flush=True)
 
             except json.JSONDecodeError as e:
                 ai_response = "Error: Invalid JSON response from API"
