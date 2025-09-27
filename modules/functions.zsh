@@ -167,8 +167,7 @@ except:
 
         # Initialize chat if this is the first message or repair corrupted session
         if ! sgpt --list-chats 2>/dev/null | grep -q "^$CHAT_NAME$"; then
-            local SESSION_DATE=$(date +%Y-%m-%d)
-            sgpt --chat "$CHAT_NAME" "Hello! This is a new daily chat session for $SESSION_DATE. Please remember our conversation throughout the day." >/dev/null 2>&1 || true
+            sgpt --chat "$CHAT_NAME" "Hello! This is a new chat session. Please remember our conversation." >/dev/null 2>&1 || true
         else
             # Test if chat session is corrupted and repair if needed
             if ! sgpt --chat "$CHAT_NAME" "test" >/dev/null 2>&1; then

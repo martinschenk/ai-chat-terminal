@@ -495,8 +495,14 @@ memory_system_menu() {
                 ;;
             2)  # Show recent messages
                 echo -e "\n${YELLOW}Recent messages from current session:${RESET}\n"
-                local SESSION_DATE=$(date +%Y-%m-%d)
-                local CHAT_NAME="chat_${SESSION_DATE}"
+                # Get current command from config
+                local CONFIG_FILE="$HOME/.aichat/config"
+                local COMMAND_CHAR="chat"
+                if [[ -f "$CONFIG_FILE" ]]; then
+                    source "$CONFIG_FILE"
+                    COMMAND_CHAR="${AI_CHAT_COMMAND:-chat}"
+                fi
+                local CHAT_NAME="${COMMAND_CHAR}_session"
                 if [[ -f "/tmp/chat_cache/$CHAT_NAME" ]]; then
                     python3 -c "
 import json
