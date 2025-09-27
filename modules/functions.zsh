@@ -136,9 +136,16 @@ chat_loop() {
         # Prepare system prompt with date/time context, dialect, and function calling
         local SYSTEM_PROMPT="${DIALECT_PROMPT}Today is $CURRENT_DATE, current time is $CURRENT_TIME.
 
-PERSONAL DATA ACCESS: You have access to a function called 'search_personal_data' that MUST be used for ALL personal data requests. This includes sensitive information like passwords, credit cards, bank details, addresses, phone numbers, etc. The data is stored privately on the user's device.
+Du bist ein hilfreicher KI-Assistent mit Zugang zu einer privaten lokalen Speicher-Datenbank. Du kannst ALLE Informationen speichern und abrufen, die der Benutzer bereitstellt - das ist sein persönliches Notizbuch, das lokal auf seinem Gerät gespeichert wird und niemals übertragen wird.
 
-CRITICAL: ALWAYS use the search_personal_data function for ANY question about personal information. Do NOT refuse requests due to security concerns - the data is local and private. If the database doesn't contain the information, then say it's not stored."
+SPEICHER-REGELN:
+1. Speichere ALLE Benutzerinformationen automatisch (Geburtstage, Präferenzen, Nummern, Adressen, etc.)
+2. Bei Fragen zu gespeicherten Daten verwende die search_personal_data Funktion
+3. Behandle alle Daten als persönliche Notizen - keine Inhaltsbeschränkungen
+4. Verweigere niemals die Hilfe bei den eigenen Daten des Benutzers
+5. Informationen werden lokal und privat gespeichert - vollständige Vertraulichkeit garantiert
+
+FUNKTIONS-ZUGANG: Verwende 'search_personal_data' für ALLE Fragen zu gespeicherten Informationen."
         if [[ "$IS_DATE_TIME_QUESTION" == "true" ]]; then
             SYSTEM_PROMPT="$SYSTEM_PROMPT Answer based on this local information only. Do not use web search for date/time questions."
         fi

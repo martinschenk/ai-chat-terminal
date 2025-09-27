@@ -224,29 +224,29 @@ class ChatSystem:
         """Handle DB search triggers in AI response"""
         # Check if response contains search trigger
         if "{{SEARCH_DB}}" not in ai_response:
-            print(f"[DEBUG] No {{{{SEARCH_DB}}}} trigger found in response", file=sys.stderr)
+            # print(f"[DEBUG] No {{{{SEARCH_DB}}}} trigger found in response", file=sys.stderr)
             return ai_response
 
-        print(f"[DEBUG] ✅ FOUND {{{{SEARCH_DB}}}} TRIGGER! User asked: '{user_input}'", file=sys.stderr)
+        # print(f"[DEBUG] ✅ FOUND {{{{SEARCH_DB}}}} TRIGGER! User asked: '{user_input}'", file=sys.stderr)
 
         try:
             # Search database using the original user input
             search_results = self.search_db_with_user_query(user_input)
-            print(f"[DEBUG] DB search results: {search_results}", file=sys.stderr)
+            # print(f"[DEBUG] DB search results: {search_results}", file=sys.stderr)
 
             if search_results:
                 # Replace trigger with search results
-                print(f"[DEBUG] ✅ Replacing {{{{SEARCH_DB}}}} with: {search_results}", file=sys.stderr)
+                # print(f"[DEBUG] ✅ Replacing {{{{SEARCH_DB}}}} with: {search_results}", file=sys.stderr)
                 ai_response = ai_response.replace("{{SEARCH_DB}}", search_results)
             else:
                 # Replace with not found message
-                print(f"[DEBUG] ❌ No data found in DB for query: {user_input}", file=sys.stderr)
+                # print(f"[DEBUG] ❌ No data found in DB for query: {user_input}", file=sys.stderr)
                 ai_response = ai_response.replace("{{SEARCH_DB}}", "I don't have that information stored in our conversation history.")
 
             return ai_response
 
         except Exception as e:
-            print(f"[DEBUG] ❌ DB search failed: {e}", file=sys.stderr)
+            # print(f"[DEBUG] ❌ DB search failed: {e}", file=sys.stderr)
             # Return original response if DB search fails
             return ai_response
 
@@ -488,7 +488,7 @@ Please answer their question in a natural, friendly way using this information."
                                             ai_response = config.get("LANG_NO_INFO_STORED", "I don't have that information stored in my memory database.")
                                         except Exception as e:
                                             # print(f"[DEBUG] Config loading failed: {e}", file=sys.stderr)
-                                            ai_response = "I don't have that information stored in my memory database."
+                                            ai_response = "Ich habe diese Information nicht in meiner Speicher-Datenbank gespeichert."
                                         # print(f"[DEBUG] Final ai_response: {ai_response}", file=sys.stderr)
                                         # Print the response BEFORE returning
                                         print(ai_response, flush=True)
