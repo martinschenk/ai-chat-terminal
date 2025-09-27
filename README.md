@@ -352,6 +352,12 @@ pip3 install --user sentence-transformers sqlite-vec
 ```
 The system will automatically fall back to text search if needed.
 
+### urllib3 SSL Warning (macOS)
+If you see `NotOpenSSLWarning` about LibreSSL compatibility:
+- This is a cosmetic warning only - functionality works correctly
+- The warning is automatically suppressed in v5.4.0+
+- More info: [urllib3/urllib3#3020](https://github.com/urllib3/urllib3/issues/3020)
+
 ### Uninstall
 Start `chat`, then type `/config` and select option 10 (Uninstall).
 

@@ -9,8 +9,24 @@ import sys
 import json
 import sqlite3
 from datetime import datetime
-import requests
+import warnings
 from typing import Dict, List, Optional, Tuple
+
+# Suppress urllib3 LibreSSL warnings on macOS BEFORE importing requests
+# This is a known issue: https://github.com/urllib3/urllib3/issues/3020
+# urllib3 v2 requires OpenSSL 1.1.1+ but macOS ships with LibreSSL 2.8.3
+# The functionality still works correctly, only the warning is cosmetic
+warnings.filterwarnings("ignore", message=".*urllib3 v2.*OpenSSL.*")
+
+# Now safe to import requests (which uses urllib3)
+import requests
+
+# Additional urllib3 warning suppression for runtime
+try:
+    import urllib3
+    urllib3.disable_warnings(urllib3.exceptions.NotOpenSSLWarning)
+except (ImportError, AttributeError):
+    pass
 
 class ChatSystem:
     def __init__(self, config_dir: str = None):

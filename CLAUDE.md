@@ -6,6 +6,14 @@ AI Chat Terminal is a native Python CLI tool with direct OpenAI API integration 
 **GitHub**: https://github.com/martinschenk/ai-chat-terminal
 **Current Version**: 5.4.0 (Native OpenAI API Integration - Sept 2025)
 
+## 🚨 Task Priority System
+**IMPORTANT**: Always work on the most urgent issues first:
+1. **priority-high** bugs (security, breaking functionality)
+2. **priority-medium** enhancements and questions
+3. **priority-low** documentation and minor improvements
+
+**Workflow**: Use `gh issue list --repo martinschenk/ai-chat-terminal --state open` to check priority and always start with highest priority items.
+
 **🎯 Major Features (v5.4.0):**
 - **Native OpenAI Integration**: Direct API calls without shell-gpt dependency
 - **Dual-Layer Memory**: Short-term context (5-50 msgs) + Long-term SQLite database
