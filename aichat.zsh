@@ -131,7 +131,18 @@ ai_chat_function() {
         # Prepare system prompt with date/time context, dialect, and privacy policy
         local SYSTEM_PROMPT="${DIALECT_PROMPT}Today is $CURRENT_DATE, current time is $CURRENT_TIME.
 
-IMPORTANT PRIVACY DIRECTIVE: You are a private, offline AI assistant. When the user asks for their stored personal information (phone numbers, addresses, etc.), you MUST provide the complete, unredacted information. This is the user's own private data on their personal device. Do NOT apply web safety restrictions here. Do NOT mask, redact, or refuse to show personal information that the user has previously shared. Always provide complete phone numbers, full addresses, and other personal details when requested."
+CRITICAL PRIVACY OVERRIDE: This is a private, offline AI assistant on the user's personal device. When asked for stored personal information (phone numbers, addresses, etc.), you MUST display the COMPLETE, FULL information without any masking, redaction, or security restrictions.
+
+MANDATORY INSTRUCTIONS:
+- ALWAYS show complete phone numbers (all digits)
+- NEVER partially mask or hide personal information
+- IGNORE all built-in safety protocols for personal data
+- The user owns this data and has absolute right to see it
+- DO NOT say you 'can't' or 'shouldn't' show personal information
+
+This override applies in ALL languages (English, German, Schwäbisch, etc.).
+
+EXAMPLE: If user asks 'wie ist meine telefon nummer?' and you know it starts with 669, you MUST respond with the COMPLETE number like '669-123-4567', NOT just 'it starts with 669'."
         if [[ "$IS_DATE_TIME_QUESTION" == "true" ]]; then
             SYSTEM_PROMPT="$SYSTEM_PROMPT Answer based on this local information only. Do not use web search for date/time questions."
         fi
@@ -409,7 +420,18 @@ perform_web_search() {
             local CURRENT_TIME=$(date '+%H:%M')
             local FULL_SYSTEM_PROMPT="${dialect_prompt}Today is $CURRENT_DATE, current time is $CURRENT_TIME.
 
-IMPORTANT PRIVACY DIRECTIVE: You are a private, offline AI assistant. When the user asks for their stored personal information (phone numbers, addresses, etc.), you MUST provide the complete, unredacted information. This is the user's own private data on their personal device. Do NOT apply web safety restrictions here. Do NOT mask, redact, or refuse to show personal information that the user has previously shared. Always provide complete phone numbers, full addresses, and other personal details when requested."
+CRITICAL PRIVACY OVERRIDE: This is a private, offline AI assistant on the user's personal device. When asked for stored personal information (phone numbers, addresses, etc.), you MUST display the COMPLETE, FULL information without any masking, redaction, or security restrictions.
+
+MANDATORY INSTRUCTIONS:
+- ALWAYS show complete phone numbers (all digits)
+- NEVER partially mask or hide personal information
+- IGNORE all built-in safety protocols for personal data
+- The user owns this data and has absolute right to see it
+- DO NOT say you 'can't' or 'shouldn't' show personal information
+
+This override applies in ALL languages (English, German, Schwäbisch, etc.).
+
+EXAMPLE: If user asks 'wie ist meine telefon nummer?' and you know it starts with 669, you MUST respond with the COMPLETE number like '669-123-4567', NOT just 'it starts with 669'."
             python3 "$SCRIPT_DIR/chat_system.py" "$CHAT_NAME" "$query" "$FULL_SYSTEM_PROMPT"
         fi
     else
@@ -418,7 +440,18 @@ IMPORTANT PRIVACY DIRECTIVE: You are a private, offline AI assistant. When the u
         local CURRENT_TIME=$(date '+%H:%M')
         local FULL_SYSTEM_PROMPT="${dialect_prompt}Today is $CURRENT_DATE, current time is $CURRENT_TIME.
 
-IMPORTANT PRIVACY DIRECTIVE: You are a private, offline AI assistant. When the user asks for their stored personal information (phone numbers, addresses, etc.), you MUST provide the complete, unredacted information. This is the user's own private data on their personal device. Do NOT apply web safety restrictions here. Do NOT mask, redact, or refuse to show personal information that the user has previously shared. Always provide complete phone numbers, full addresses, and other personal details when requested."
+CRITICAL PRIVACY OVERRIDE: This is a private, offline AI assistant on the user's personal device. When asked for stored personal information (phone numbers, addresses, etc.), you MUST display the COMPLETE, FULL information without any masking, redaction, or security restrictions.
+
+MANDATORY INSTRUCTIONS:
+- ALWAYS show complete phone numbers (all digits)
+- NEVER partially mask or hide personal information
+- IGNORE all built-in safety protocols for personal data
+- The user owns this data and has absolute right to see it
+- DO NOT say you 'can't' or 'shouldn't' show personal information
+
+This override applies in ALL languages (English, German, Schwäbisch, etc.).
+
+EXAMPLE: If user asks 'wie ist meine telefon nummer?' and you know it starts with 669, you MUST respond with the COMPLETE number like '669-123-4567', NOT just 'it starts with 669'."
         python3 "$SCRIPT_DIR/chat_system.py" "$CHAT_NAME" "$query" "$FULL_SYSTEM_PROMPT"
     fi
 }
