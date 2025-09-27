@@ -336,7 +336,7 @@ class ChatSystem:
                 "messages": messages,
                 "temperature": 0.7,
                 "max_tokens": 2000,
-                "stream": True,  # Enable streaming for faster response times
+                "stream": False,  # Disable streaming for function calls
                 "tools": [
                     {
                         "type": "function",
@@ -377,14 +377,13 @@ class ChatSystem:
                 error_msg = f"OpenAI API error {response.status_code}: {response.text}"
                 return error_msg, {"error": True, "status_code": response.status_code}
 
-            # Process response (with function calling support)
+            # Process response (non-streaming for function calls)
             ai_response = ""
-            function_calls = []
-            streaming_worked = False
 
             try:
-                # Try to parse as complete JSON first (function calls don't stream well)
                 data = response.json()
+                print(f"[DEBUG] Raw API response: {json.dumps(data, indent=2)[:500]}...", file=sys.stderr)
+
                 if "choices" in data and data["choices"]:
                     choice = data["choices"][0]
                     message = choice.get("message", {})
@@ -392,10 +391,9 @@ class ChatSystem:
                     # Check for function calls
                     if "tool_calls" in message and message["tool_calls"]:
                         print(f"[DEBUG] ✅ OpenAI wants to call function!", file=sys.stderr)
-                        function_calls = message["tool_calls"]
 
                         # Process function calls
-                        for tool_call in function_calls:
+                        for tool_call in message["tool_calls"]:
                             if tool_call["type"] == "function":
                                 func_name = tool_call["function"]["name"]
                                 func_args = json.loads(tool_call["function"]["arguments"])
@@ -405,60 +403,33 @@ class ChatSystem:
                                 if func_name == "search_personal_data":
                                     # Execute our search function
                                     search_result = self.search_db_with_user_query(func_args.get("query", ""))
+                                    print(f"[DEBUG] Search result: {search_result}", file=sys.stderr)
 
                                     if search_result:
                                         ai_response = f"Your {func_args.get('data_type', 'information')}: {search_result}"
-                                        print(ai_response)
                                     else:
                                         ai_response = "I don't have that information stored in our conversation history."
-                                        print(ai_response)
-
-                                    streaming_worked = True
 
                     elif "content" in message and message["content"]:
                         # Regular text response
                         ai_response = message["content"]
-                        print(ai_response)
-                        streaming_worked = True
 
-            except json.JSONDecodeError:
-                # Fallback to streaming for regular responses
-                try:
-                    for line in response.iter_lines():
-                        if line:
-                            line = line.decode('utf-8')
-                            if line.startswith('data: '):
-                                line = line[6:]  # Remove 'data: ' prefix
+                    else:
+                        ai_response = "No valid response content found"
 
-                                if line.strip() == '[DONE]':
-                                    streaming_worked = True
-                                    break
+                else:
+                    ai_response = "No choices in API response"
 
-                                try:
-                                    chunk = json.loads(line)
-                                    if 'choices' in chunk and chunk['choices']:
-                                        delta = chunk['choices'][0].get('delta', {})
-                                        if 'content' in delta:
-                                            content = delta['content']
-                                            ai_response += content
-                                            # Print content immediately for better UX
-                                            print(content, end='', flush=True)
-                                            streaming_worked = True
-                                except json.JSONDecodeError:
-                                    continue  # Skip malformed JSON
+                # Print the response
+                print(ai_response)
 
-                    # Print newline after streaming is complete
-                    if streaming_worked:
-                        print()
-
-                except Exception as e:
-                    # Final fallback
-                    print(f"\nAll parsing failed, using fallback...", file=sys.stderr)
-                    streaming_worked = False
-
-            # Final fallback
-            if not streaming_worked:
-                ai_response = "Error: Could not process API response"
+            except json.JSONDecodeError as e:
+                print(f"[DEBUG] JSON decode error: {e}", file=sys.stderr)
+                ai_response = "Error: Invalid JSON response from API"
+                print(ai_response)
+            except Exception as e:
+                print(f"[DEBUG] Unexpected error: {e}", file=sys.stderr)
+                ai_response = f"Error: {e}"
                 print(ai_response)
 
             # Function calling already handled above, no need for trigger processing
