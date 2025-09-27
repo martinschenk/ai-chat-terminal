@@ -47,24 +47,24 @@ show_config_menu() {
         echo -e "${PURPLE}│${RESET}  ${LANG_CONFIG_CURRENT}"
         echo -e "${PURPLE}│${RESET}  ├─ ${LANG_CONFIG_COMMAND}: ${YELLOW}$COMMAND_CHAR${RESET}"
         echo -e "${PURPLE}│${RESET}  ├─ ${LANG_CONFIG_LANGUAGE}: ${YELLOW}$LANGUAGE${RESET}"
-        echo -e "${PURPLE}│${RESET}  ├─ Context Window: ${YELLOW}$CONTEXT_WINDOW messages${RESET}"
+        echo -e "${PURPLE}│${RESET}  ├─ ${LANG_CONFIG_CONTEXT_WINDOW:-Context Window}: ${YELLOW}$CONTEXT_WINDOW ${LANG_CONTEXT_MESSAGES:-messages}${RESET}"
         echo -e "${PURPLE}│${RESET}  └─ ${LANG_CONFIG_ESC}: ${YELLOW}$ENABLE_ESC${RESET}"
         echo -e "${PURPLE}├─────────────────────────────────────${RESET}"
         echo -e "${PURPLE}│${RESET}  ${GREEN}[1]${RESET} ${LANG_CONFIG_OPT1}"
         echo -e "${PURPLE}│${RESET}  ${GREEN}[2]${RESET} ${LANG_CONFIG_OPT2}"
         echo -e "${PURPLE}│${RESET}  ${GREEN}[3]${RESET} ${LANG_CONFIG_OPT4}"
         echo -e "${PURPLE}│${RESET}  ${GREEN}[4]${RESET} ${LANG_CONFIG_OPT5}"
-        echo -e "${PURPLE}│${RESET}  ${GREEN}[5]${RESET} 💬 Set context window"
-        echo -e "${PURPLE}│${RESET}  ${GREEN}[6]${RESET} 🧠 Memory system"
+        echo -e "${PURPLE}│${RESET}  ${GREEN}[5]${RESET} 💬 ${LANG_CONTEXT_SET:-Set context window}"
+        echo -e "${PURPLE}│${RESET}  ${GREEN}[6]${RESET} 🧠 ${LANG_CONFIG_MEMORY_SYSTEM:-Memory system}"
         echo -e "${PURPLE}│${RESET}  ${GREEN}[7]${RESET} 🧹 ${LANG_CONFIG_OPT7}"
-        echo -e "${PURPLE}│${RESET}  ${GREEN}[8]${RESET} ℹ️  About & Version"
+        echo -e "${PURPLE}│${RESET}  ${GREEN}[8]${RESET} ℹ️  ${LANG_CONFIG_ABOUT:-About & Version}"
         echo -e "${PURPLE}│${RESET}  ${GREEN}[9]${RESET} ${LANG_CONFIG_OPT6}"
         echo -e "${PURPLE}│${RESET}"
         echo -e "${PURPLE}│${RESET}  ${RED}[10]${RESET} 🗑️  ${LANG_CONFIG_OPT9}"
         echo -e "${PURPLE}└─────────────────────────────────────${RESET}"
         echo ""
 
-        echo -ne "${CYAN}Select [1-10]: ${RESET}"
+        echo -ne "${CYAN}${LANG_CONFIG_SELECT_OPTION:-Select [1-10]:} ${RESET}"
         read -r choice
 
         case $choice in
@@ -101,7 +101,7 @@ show_config_menu() {
                 # If uninstall succeeded, the script will have exited
                 ;;
             *)  # Invalid option
-                echo -e "${RED}Invalid option. Please try again.${RESET}"
+                echo -e "${RED}${LANG_CONFIG_INVALID:-Invalid option. Please try again.}${RESET}"
                 sleep 1
                 ;;
         esac
@@ -110,7 +110,7 @@ show_config_menu() {
 
 # Change language function
 change_language() {
-    echo -e "\n${CYAN}Select Your Language:${RESET}"
+    echo -e "\n${CYAN}${LANG_SELECT_LANGUAGE:-Select Your Language:}${RESET}"
     echo "  [1] 🇬🇧 English"
     echo "  [2] 🇩🇪 Deutsch"
     echo "  [3] 🇫🇷 Français"
@@ -130,7 +130,7 @@ change_language() {
         5) new_lang="es" ;;
         6) new_lang="zh" ;;
         7) new_lang="hi" ;;
-        *) echo -e "${RED}Invalid choice${RESET}"; sleep 2; return ;;
+        *) echo -e "${RED}${LANG_SELECT_INVALID:-Invalid choice}${RESET}"; sleep 2; return ;;
     esac
 
     if [[ ! -z "$new_lang" ]]; then
@@ -154,7 +154,7 @@ change_language() {
 
 # Change context window function
 change_context_window() {
-    echo -e "\n${CYAN}Set Context Window Size:${RESET}"
+    echo -e "\n${CYAN}${LANG_CONTEXT_SET:-Set Context Window Size:}${RESET}"
     echo "Current: ${AI_CHAT_CONTEXT_WINDOW:-20} messages"
     echo ""
     echo "Recommended settings:"
@@ -209,7 +209,7 @@ change_ai_model() {
         3) new_model="gpt-4-turbo" ;;
         4) new_model="gpt-4" ;;
         5) new_model="gpt-3.5-turbo" ;;
-        *) echo -e "${RED}Invalid choice${RESET}"; sleep 2; return ;;
+        *) echo -e "${RED}${LANG_SELECT_INVALID:-Invalid choice}${RESET}"; sleep 2; return ;;
     esac
 
     # Update .env file
@@ -434,7 +434,7 @@ memory_system_menu() {
 
     while true; do
         clear
-        echo -e "${BOLD}${CYAN}🧠 Memory System${RESET}\n"
+        echo -e "${BOLD}${CYAN}🧠 ${LANG_MEMORY_TITLE:-Memory System}${RESET}\n"
 
         # Get memory statistics
         local MEMORY_STATS=""
@@ -465,7 +465,7 @@ memory_system_menu() {
         echo -e "${PURPLE}│${RESET}  ├─ Oldest Message: ${YELLOW}$OLDEST_DATE${RESET}"
         echo -e "${PURPLE}│${RESET}  └─ Newest Message: ${YELLOW}$NEWEST_DATE${RESET}"
         echo -e "${PURPLE}├─────────────────────────────────────${RESET}"
-        echo -e "${PURPLE}│${RESET}  ${GREEN}[1]${RESET} Search memories"
+        echo -e "${PURPLE}│${RESET}  ${GREEN}[1]${RESET} ${LANG_MEMORY_SEARCH:-Search memories}"
         echo -e "${PURPLE}│${RESET}  ${GREEN}[2]${RESET} Show recent messages"
         echo -e "${PURPLE}│${RESET}  ${GREEN}[3]${RESET} Database statistics"
         echo -e "${PURPLE}│${RESET}  ${YELLOW}[4]${RESET} Smart cleanup (5000+ msgs/50MB)"
@@ -479,7 +479,7 @@ memory_system_menu() {
         case $choice in
             1)  # Search memories
                 echo ""
-                echo -ne "${CYAN}Enter search query: ${RESET}"
+                echo -ne "${CYAN}${LANG_MEMORY_ENTER_QUERY:-Enter search query:} ${RESET}"
                 read -r query
                 if [[ -n "$query" ]]; then
                     echo -e "\n${YELLOW}Searching memories for: \"$query\"${RESET}\n"
@@ -556,7 +556,7 @@ except:
                 return
                 ;;
             *)
-                echo -e "${RED}Invalid option. Please try again.${RESET}"
+                echo -e "${RED}${LANG_CONFIG_INVALID:-Invalid option. Please try again.}${RESET}"
                 sleep 1
                 ;;
         esac
