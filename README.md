@@ -4,7 +4,7 @@ A ChatGPT-powered terminal interface with integrated web search and AI-powered v
 
 **🚀 Transform your terminal into an intelligent AI assistant with memory that never forgets!**
 
-[![Version](https://img.shields.io/badge/version-5.3.0-blue.svg)](https://github.com/martinschenk/ai-chat-terminal)
+[![Version](https://img.shields.io/badge/version-5.4.0-blue.svg)](https://github.com/martinschenk/ai-chat-terminal)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-macOS%20|%20Linux-lightgrey.svg)](https://github.com/martinschenk/ai-chat-terminal)
 
@@ -101,66 +101,23 @@ Your name is Sara! How can I help you today?
 👤 You ▶
 ```
 
-### Everyday Help Example
-AI assistance with daily tasks and planning:
+### Private Information Storage Example
+Store and retrieve personal data with complete privacy:
 ```
 /config = settings | ESC/exit = quit
 ─────────────────────────────────────────────────────
 
-👤 You ▶ I need to plan a birthday party for my 8-year old
+👤 You ▶ My phone number is 555-123-4567
 🤖 AI ▶
-Fun! Here's a simple party plan for an 8-year-old:
-
-🎂 **Food**: Pizza, cake, juice boxes, fruit
-🎮 **Activities**: Musical chairs, treasure hunt, crafts station
-🎁 **Party favors**: Small toys, stickers, candy bags
-⏰ **Duration**: 2-3 hours is perfect for this age
-
-What's their favorite theme or character?
+Got it! I'll remember your phone number. The information is stored
+securely in your local database and never sent to OpenAI.
 ─────────────────────────────────────────────────────
 
-👤 You ▶ She loves unicorns!
+👤 You ▶ What's my phone number?
 🤖 AI ▶
-Perfect! Unicorn theme ideas:
-- Pink/purple decorations with rainbow colors
-- Unicorn cake or cupcakes with horns
-- "Pin the horn on the unicorn" game
-- Unicorn headbands as party favors
-- Face painting with glitter and rainbows
+🗄️ Source: Local database
 
-Would you like specific recipes or decoration ideas?
-─────────────────────────────────────────────────────
-
-👤 You ▶
-```
-
-### Quick Help Example
-Get instant answers to everyday questions:
-```
-/config = settings | ESC/exit = quit
-─────────────────────────────────────────────────────
-
-👤 You ▶ what's a good recipe for chocolate chip cookies?
-🤖 AI ▶
-Here's a simple recipe:
-
-**Ingredients:**
-- 2¼ cups flour
-- 1 cup butter, softened
-- ¾ cup each: brown & white sugar
-- 2 eggs, 2 tsp vanilla
-- 1 tsp baking soda, 1 tsp salt
-- 2 cups chocolate chips
-
-**Steps:** Mix wet ingredients, add dry ingredients, fold in chips,
-bake at 375°F for 9-11 minutes. Makes about 48 cookies!
-─────────────────────────────────────────────────────
-
-👤 You ▶ how do I know when they're done?
-🤖 AI ▶
-Look for golden brown edges but centers still look slightly underbaked.
-They'll continue cooking on the hot pan for a few minutes after removing
-from oven. This gives you that perfect chewy texture!
+Your phone number is 555-123-4567.
 ─────────────────────────────────────────────────────
 
 👤 You ▶

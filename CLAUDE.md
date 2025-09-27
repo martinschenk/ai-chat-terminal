@@ -4,7 +4,7 @@
 AI Chat Terminal is a native Python CLI tool with direct OpenAI API integration that brings ChatGPT + Web Search + AI Vector Database to the terminal with 19 language support and regional dialects.
 
 **GitHub**: https://github.com/martinschenk/ai-chat-terminal
-**Current Version**: 5.4.0 (Native OpenAI API Integration - Sept 2025)
+**Current Version**: 5.4.0 (Enhanced Function Calling & Privacy System - Sept 2025)
 
 ## 🚨 Task Priority System
 **IMPORTANT**: Always work on the most urgent issues first:
@@ -15,6 +15,8 @@ AI Chat Terminal is a native Python CLI tool with direct OpenAI API integration 
 **Workflow**: Use `gh issue list --repo martinschenk/ai-chat-terminal --state open` to check priority and always start with highest priority items.
 
 **🎯 Major Features (v5.4.0):**
+- **Enhanced Function Calling**: Precise triggers for questions vs statements with 80-token natural responses
+- **Transparent Privacy System**: OpenAI Function Calling ensures personal data never leaves local system
 - **Native OpenAI Integration**: Direct API calls without shell-gpt dependency
 - **Dual-Layer Memory**: Short-term context (5-50 msgs) + Long-term SQLite database
 - **AI Vector Search**: Semantic search with sentence-transformers (384D embeddings)
@@ -325,21 +327,27 @@ Always clearly explain in installer:
 - Language Selection: Visual guide to dialect selection (German variants)
 - All examples show actual terminal format with proper headers
 
-### ✅ OpenAI Function Calling System (v5.4.0) - **NEW!**
-**Problem**: OpenAI's safety training refuses to show stored personal data (phone numbers, emails, etc.)
-**Solution**: Official OpenAI Function Calling API for transparent local data access
+### ✅ Enhanced Function Calling & Privacy System (v5.4.0) - **NEW!**
+**Problem**: OpenAI's safety training refuses to show stored personal data + function calls triggered on statements
+**Solution**: Optimized OpenAI Function Calling with precise triggers and natural responses
+
+**Technical Implementation:**
+- **Precise Function Description**: "Use ONLY for questions like 'what is my...', never for statements like 'my X is Y'"
+- **80-Token Natural Responses**: Increased from 20 tokens for complete, friendly answers
+- **Smart Extraction**: OpenAI processes raw DB content into natural language
+- **Statement Prevention**: "mein api key ist X" gets normal response, no function call
 
 **How it works:**
-1. **User asks**: "Wie ist meine Telefonnummer?"
-2. **OpenAI calls**: `search_personal_data(query="telefonnummer", data_type="phone")`
-3. **Our system**: Executes function and searches local SQLite database
-4. **Function returns**: Data from local storage only
-5. **Result**: User gets complete phone number from their own data
+1. **Statement**: "My phone is 555-1234" → Normal chat response, no DB trigger
+2. **Question**: "What's my phone?" → Function call searches local DB → Natural response with source indicator
+3. **Result**: Complete privacy + natural conversation flow
 
 **Key Features:**
 - **Official OpenAI Feature**: Uses legitimate Function Calling API
 - **Complete Transparency**: OpenAI never sees actual sensitive data
 - **Local Privacy**: All personal data stays in local SQLite database
+- **Natural Responses**: "Your phone number is 555-1234" instead of robotic output
+- **Statement Safety**: Prevents unwanted function triggers on information sharing
 - **Intelligent Search**: Uses function parameters to find relevant data
 - **Universal Support**: Works for any type of sensitive information
 - **Clean Integration**: No hacks or workarounds needed
