@@ -85,24 +85,16 @@ Shows how AI remembers your preferences and details:
 /config = settings | ESC/exit = quit
 ─────────────────────────────────────────────────────
 
-👤 You ▶ My name is Sarah and I prefer coffee over tea
+👤 You ▶ My name is Sara
 🤖 AI ▶
-Nice to meet you, Sarah! I'll remember that you prefer coffee over tea.
-Is there a particular type of coffee you enjoy most?
-─────────────────────────────────────────────────────
-
-👤 You ▶ I love Ethiopian coffee
-🤖 AI ▶
-Ethiopian coffee is excellent! Known for its bright, fruity flavors.
-I'll remember that Sarah loves Ethiopian coffee.
+Nice to meet you, Sara! I'll remember that.
 ─────────────────────────────────────────────────────
 
 # Days later...
 
-👤 You ▶ what should I drink this morning?
+👤 You ▶ What's my name?
 🤖 AI ▶
-Good morning, Sarah! Since you love Ethiopian coffee, how about brewing
-a nice cup to start your day? The bright flavors should wake you up nicely!
+Your name is Sara! How can I help you today?
 ─────────────────────────────────────────────────────
 
 👤 You ▶
