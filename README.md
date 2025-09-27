@@ -12,11 +12,11 @@ A ChatGPT-powered terminal interface with integrated web search and AI-powered v
 
 - [Features](#features)
 - [Quick Start](#quick-start)
+- [Requirements](#requirements)
 - [Installation](#installation)
 - [Usage Examples](#usage-examples)
 - [Smart Memory System](#-ai-powered-vector-database-system)
 - [Configuration](#configuration-options)
-- [Requirements](#requirements)
 - [Supported Languages](#supported-languages)
 - [Troubleshooting](#troubleshooting)
 - [Contributing](#contributing)
@@ -47,6 +47,19 @@ chat
 ```
 
 Then enter your [OpenAI API key](https://platform.openai.com/api-keys) and start chatting!
+
+## Requirements
+
+### Required
+- **OpenAI API Key** - Get yours at [platform.openai.com/api-keys](https://platform.openai.com/api-keys)
+- **Python 3** (usually pre-installed on macOS/Linux)
+- **Minimum $5 OpenAI credit** (gpt-3.5-turbo recommended for cost efficiency)
+
+### Auto-Installed Dependencies
+- **Shell-GPT** - Core chat functionality
+- **sentence-transformers** (~80MB) - AI semantic search
+- **sqlite-vec** - Vector embeddings in SQLite
+- **jq** - JSON processing
 
 ## Installation
 
@@ -312,18 +325,6 @@ The configuration menu provides these options:
 9. **Back to Chat** - Return to conversation
 10. **🗑️ Uninstall** - Complete removal with cleanup
 
-## Requirements
-
-### Required
-- **OpenAI API Key** - Get yours at [platform.openai.com/api-keys](https://platform.openai.com/api-keys)
-- **Python 3** (usually pre-installed on macOS/Linux)
-- **Minimum $5 OpenAI credit** (gpt-3.5-turbo recommended for cost efficiency)
-
-### Auto-Installed Dependencies
-- **Shell-GPT** - Core chat functionality
-- **sentence-transformers** (~80MB) - AI semantic search
-- **sqlite-vec** - Vector embeddings in SQLite
-- **jq** - JSON processing
 
 ## Supported Languages
 
@@ -379,8 +380,7 @@ pip3 install --user sentence-transformers sqlite-vec
 ```
 The system will automatically fall back to text search if needed.
 
-## Uninstall
-
+### Uninstall
 Start `chat`, then type `/config` and select option 10 (Uninstall).
 
 ## Contributing
