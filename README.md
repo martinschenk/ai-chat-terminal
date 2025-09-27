@@ -312,6 +312,63 @@ Search: "Docker" → Finds: any message containing "Docker"
 - Complete transparency: you control what gets stored and retrieved
 - Works for any type of personal information, not just predefined categories
 
+### 🧠 Function Calling Flow - How It Actually Works
+
+**The system intelligently routes questions through two different paths:**
+
+#### Normal Questions (e.g., "When was Beethoven born?")
+```
+User Input → OpenAI API → Direct Response → User
+```
+- No function calling triggered
+- No database search
+- Standard ChatGPT response about public information
+
+#### Private/Security Questions (e.g., "What's my credit card number?")
+```
+User Input → OpenAI API (with Function Definition)
+         ↓
+   🔍 Function Call Signal ("search_personal_data")
+         ↓
+   🗄️ Database Search with User Query (LOCAL ONLY)
+         ↓
+   ┌─ Case A: Data Found ──────────────┐    ┌─ Case B: Nothing Found ──────┐
+   │                                   │    │                              │
+   │ OpenAI API (2nd call with data)   │    │ "I don't have that          │
+   │           ↓                       │    │  information stored"         │
+   │ ✨ Natural Formatted Response     │    │  (NO 2nd API call)          │
+   │           ↓                       │    │           ↓                  │
+   │ User sees: "Your credit card      │    │ User sees localized          │
+   │ number is 1234-5678-9012-3456"    │    │ "not found" message          │
+   └───────────────────────────────────┘    └──────────────────────────────┘
+```
+
+#### Smart Detection Keywords
+OpenAI automatically recognizes requests for:
+- **Personal Info**: "my credit card", "my password", "my address", "my email"
+- **Security Data**: "API key", "token", "login credentials", "account info"
+- **Private Details**: "birthday", "phone number", "bank details", "PIN"
+- **Memory Queries**: "when did I...", "what was my...", "how do I..."
+- **Multilingual**: Works in German, Spanish, French and all 19 supported languages
+
+#### Privacy Guarantee in Action
+```bash
+# What OpenAI sees:
+Request: "What's my credit card number?"
+Function: search_personal_data(query="credit card number")
+
+# What stays local:
+Database Query: SELECT * FROM messages WHERE content LIKE '%credit card%'
+Result: "My Visa card is 1234-5678-9012-3456"
+```
+
+**Key Benefits:**
+- ✅ **Zero false refusals**: OpenAI never blocks access to YOUR data
+- ✅ **Natural responses**: AI formats the answer professionally
+- ✅ **Language support**: Works with all 19 supported languages
+- ✅ **Smart routing**: Public questions go direct, private questions search local DB
+- ✅ **Complete privacy**: Sensitive data never transmitted to OpenAI servers
+
 
 ## Configuration Options
 
