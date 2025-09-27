@@ -176,6 +176,9 @@ get_dialect_prompt() {
     DIALECT_PROMPT=""
 
     case "$lang" in
+        de)
+            DIALECT_PROMPT="[SYSTEM: Antworte auf Deutsch] "
+            ;;
         de-schwaebisch)
             DIALECT_PROMPT="[SYSTEM: Antworte auf Schwäbisch mit typischen schwäbischen Ausdrücken] "
             ;;
