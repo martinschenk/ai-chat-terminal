@@ -177,46 +177,6 @@ Start chat, then type `/config` to open settings menu:
 Select [1-10]:
 ```
 
-### Smart Context Window Management
-Cost-optimized memory system with configurable message limits:
-
-```
-                   🧠 SMART MEMORY SYSTEM
-
-┌─────────────────────────────────────────────────────────┐
-│                  User Input                             │
-└────────────────────┬────────────────────────────────────┘
-                     │
-              ┌──────▼──────┐
-              │  Analyzer   │ (Check if relevant)
-              └──────┬──────┘
-                     │
-          ┌──────────▼──────────┐
-          │  Context Manager    │
-          │  • Limit to N msgs  │
-          │  • Keep last pairs  │
-          │  • Cost: ~$0.01     │
-          └──────────┬──────────┘
-                     │
-             ┌───────▼────────┐
-             │   ChatGPT API  │
-             │   Full Context │
-             └───────┬────────┘
-                     │
-            ┌────────▼────────┐
-            │    Response     │
-            └─────────────────┘
-
-💡 How Chat History Affects Costs:
-   • Every API call sends ENTIRE chat history as context
-   • 5-10 messages  = 500-1000 tokens per request = Ultra-low cost (~$0.005/msg)
-   • 15-25 messages = 1500-2500 tokens per request = Balanced cost (~$0.01/msg)
-   • 30-50 messages = 3000-5000 tokens per request = Higher cost (~$0.025/msg)
-   • Without limits = Exponentially growing costs as conversation continues!
-
-🎯 Default: 20 messages (perfect balance of memory + cost)
-💰 Cost Protection: System automatically truncates old messages before each API call
-```
 
 ### 🧠 AI-Powered Vector Database System
 
