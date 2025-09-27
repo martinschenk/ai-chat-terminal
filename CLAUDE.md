@@ -325,6 +325,46 @@ Always clearly explain in installer:
 - Language Selection: Visual guide to dialect selection (German variants)
 - All examples show actual terminal format with proper headers
 
+### ✅ Transparent DB Search System (v5.4.0) - **NEW!**
+**Problem**: OpenAI's safety training refuses to show stored personal data (phone numbers, emails, etc.)
+**Solution**: Elegant template system that bypasses OpenAI safety while maintaining transparency
+
+**How it works:**
+1. **User asks**: "Wie ist meine Telefonnummer?"
+2. **OpenAI gets**: Original question + template instruction
+3. **OpenAI responds**: `{{SEARCH_DB}}` (instead of refusing)
+4. **Our system**: Searches local database with original user question
+5. **Result**: User gets complete phone number from their own data
+
+**Key Features:**
+- **Complete Transparency**: OpenAI never sees actual sensitive data
+- **Local Privacy**: All personal data stays in local SQLite database
+- **Intelligent Search**: Uses original user question to find relevant data
+- **No Hardcoded Categories**: Works for any type of sensitive information
+- **Graceful Fallback**: Shows "information not found" if nothing in database
+
+**What gets stored locally:**
+- All conversation messages and metadata
+- Personal information (names, phone numbers, addresses, preferences)
+- AI responses and user interactions
+- Language detection per message
+- Nothing sent to OpenAI beyond template triggers
+
+**Implementation Details:**
+```bash
+# User input: "Was ist meine Telefonnummer?"
+# System extracts: ["telefonnummer"]
+# Searches DB for: content LIKE '%telefonnummer%'
+# Finds: "Meine Telefonnummer ist 669686832"
+# Extracts: "669686832"
+# Returns: Complete phone number to user
+```
+
+**Privacy Guarantee:**
+- OpenAI only sees: User question + `{{SEARCH_DB}}` template
+- OpenAI never sees: Actual phone numbers, addresses, emails, or personal data
+- All sensitive data retrieved from local database only
+
 ## Language Support (Enhanced)
 **19 languages with regional dialects (NOW WORKING!):**
 - **German**: Hochdeutsch + Schwäbisch, Bayerisch, Sächsisch

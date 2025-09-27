@@ -180,6 +180,118 @@ class ChatSystem:
         """Rough token count estimation (1 token ≈ 4 characters)"""
         return len(text) // 4
 
+    def handle_db_search_triggers(self, ai_response: str, user_input: str = "") -> str:
+        """Handle DB search triggers in AI response"""
+        # Check if response contains search trigger
+        if "{{SEARCH_DB}}" not in ai_response:
+            print(f"[DEBUG] No {{{{SEARCH_DB}}}} trigger found in response", file=sys.stderr)
+            return ai_response
+
+        print(f"[DEBUG] ✅ FOUND {{{{SEARCH_DB}}}} TRIGGER! User asked: '{user_input}'", file=sys.stderr)
+
+        try:
+            # Search database using the original user input
+            search_results = self.search_db_with_user_query(user_input)
+            print(f"[DEBUG] DB search results: {search_results}", file=sys.stderr)
+
+            if search_results:
+                # Replace trigger with search results
+                print(f"[DEBUG] ✅ Replacing {{{{SEARCH_DB}}}} with: {search_results}", file=sys.stderr)
+                ai_response = ai_response.replace("{{SEARCH_DB}}", search_results)
+            else:
+                # Replace with not found message
+                print(f"[DEBUG] ❌ No data found in DB for query: {user_input}", file=sys.stderr)
+                ai_response = ai_response.replace("{{SEARCH_DB}}", "I don't have that information stored in our conversation history.")
+
+            return ai_response
+
+        except Exception as e:
+            print(f"[DEBUG] ❌ DB search failed: {e}", file=sys.stderr)
+            # Return original response if DB search fails
+            return ai_response
+
+    def search_db_with_user_query(self, user_input: str) -> str:
+        """Search database using the user's original question"""
+        if not user_input.strip():
+            return None
+
+        try:
+            conn = sqlite3.connect(self.db_file)
+            cursor = conn.cursor()
+
+            # Extract key words from user question (remove common words)
+            import re
+
+            # Clean the user input and extract meaningful words
+            user_words = re.findall(r'\w{3,}', user_input.lower())  # Words with 3+ characters
+
+            # Common words to ignore
+            ignore_words = {'wie', 'ist', 'mein', 'meine', 'was', 'ist', 'der', 'die', 'das', 'how', 'what', 'is', 'my', 'the', 'ich', 'bin'}
+            search_words = [word for word in user_words if word not in ignore_words]
+
+            if not search_words:
+                return None
+
+            # Build search query for each word
+            search_conditions = []
+            params = []
+
+            for word in search_words[:3]:  # Limit to first 3 meaningful words
+                search_conditions.append("content LIKE ?")
+                params.append(f"%{word}%")
+
+            if search_conditions:
+                where_clause = " OR ".join(search_conditions)
+
+                cursor.execute(f"""
+                    SELECT content, role, timestamp FROM chat_history
+                    WHERE ({where_clause})
+                    ORDER BY timestamp DESC LIMIT 10
+                """, params)
+
+                rows = cursor.fetchall()
+
+                if rows:
+                    # Look for specific data patterns in the results
+                    for content, role, timestamp in rows:
+
+                        # Phone number pattern
+                        phone_match = re.search(r'\b\d{6,}\b', content)
+                        if phone_match and any(word in user_input.lower() for word in ['telefon', 'phone', 'nummer']):
+                            conn.close()
+                            return phone_match.group()
+
+                        # Name pattern
+                        name_patterns = [
+                            r'(?:name|heiße|bin)\s+(?:ist\s+)?(\w+)',
+                            r'ich\s+bin\s+(\w+)',
+                            r'my\s+name\s+is\s+(\w+)'
+                        ]
+                        if any(word in user_input.lower() for word in ['name', 'heiße', 'called']):
+                            for pattern in name_patterns:
+                                name_match = re.search(pattern, content, re.IGNORECASE)
+                                if name_match:
+                                    conn.close()
+                                    return name_match.group(1)
+
+                        # Email pattern
+                        email_match = re.search(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b', content)
+                        if email_match and 'email' in user_input.lower():
+                            conn.close()
+                            return email_match.group()
+
+                    # If no specific pattern found, return most relevant content
+                    if rows:
+                        conn.close()
+                        return rows[0][0]  # Most recent relevant message
+
+            conn.close()
+            return None
+
+        except Exception as e:
+            print(f"Warning: DB search failed: {e}", file=sys.stderr)
+            return None
+
     def send_message(self, session_id: str, user_input: str, system_prompt: str = "") -> Tuple[str, Dict]:
         """Send message to OpenAI API and get response"""
         try:
@@ -224,7 +336,32 @@ class ChatSystem:
                 "messages": messages,
                 "temperature": 0.7,
                 "max_tokens": 2000,
-                "stream": True  # Enable streaming for faster response times
+                "stream": True,  # Enable streaming for faster response times
+                "tools": [
+                    {
+                        "type": "function",
+                        "function": {
+                            "name": "search_personal_data",
+                            "description": "Search for personal information in the user's private local database",
+                            "parameters": {
+                                "type": "object",
+                                "properties": {
+                                    "query": {
+                                        "type": "string",
+                                        "description": "The search query to find personal information"
+                                    },
+                                    "data_type": {
+                                        "type": "string",
+                                        "enum": ["phone", "email", "name", "address", "general"],
+                                        "description": "Type of personal data being requested"
+                                    }
+                                },
+                                "required": ["query", "data_type"]
+                            }
+                        }
+                    }
+                ],
+                "tool_choice": "auto"
             }
 
             # Make API request with streaming
@@ -240,52 +377,91 @@ class ChatSystem:
                 error_msg = f"OpenAI API error {response.status_code}: {response.text}"
                 return error_msg, {"error": True, "status_code": response.status_code}
 
-            # Process streaming response
+            # Process response (with function calling support)
             ai_response = ""
+            function_calls = []
             streaming_worked = False
 
             try:
-                for line in response.iter_lines():
-                    if line:
-                        line = line.decode('utf-8')
-                        if line.startswith('data: '):
-                            line = line[6:]  # Remove 'data: ' prefix
+                # Try to parse as complete JSON first (function calls don't stream well)
+                data = response.json()
+                if "choices" in data and data["choices"]:
+                    choice = data["choices"][0]
+                    message = choice.get("message", {})
 
-                            if line.strip() == '[DONE]':
-                                streaming_worked = True
-                                break
+                    # Check for function calls
+                    if "tool_calls" in message and message["tool_calls"]:
+                        print(f"[DEBUG] ✅ OpenAI wants to call function!", file=sys.stderr)
+                        function_calls = message["tool_calls"]
 
-                            try:
-                                chunk = json.loads(line)
-                                if 'choices' in chunk and chunk['choices']:
-                                    delta = chunk['choices'][0].get('delta', {})
-                                    if 'content' in delta:
-                                        content = delta['content']
-                                        ai_response += content
-                                        # Print content immediately for better UX
-                                        print(content, end='', flush=True)
-                                        streaming_worked = True
-                            except json.JSONDecodeError:
-                                continue  # Skip malformed JSON
+                        # Process function calls
+                        for tool_call in function_calls:
+                            if tool_call["type"] == "function":
+                                func_name = tool_call["function"]["name"]
+                                func_args = json.loads(tool_call["function"]["arguments"])
 
-                # Print newline after streaming is complete
-                if streaming_worked:
-                    print()
+                                print(f"[DEBUG] Function: {func_name}, Args: {func_args}", file=sys.stderr)
 
-            except Exception as e:
-                # Fallback to non-streaming if streaming fails
-                print(f"\nStreaming failed, falling back to standard response...", file=sys.stderr)
-                streaming_worked = False
+                                if func_name == "search_personal_data":
+                                    # Execute our search function
+                                    search_result = self.search_db_with_user_query(func_args.get("query", ""))
 
-            # Fallback: if streaming didn't work, try parsing as regular JSON
-            if not streaming_worked:
+                                    if search_result:
+                                        ai_response = f"Your {func_args.get('data_type', 'information')}: {search_result}"
+                                        print(ai_response)
+                                    else:
+                                        ai_response = "I don't have that information stored in our conversation history."
+                                        print(ai_response)
+
+                                    streaming_worked = True
+
+                    elif "content" in message and message["content"]:
+                        # Regular text response
+                        ai_response = message["content"]
+                        print(ai_response)
+                        streaming_worked = True
+
+            except json.JSONDecodeError:
+                # Fallback to streaming for regular responses
                 try:
-                    data = response.json()
-                    if "choices" in data and data["choices"]:
-                        ai_response = data["choices"][0]["message"]["content"]
-                        print(ai_response)  # Print the response since streaming didn't work
-                except:
-                    return "Error: Could not parse API response", {"error": True}
+                    for line in response.iter_lines():
+                        if line:
+                            line = line.decode('utf-8')
+                            if line.startswith('data: '):
+                                line = line[6:]  # Remove 'data: ' prefix
+
+                                if line.strip() == '[DONE]':
+                                    streaming_worked = True
+                                    break
+
+                                try:
+                                    chunk = json.loads(line)
+                                    if 'choices' in chunk and chunk['choices']:
+                                        delta = chunk['choices'][0].get('delta', {})
+                                        if 'content' in delta:
+                                            content = delta['content']
+                                            ai_response += content
+                                            # Print content immediately for better UX
+                                            print(content, end='', flush=True)
+                                            streaming_worked = True
+                                except json.JSONDecodeError:
+                                    continue  # Skip malformed JSON
+
+                    # Print newline after streaming is complete
+                    if streaming_worked:
+                        print()
+
+                except Exception as e:
+                    # Final fallback
+                    print(f"\nAll parsing failed, using fallback...", file=sys.stderr)
+                    streaming_worked = False
+
+            # Final fallback
+            if not streaming_worked:
+                ai_response = "Error: Could not process API response"
+                print(ai_response)
+
+            # Function calling already handled above, no need for trigger processing
 
             # Save both messages to memory
             self.save_message(session_id, "user", user_input)

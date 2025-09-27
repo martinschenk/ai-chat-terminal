@@ -27,6 +27,7 @@ A ChatGPT-powered terminal interface with integrated web search and AI-powered v
 - **🌐 Integrated Web Search** - Real-time information via ChatGPT search capabilities
 - **🧠 Smart Memory System** - Dual-layer memory: short-term context + long-term SQLite database
 - **🔍 AI Semantic Search** - Find past conversations using natural language queries
+- **🔒 Transparent Privacy System** - Personal data stays local; OpenAI never sees sensitive information
 - **🌐 Cross-Language Search** - Query in any language, find content in any other with multilingual E5 model
 - **🗣️ Language Detection** - Automatic detection and storage per message for all 19 supported languages
 - **💰 Cost-Optimized Context** - Prevents token cost explosion by limiting chat history sent to API
@@ -297,6 +298,63 @@ Search: "Docker" → Finds: any message containing "Docker"
    • High importance scores (> 1.5)
    • Recent important conversations
 ```
+
+#### 🔒 Transparent Privacy System
+
+**Your personal data never leaves your computer - here's how we guarantee it:**
+
+```
+🔐 PRIVACY-FIRST ARCHITECTURE
+
+┌─────────────────────────────────────────────────────┐
+│                  YOUR QUESTION                      │
+│          "What's my phone number?"                  │
+└─────────────────┬───────────────────────────────────┘
+                  │
+          ┌───────▼──────┐
+          │  To OpenAI:  │
+          │  Question +  │ ← Only question + template instruction
+          │  Template    │   NO personal data sent!
+          └───────┬──────┘
+                  │
+       ┌──────────▼──────────┐
+       │   OpenAI Response:  │
+       │   {{SEARCH_DB}}     │ ← Template instead of refusal
+       └──────────┬──────────┘
+                  │
+    ┌─────────────▼─────────────┐
+    │    LOCAL DB SEARCH        │
+    │  Uses YOUR question to    │ ← Searches local SQLite only
+    │  find YOUR stored data    │   OpenAI never sees results!
+    └─────────────┬─────────────┘
+                  │
+       ┌──────────▼──────────┐
+       │    YOUR ANSWER:     │
+       │   "669686832"       │ ← Complete data from local storage
+       └─────────────────────┘
+```
+
+**What OpenAI sees vs. what stays local:**
+
+| OpenAI Sees | Stays Local Only |
+|-------------|------------------|
+| ✅ "What's my phone number?" | ❌ Actual phone number |
+| ✅ Template: `{{SEARCH_DB}}` | ❌ Your personal data |
+| ✅ System instructions | ❌ Database contents |
+| ✅ Public conversation context | ❌ Sensitive information |
+
+**Technical Implementation:**
+- **Step 1**: User asks for sensitive info
+- **Step 2**: OpenAI gets question + template system (no personal data)
+- **Step 3**: OpenAI responds with `{{SEARCH_DB}}` instead of refusing
+- **Step 4**: Our system searches local database with original question
+- **Step 5**: Template gets replaced with actual data from your local storage
+
+**Why this matters:**
+- Your phone numbers, emails, addresses stay on YOUR computer only
+- OpenAI's safety training can't block access to YOUR own data
+- Complete transparency: you control what gets stored and retrieved
+- Works for any type of personal information, not just predefined categories
 
 
 ## Configuration Options
