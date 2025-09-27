@@ -165,28 +165,68 @@ class ChatSystem:
                 "messages": messages,
                 "temperature": 0.7,
                 "max_tokens": 2000,
-                "stream": False
+                "stream": True  # Enable streaming for faster response times
             }
 
-            # Make API request
+            # Make API request with streaming
             response = requests.post(
                 self.api_url,
                 headers=headers,
                 json=payload,
-                timeout=30
+                timeout=30,
+                stream=True
             )
 
             if response.status_code != 200:
                 error_msg = f"OpenAI API error {response.status_code}: {response.text}"
                 return error_msg, {"error": True, "status_code": response.status_code}
 
-            # Parse response
-            data = response.json()
+            # Process streaming response
+            ai_response = ""
+            streaming_worked = False
 
-            if "choices" not in data or not data["choices"]:
-                return "Error: No response from OpenAI API", {"error": True}
+            try:
+                for line in response.iter_lines():
+                    if line:
+                        line = line.decode('utf-8')
+                        if line.startswith('data: '):
+                            line = line[6:]  # Remove 'data: ' prefix
 
-            ai_response = data["choices"][0]["message"]["content"]
+                            if line.strip() == '[DONE]':
+                                streaming_worked = True
+                                break
+
+                            try:
+                                chunk = json.loads(line)
+                                if 'choices' in chunk and chunk['choices']:
+                                    delta = chunk['choices'][0].get('delta', {})
+                                    if 'content' in delta:
+                                        content = delta['content']
+                                        ai_response += content
+                                        # Print content immediately for better UX
+                                        print(content, end='', flush=True)
+                                        streaming_worked = True
+                            except json.JSONDecodeError:
+                                continue  # Skip malformed JSON
+
+                # Print newline after streaming is complete
+                if streaming_worked:
+                    print()
+
+            except Exception as e:
+                # Fallback to non-streaming if streaming fails
+                print(f"\nStreaming failed, falling back to standard response...", file=sys.stderr)
+                streaming_worked = False
+
+            # Fallback: if streaming didn't work, try parsing as regular JSON
+            if not streaming_worked:
+                try:
+                    data = response.json()
+                    if "choices" in data and data["choices"]:
+                        ai_response = data["choices"][0]["message"]["content"]
+                        print(ai_response)  # Print the response since streaming didn't work
+                except:
+                    return "Error: Could not parse API response", {"error": True}
 
             # Save both messages to memory
             self.save_message(session_id, "user", user_input)
@@ -230,8 +270,8 @@ def main():
         chat = ChatSystem()
         response, stats = chat.send_message(session_id, user_message, system_prompt)
 
-        # Print response (this is what the shell script will capture)
-        print(response)
+        # Response already printed during streaming, no need to print again
+        # print(response)  # Commented out to avoid duplication with streaming output
 
         # Print stats to stderr for debugging
         if not stats.get("error", False):
