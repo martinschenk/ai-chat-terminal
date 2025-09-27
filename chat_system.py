@@ -405,7 +405,7 @@ Please answer their question in a natural, friendly way using this information."
                         "type": "function",
                         "function": {
                             "name": "search_personal_data",
-                            "description": "Search the user's database to answer their QUESTIONS about stored information. Use ONLY for questions like 'what is my...', 'how is my...', 'tell me my...'. Never use for statements like 'my X is Y' or when user is providing new information.",
+                            "description": "Search the user's database to answer their QUESTIONS about stored information. CRITICAL: Use ONLY for direct questions asking for information retrieval (wie ist mein..., what is my..., tell me my...). NEVER use for statements where user is PROVIDING information (mein X ist Y, my X is Y). When user says 'meine schwester heisst diana' they are GIVING information, not asking for it.",
                             "parameters": {
                                 "type": "object",
                                 "properties": {
