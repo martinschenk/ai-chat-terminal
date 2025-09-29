@@ -59,7 +59,7 @@ class FastPrivacyClassifier:
                 "Social Security Number: 123-45-6789",
                 "Mi número de tarjeta es 5555-4444-3333",
                 "Contraseña del sistema: Clave2023",
-                "OAuth token: bearer_abc123xyz789"
+                "OAuth token: bearer_EXAMPLE_TOKEN"
             ],
             'PROPRIETARY': [
                 "Our Q2 product launch is planned for June",
