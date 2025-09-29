@@ -391,21 +391,21 @@ class FastPrivacyClassifier:
         text_lower = text.lower()
 
         storage_patterns = [
-            # German
-            'speichere', 'merke dir', 'notiere', 'schreibe auf', 'behalte', 'ist', 'bin', 'heißt', 'lautet',
-            # English
-            'save', 'remember', 'note', 'store', 'keep', 'is', 'am', 'called', 'my',
-            # Spanish
-            'guarda', 'recuerda', 'apunta', 'almacena', 'es', 'soy', 'se llama', 'mi'
+            # German - definitive storage indicators
+            'speichere', 'merke dir', 'notiere', 'schreibe auf', 'behalte', 'mein.*ist', 'ich bin', 'ich heiße',
+            # English - definitive storage indicators
+            'save', 'remember', 'note', 'store', 'keep', 'my.*is', 'i am', 'called',
+            # Spanish - definitive storage indicators
+            'guarda', 'recuerda', 'apunta', 'almacena', 'mi.*es', 'soy', 'me llamo'
         ]
 
         query_patterns = [
-            # German
-            'wie ist', 'was ist', 'zeige', 'gib mir', 'welche', 'was weißt du', 'erkläre',
-            # English
-            'what is', 'how is', 'show me', 'give me', 'which', 'what do you know', 'explain',
-            # Spanish
-            'qué es', 'cómo es', 'muestra', 'dame', 'cuál', 'qué sabes', 'explica'
+            # German - questions asking for information
+            'wie ist mein', 'was ist mein', 'zeige mir', 'gib mir', 'welche.*habe', 'was weißt du über mein',
+            # English - questions asking for information
+            'what is my', 'how is my', 'show me my', 'give me my', 'which.*do i have', 'what do you know about my',
+            # Spanish - questions asking for information
+            'qué es mi', 'cómo es mi', 'muestra mi', 'dame mi', 'cuál.*tengo', 'qué sabes de mi'
         ]
 
         delete_patterns = [
@@ -417,8 +417,10 @@ class FastPrivacyClassifier:
             'elimina', 'borra', 'olvida', 'borrar', 'eliminar'
         ]
 
-        storage_score = sum(1 for pattern in storage_patterns if pattern in text_lower)
-        query_score = sum(1 for pattern in query_patterns if pattern in text_lower)
+        import re
+
+        storage_score = sum(1 for pattern in storage_patterns if re.search(pattern, text_lower))
+        query_score = sum(1 for pattern in query_patterns if re.search(pattern, text_lower))
         delete_score = sum(1 for pattern in delete_patterns if pattern in text_lower)
 
         # Check for delete intent first (highest priority)
