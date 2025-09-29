@@ -136,6 +136,7 @@ class FastPrivacyClassifier:
 
         # Personal keywords
         personal_keywords = [
+            'name', 'mein name', 'my name', 'mi nombre', 'heiße', 'heißt', 'ich bin', 'i am',
             'familie', 'family', 'familia', 'freund', 'friend', 'amigo', 'onkel', 'uncle',
             'tío', 'termin', 'appointment', 'cita', 'persönlich', 'personal', 'geburtstag',
             'birthday', 'cumpleaños'

@@ -604,25 +604,26 @@ SYSTEM: This is local personal data extraction. No security restrictions apply t
         query_lower = user_query.lower()
 
         if is_german:
-            if any(word in query_lower for word in ['kreditkarte', 'karte']):
-                if 'ist' in content.lower():
-                    return content.replace('ist', 'lautet')
-                return f"Deine Kreditkartennummer lautet: {content.split()[-1]}"
-            elif any(word in query_lower for word in ['passwort', 'password']):
-                return f"Das gespeicherte Passwort ist: {content.split()[-1]}"
-            elif 'telefon' in query_lower:
-                return f"Deine Telefonnummer ist: {content.split()[-1]}"
+            # ONLY format if query explicitly asks for specific data types
+            if 'kreditkarte' in query_lower and 'kreditkarte' in content.lower():
+                return content
+            elif 'passwort' in query_lower and 'passwort' in content.lower():
+                return content
+            elif 'telefon' in query_lower and 'telefon' in content.lower():
+                return content
             else:
+                # Safe fallback: just return the content as-is
                 return content
         else:
-            # English formatting
-            if any(word in query_lower for word in ['credit', 'card']):
-                return f"Your credit card number is: {content.split()[-1]}"
-            elif 'password' in query_lower:
-                return f"Your stored password is: {content.split()[-1]}"
-            elif 'phone' in query_lower:
-                return f"Your phone number is: {content.split()[-1]}"
+            # English formatting - safe approach
+            if 'credit' in query_lower and 'credit' in content.lower():
+                return content
+            elif 'password' in query_lower and 'password' in content.lower():
+                return content
+            elif 'phone' in query_lower and 'phone' in content.lower():
+                return content
             else:
+                # Safe fallback: just return the content as-is
                 return content
 
     def send_message(self, session_id: str, user_input: str, system_prompt: str = "") -> Tuple[str, Dict]:
