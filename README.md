@@ -2,7 +2,7 @@
 
 Terminal-based AI assistant with intelligent privacy routing that keeps sensitive data local while using OpenAI for general queries.
 
-[![Version](https://img.shields.io/badge/version-6.0.0-blue.svg)](https://github.com/martinschenk/ai-chat-terminal)
+[![Version](https://img.shields.io/badge/version-6.1.0-blue.svg)](https://github.com/martinschenk/ai-chat-terminal)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-macOS%20|%20Linux-lightgrey.svg)](https://github.com/martinschenk/ai-chat-terminal)
 [![Privacy](https://img.shields.io/badge/privacy-first-green.svg)](https://github.com/martinschenk/ai-chat-terminal)
@@ -22,6 +22,25 @@ AI-based classification system using dual AI models to route conversations based
 - **🌐 PUBLIC** (General knowledge, tutorials) → **OpenAI Processing**
 
 **Result**: Local processing for sensitive data, OpenAI processing for general queries.
+
+## 🆕 What's New in v6.1.0
+
+### ✅ **Critical Bug Fixes:**
+- **Fixed duplicate responses** - OpenAI answers no longer appear twice
+- **Enhanced search accuracy** - Personal data queries now find stored information reliably
+- **Improved classification** - Historical questions (birth dates, events) correctly route to OpenAI
+- **Better language detection** - Automatic German/English response language matching
+
+### 🔑 **New Feature: OpenAI API Key Management**
+- **Secure configuration** via `/config` menu option [6]
+- **Format validation** (ensures keys start with 'sk-' and proper length)
+- **Safe display** (shows only first 8 characters for verification)
+- **Instant activation** for new chats
+
+### 🧠 **Enhanced AI Classification:**
+- **20+ famous people** added for historical question recognition
+- **Cross-language patterns** for German/English historical queries
+- **Improved confidence scoring** for better routing decisions
 
 ---
 
@@ -315,12 +334,15 @@ chat
 **Configuration Options:**
 1. **Change command** (`chat`, `ai`, `ask`, or custom)
 2. **Select language** (19 languages + dialects)
-3. **AI model** (gpt-4o, gpt-4o-mini, gpt-3.5-turbo)
-4. **Context window** (5-50 messages for cost control)
-5. **ESC key behavior** (exit chat or disable)
-6. **Memory system** (search, stats, cleanup)
-7. **Privacy settings** (view classification confidence)
-8. **Complete uninstall** (removes all traces)
+3. **Toggle ESC key** (exit chat or disable)
+4. **AI model** (gpt-4o, gpt-4o-mini, gpt-3.5-turbo)
+5. **Context window** (5-50 messages for cost control)
+6. **🔑 OpenAI API key** (secure configuration, format validation)
+7. **Memory system** (search, stats, cleanup)
+8. **Clear cache** (remove temporary chat files)
+9. **About & version** (system information)
+10. **Back to chat** (return to conversation)
+11. **Complete uninstall** (removes all traces)
 
 ### Cost Optimization
 
