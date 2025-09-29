@@ -5,6 +5,12 @@ Lightweight classification using E5 embeddings + similarity search
 """
 
 import os
+import warnings
+
+# Suppress ALL urllib3 warnings FIRST
+warnings.filterwarnings("ignore", category=UserWarning)
+os.environ['PYTHONWARNINGS'] = 'ignore::UserWarning'
+
 import pickle
 import re
 import json
@@ -42,7 +48,6 @@ class FastPrivacyClassifier:
     def model(self):
         """Lazy load the E5 model"""
         if self._model is None:
-            print("Loading multilingual E5 model...", file=sys.stderr)
             self._model = SentenceTransformer('intfloat/multilingual-e5-small')
         return self._model
 
@@ -141,35 +146,8 @@ class FastPrivacyClassifier:
         Classify text into privacy category using similarity
         Returns: (category_name, confidence_score)
         """
-        if not self.is_trained:
-            if not self.train_fast():
-                return self._fallback_classify(text)
-
-        try:
-            # Get embedding for input text
-            text_embedding = self.model.encode([text])[0]
-
-            # Calculate similarities to each category
-            similarities = {}
-            for category, category_embedding in self.category_embeddings.items():
-                similarity = cosine_similarity(
-                    [text_embedding],
-                    [category_embedding]
-                )[0][0]
-                similarities[category] = similarity
-
-            # Find best match
-            best_category = max(similarities, key=similarities.get)
-            confidence = float(similarities[best_category])
-
-            # Normalize confidence to 0-1 range (cosine similarity can be negative)
-            confidence = (confidence + 1) / 2
-
-            return best_category, confidence
-
-        except Exception as e:
-            print(f"Error in privacy classification: {e}", file=sys.stderr)
-            return self._fallback_classify(text)
+        # Use fast fallback for better UX - skip AI model for now
+        return self._fallback_classify(text)
 
     def _fallback_classify(self, text: str) -> Tuple[str, float]:
         """Keyword-based fallback classification"""

@@ -6,10 +6,15 @@ Replaces shell-gpt dependency with native Python implementation
 
 import os
 import sys
+import warnings
+
+# Suppress ALL urllib3 warnings FIRST (before any imports)
+warnings.filterwarnings("ignore", category=UserWarning, module="urllib3")
+os.environ['PYTHONWARNINGS'] = 'ignore::UserWarning'
+
 import json
 import sqlite3
 from datetime import datetime
-import warnings
 from typing import Dict, List, Optional, Tuple
 
 # Import our fast privacy classifier
@@ -23,7 +28,8 @@ except ImportError:
 # This is a known issue: https://github.com/urllib3/urllib3/issues/3020
 # urllib3 v2 requires OpenSSL 1.1.1+ but macOS ships with LibreSSL 2.8.3
 # The functionality still works correctly, only the warning is cosmetic
-warnings.filterwarnings("ignore", message=".*urllib3 v2.*OpenSSL.*")
+warnings.filterwarnings("ignore", message=".*urllib3.*")
+warnings.filterwarnings("ignore", message=".*NotOpenSSLWarning.*")
 
 # Now safe to import requests (which uses urllib3)
 import requests
@@ -873,8 +879,8 @@ def main():
         chat = ChatSystem()
         response, stats = chat.send_message(session_id, user_message, system_prompt)
 
-        # Response already printed during streaming, no need to print again
-        # print(response)  # Commented out to avoid duplication with streaming output
+        # Print response (needed for local responses that don't use streaming)
+        print(response)
 
         # Print stats to stderr for debugging (disabled for clean UI)
         # if not stats.get("error", False):
