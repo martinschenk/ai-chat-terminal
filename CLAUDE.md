@@ -4,11 +4,11 @@
 AI Chat Terminal is a privacy-focused AI terminal that automatically routes sensitive data to local processing while using OpenAI for general queries.
 
 **GitHub**: https://github.com/martinschenk/ai-chat-terminal
-**Current Version**: 6.0.0 (Smart Privacy Routing - Sept 2025)
+**Current Version**: 6.1.0 (Enhanced Privacy + OpenAI API Key Management - Sept 2025)
 
 ## Smart Privacy Routing System
 
-**🎯 Major Features (v6.0.0):**
+**🎯 Major Features (v6.1.0):**
 - **🧠 Dual AI Architecture**: Two separate `multilingual-e5-small` models for different purposes
 - **🔍 Model #1 - Privacy Classifier**: Semantic classification of 4 privacy levels (160+ training examples)
 - **💾 Model #2 - Memory System**: Vector-based semantic search in local SQLite database
@@ -18,6 +18,9 @@ AI Chat Terminal is a privacy-focused AI terminal that automatically routes sens
 - **🗑️ Secure Deletion**: "Delete my credit card info" removes data permanently
 - **💰 Cost Optimization**: 70-80% reduction in OpenAI API calls
 - **🏢 Enterprise-Ready**: GDPR/CCPA compliant by design
+- **🔑 API Key Management**: Secure OpenAI API key configuration via `/config` menu (v6.1.0)
+- **🐛 Enhanced Reliability**: Fixed duplicate responses, improved search accuracy (v6.1.0)
+- **👥 Famous People Recognition**: 20+ authors/historical figures for better PUBLIC routing (v6.1.0)
 
 ## 🧠 DUAL AI MODEL ARCHITECTURE - CRITICAL UNDERSTANDING
 
@@ -366,6 +369,41 @@ print(f'Model: {metadata.get(\"model\")}')  # Should be 'local-privacy-routing'
 - **Performance**: Optimize embedding models, reduce memory usage
 - **Language Support**: Add more languages and dialects
 - **Mobile Support**: iOS/Android terminal apps
+
+## 🚀 Development & Deployment Workflow
+
+### **CRITICAL: Always Copy to User's .aichat After Push**
+
+**📁 Development Flow:**
+1. **Edit files** in `/Users/martin/Development/ai-chat-terminal/`
+2. **Test changes** by copying to `/Users/martin/.aichat/`
+3. **Commit & push** to GitHub
+4. **⚠️ IMPORTANT**: Copy updated files to user's `.aichat` for testing
+
+**🔄 Deployment Commands:**
+```bash
+# After git push, ALWAYS run:
+cp chat_system.py /Users/martin/.aichat/
+cp privacy_classifier_fast.py /Users/martin/.aichat/
+cp modules/config-menu.zsh /Users/martin/.aichat/modules/
+cp VERSION /Users/martin/.aichat/
+
+# Retrain AI model with any classification updates:
+cd /Users/martin/.aichat
+python3 -c "from privacy_classifier_fast import FastPrivacyClassifier; c = FastPrivacyClassifier(); c.train_fast()"
+```
+
+**🧪 Testing Checklist:**
+- [ ] Privacy classification working (historical → OpenAI, personal → local)
+- [ ] Search functionality (telephone, credit card data retrieval)
+- [ ] OpenAI API key configuration via `/config` → [6]
+- [ ] No duplicate responses from OpenAI
+- [ ] Language detection (German/English responses)
+
+**📋 File Locations:**
+- **Development**: `/Users/martin/Development/ai-chat-terminal/`
+- **User Testing**: `/Users/martin/.aichat/`
+- **GitHub Repo**: `https://github.com/martinschenk/ai-chat-terminal`
 
 ## 🔐 Security & Privacy Notes
 
