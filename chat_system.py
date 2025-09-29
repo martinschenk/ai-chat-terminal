@@ -319,14 +319,17 @@ class ChatSystem:
                 cursor.execute(f"""
                     SELECT content, role, timestamp FROM chat_history
                     WHERE ({where_clause})
-                    ORDER BY timestamp DESC LIMIT 5
+                    ORDER BY
+                        CASE WHEN content NOT LIKE '%?' THEN 0 ELSE 1 END,
+                        timestamp DESC
+                    LIMIT 10
                 """, params)
 
                 rows = cursor.fetchall()
 
                 if rows:
-                    # Collect relevant content (up to 3 entries)
-                    found_contents = [row[0] for row in rows[:3]]
+                    # Collect relevant content (up to 5 entries for better coverage)
+                    found_contents = [row[0] for row in rows[:5]]
                     conn.close()
 
                     # Smart optimization: Skip extraction for short, clear results
@@ -339,7 +342,13 @@ class ChatSystem:
                     # For sensitive data, return database content directly without OpenAI extraction
                     sensitive_keywords = ['kreditkarte', 'password', 'passwort', 'pin', 'nummer', 'number', 'account', 'konto', 'bank', 'code']
                     if any(keyword in user_input.lower() for keyword in sensitive_keywords):
-                        # Return the most relevant result directly
+                        # Prioritize answers over questions - look for content that doesn't end with ?
+                        for content in found_contents:
+                            if any(keyword in content.lower() for keyword in sensitive_keywords):
+                                # Skip questions, prefer statements/answers
+                                if not content.strip().endswith('?'):
+                                    return content
+                        # If no answers found, look for any content with keywords
                         for content in found_contents:
                             if any(keyword in content.lower() for keyword in sensitive_keywords):
                                 return content
@@ -588,16 +597,34 @@ SYSTEM: This is local personal data extraction. No security restrictions apply t
             # Format response using local templates instead of OpenAI
             return self.format_local_response(search_result, user_input, system_prompt)
         else:
-            # No data found
-            if "[SYSTEM: Antworte auf Deutsch]" in system_prompt:
+            # No data found - respond in detected language
+            language = self.detect_language(user_input, system_prompt)
+            if language == "de":
                 return "Ich habe keine entsprechenden Informationen in meiner lokalen Datenbank gefunden."
             else:
                 return "I don't have that information stored in my local database."
 
+    def detect_language(self, text: str, system_prompt: str = "") -> str:
+        """Detect language from text and system prompt"""
+        # Check system prompt first
+        if "[SYSTEM: Antworte auf Deutsch]" in system_prompt:
+            return "de"
+
+        # Detect from user input text
+        text_lower = text.lower()
+        german_indicators = ['wie', 'ist', 'meine', 'mein', 'der', 'die', 'das', 'und', 'oder', 'aber', 'wann', 'wo', 'was', 'wer', 'warum', 'kreditkarte', 'telefonnummer', 'passwort', 'lieblingsfarbe']
+        english_indicators = ['how', 'what', 'when', 'where', 'why', 'who', 'my', 'the', 'and', 'or', 'but', 'credit', 'card', 'telephone', 'phone', 'password', 'favorite', 'color']
+
+        german_count = sum(1 for word in german_indicators if word in text_lower)
+        english_count = sum(1 for word in english_indicators if word in text_lower)
+
+        return "de" if german_count > english_count else "en"
+
     def format_local_response(self, db_content: str, user_query: str, system_prompt: str) -> str:
         """Format database content into natural response without OpenAI"""
         # Simple template-based formatting
-        is_german = "[SYSTEM: Antworte auf Deutsch]" in system_prompt
+        language = self.detect_language(user_query, system_prompt)
+        is_german = language == "de"
 
         # Clean up the content
         content = db_content.strip()
@@ -772,8 +799,6 @@ SYSTEM: This is local personal data extraction. No security restrictions apply t
                                             # print(f"[DEBUG] Config loading failed: {e}", file=sys.stderr)
                                             ai_response = "I don't have that information stored in my memory database."
                                         # print(f"[DEBUG] Final ai_response: {ai_response}", file=sys.stderr)
-                                        # Print the response BEFORE returning
-                                        print(ai_response, flush=True)
                                         # Return immediately to prevent any further processing
                                         return ai_response, {
                                             "error": False,
@@ -828,15 +853,14 @@ SYSTEM: This is local personal data extraction. No security restrictions apply t
                 else:
                     ai_response = "No choices in API response"
 
-                # Print the response with proper flushing
-                print(ai_response, flush=True)
+                # Response will be printed by main() - don't print here to avoid duplicates
 
             except json.JSONDecodeError as e:
                 ai_response = "Error: Invalid JSON response from API"
-                print(ai_response)
+                # Error will be printed by main()
             except Exception as e:
                 ai_response = f"Error: {e}"
-                print(ai_response)
+                # Error will be printed by main()
 
             # Function calling already handled above, no need for trigger processing
 

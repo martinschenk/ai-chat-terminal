@@ -135,6 +135,25 @@ fi
 echo -n "  • Memory system... "
 pip3 install --user sentence-transformers sqlite-vec &>/dev/null && echo -e "${GREEN}✓${RESET}" || echo -e "${YELLOW}⚠ Install manually with: pip3 install sentence-transformers sqlite-vec${RESET}"
 
+# Initialize AI models (training)
+echo -n "  • AI konfigurieren... "
+python3 -c "
+import sys
+import warnings
+import os
+# Suppress all warnings and output
+warnings.filterwarnings('ignore')
+os.environ['PYTHONWARNINGS'] = 'ignore'
+sys.path.insert(0, '$INSTALL_DIR')
+try:
+    from privacy_classifier_fast import FastPrivacyClassifier
+    classifier = FastPrivacyClassifier()
+    classifier.train_fast()
+    print('OK')
+except Exception as e:
+    print('SKIP')
+" 2>/dev/null | grep -q "OK" && echo -e "${GREEN}✓${RESET}" || echo -e "${YELLOW}⚠ Wird beim ersten Start initialisiert${RESET}"
+
 # Skip interactive setup - will be handled by first run of 'ai' command
 echo -e "${BLUE}Setting up shell integration...${RESET}"
 

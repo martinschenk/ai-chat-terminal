@@ -56,16 +56,17 @@ show_config_menu() {
         echo -e "${PURPLE}│${RESET}  ${GREEN}[3]${RESET} ${LANG_CONFIG_OPT4}"
         echo -e "${PURPLE}│${RESET}  ${GREEN}[4]${RESET} ${LANG_CONFIG_OPT5}"
         echo -e "${PURPLE}│${RESET}  ${GREEN}[5]${RESET} 💬 ${LANG_CONTEXT_SET:-Set context window}"
-        echo -e "${PURPLE}│${RESET}  ${GREEN}[6]${RESET} 🧠 ${LANG_CONFIG_MEMORY_SYSTEM:-Memory system}"
-        echo -e "${PURPLE}│${RESET}  ${GREEN}[7]${RESET} 🧹 ${LANG_CONFIG_OPT7}"
-        echo -e "${PURPLE}│${RESET}  ${GREEN}[8]${RESET} ℹ️  ${LANG_CONFIG_ABOUT:-About & Version}"
-        echo -e "${PURPLE}│${RESET}  ${GREEN}[9]${RESET} ${LANG_CONFIG_OPT6}"
+        echo -e "${PURPLE}│${RESET}  ${GREEN}[6]${RESET} 🔑 Set OpenAI API key"
+        echo -e "${PURPLE}│${RESET}  ${GREEN}[7]${RESET} 🧠 ${LANG_CONFIG_MEMORY_SYSTEM:-Memory system}"
+        echo -e "${PURPLE}│${RESET}  ${GREEN}[8]${RESET} 🧹 ${LANG_CONFIG_OPT7}"
+        echo -e "${PURPLE}│${RESET}  ${GREEN}[9]${RESET} ℹ️  ${LANG_CONFIG_ABOUT:-About & Version}"
+        echo -e "${PURPLE}│${RESET}  ${GREEN}[10]${RESET} ${LANG_CONFIG_OPT6}"
         echo -e "${PURPLE}│${RESET}"
-        echo -e "${PURPLE}│${RESET}  ${RED}[10]${RESET} 🗑️  ${LANG_CONFIG_OPT9}"
+        echo -e "${PURPLE}│${RESET}  ${RED}[11]${RESET} 🗑️  ${LANG_CONFIG_OPT9}"
         echo -e "${PURPLE}└─────────────────────────────────────${RESET}"
         echo ""
 
-        echo -ne "${CYAN}${LANG_CONFIG_SELECT_OPTION:-Select [1-10]:} ${RESET}"
+        echo -ne "${CYAN}${LANG_CONFIG_SELECT_OPTION:-Select [1-11]:} ${RESET}"
 
         # Handle ESC key detection in config menu
         local choice=""
@@ -120,19 +121,22 @@ show_config_menu() {
             5)  # Set context window
                 change_context_window
                 ;;
-            6)  # Memory system
+            6)  # Set OpenAI API key
+                change_openai_api_key
+                ;;
+            7)  # Memory system
                 memory_system_menu
                 ;;
-            7)  # Clear cache
+            8)  # Clear cache
                 clear_chat_cache
                 ;;
-            8)  # About & Version
+            9)  # About & Version
                 show_about_info
                 ;;
-            9)  # Back to chat
+            10)  # Back to chat
                 return
                 ;;
-            10)  # Uninstall
+            11)  # Uninstall
                 uninstall_terminal
                 # If uninstall was cancelled, we continue the loop
                 # If uninstall succeeded, the script will have exited
@@ -288,6 +292,33 @@ change_ai_model() {
 
     echo -e "${GREEN}✅ OpenAI Model changed to: $new_model${RESET}"
     sleep 2
+}
+
+# Change OpenAI API key function
+change_openai_api_key() {
+    echo -e "\n${CYAN}Set OpenAI API Key:${RESET}"
+    echo "Current: ${OPENAI_API_KEY:0:8}..." # Show first 8 chars for verification
+    echo ""
+    echo -e "${YELLOW}You can get your API key from: https://platform.openai.com/api-keys${RESET}"
+    echo ""
+    echo -n "Enter new OpenAI API key: "
+    read -r new_key
+
+    if [[ -n "$new_key" ]] && [[ "$new_key" != "Enter your OpenAI API key:" ]]; then
+        # Validate key format (starts with sk- and has reasonable length)
+        if [[ "$new_key" =~ ^sk-[A-Za-z0-9_-]{20,}$ ]]; then
+            # Update .env file
+            sed -i '' "s/OPENAI_API_KEY=.*/OPENAI_API_KEY=\"$new_key\"/" "$ENV_FILE"
+            echo -e "${GREEN}✅ OpenAI API key updated successfully!${RESET}"
+            echo -e "${GREEN}Key active immediately for all new chats.${RESET}"
+        else
+            echo -e "${RED}❌ Invalid API key format. Keys should start with 'sk-'${RESET}"
+        fi
+        sleep 2
+    else
+        echo -e "${YELLOW}No changes made.${RESET}"
+        sleep 1
+    fi
 }
 
 # Change command function
