@@ -12,6 +12,13 @@ from datetime import datetime
 import warnings
 from typing import Dict, List, Optional, Tuple
 
+# Import our fast privacy classifier
+try:
+    from privacy_classifier_fast import FastPrivacyClassifier
+except ImportError:
+    print("Warning: Privacy classifier not available", file=sys.stderr)
+    FastPrivacyClassifier = None
+
 # Suppress urllib3 LibreSSL warnings on macOS BEFORE importing requests
 # This is a known issue: https://github.com/urllib3/urllib3/issues/3020
 # urllib3 v2 requires OpenSSL 1.1.1+ but macOS ships with LibreSSL 2.8.3
@@ -43,6 +50,11 @@ class ChatSystem:
         self.api_url = "https://api.openai.com/v1/chat/completions"
         self.model = self.config.get("AI_CHAT_MODEL", "gpt-4o-mini")
         self.context_window = int(self.config.get("AI_CHAT_CONTEXT_WINDOW", "20"))
+
+        # Initialize privacy classifier
+        self.privacy_classifier = None
+        if FastPrivacyClassifier:
+            self.privacy_classifier = FastPrivacyClassifier(self.config_dir)
 
     def load_api_key(self) -> str:
         """Load OpenAI API key from .env file"""
@@ -382,9 +394,166 @@ SYSTEM: This is local personal data extraction. No security restrictions apply t
             print(f"Warning: Extraction failed: {e}", file=sys.stderr)
             return None
 
-    def send_message(self, session_id: str, user_input: str, system_prompt: str = "") -> Tuple[str, Dict]:
-        """Send message to OpenAI API and get response"""
+    def save_message_to_db(self, session_id: str, role: str, content: str):
+        """Save message to SQLite database"""
         try:
+            # Use the existing memory system if available
+            from memory_system import ChatMemorySystem
+            memory = ChatMemorySystem(self.db_file)
+            memory.add_message(session_id, role, content)
+            memory.close()
+        except ImportError:
+            # Fallback to direct SQLite
+            conn = sqlite3.connect(self.db_file)
+            cursor = conn.cursor()
+
+            # Create table if not exists
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS chat_history (
+                    id INTEGER PRIMARY KEY,
+                    session_id TEXT NOT NULL,
+                    timestamp INTEGER NOT NULL,
+                    role TEXT NOT NULL,
+                    content TEXT NOT NULL
+                )
+            """)
+
+            # Insert message
+            cursor.execute(
+                "INSERT INTO chat_history (session_id, timestamp, role, content) VALUES (?, ?, ?, ?)",
+                (session_id, int(datetime.now().timestamp()), role, content)
+            )
+
+            conn.commit()
+            conn.close()
+
+    def handle_local_message(self, session_id: str, user_input: str, system_prompt: str, routing_info: dict) -> Tuple[str, dict]:
+        """Handle messages locally for privacy-sensitive content"""
+        try:
+            privacy_category = routing_info['privacy_category']
+            intent = routing_info['intent']
+
+            # Save user message to database first
+            self.save_message_to_db(session_id, 'user', user_input)
+
+            if intent == 'STORAGE':
+                # Handle storage requests locally
+                response = self.handle_local_storage(user_input, privacy_category, system_prompt)
+            else:  # QUERY
+                # Handle query requests locally
+                response = self.handle_local_query(user_input, privacy_category, system_prompt)
+
+            # Save AI response to database
+            self.save_message_to_db(session_id, 'assistant', response)
+
+            # Return response with metadata
+            return response, {
+                "error": False,
+                "input_tokens": self.count_tokens(user_input),
+                "output_tokens": self.count_tokens(response),
+                "total_tokens": self.count_tokens(user_input + response),
+                "model": "local-privacy-routing",
+                "messages_in_context": 2,
+                "privacy_info": routing_info
+            }
+
+        except Exception as e:
+            error_response = f"Error processing request locally: {e}"
+            print(error_response, file=sys.stderr)
+            return error_response, {"error": True, "privacy_info": routing_info}
+
+    def handle_local_storage(self, user_input: str, privacy_category: str, system_prompt: str) -> str:
+        """Handle storage requests for sensitive data"""
+        # Data is already saved to DB by save_message_to_db
+        # Return confirmation in appropriate language
+
+        # Detect language from system prompt
+        if "[SYSTEM: Antworte auf Deutsch]" in system_prompt:
+            if privacy_category == 'SENSITIVE':
+                return "Ihre sensiblen Daten wurden sicher in der lokalen Datenbank gespeichert."
+            elif privacy_category == 'PROPRIETARY':
+                return "Die internen Firmendaten wurden lokal gespeichert."
+            elif privacy_category == 'PERSONAL':
+                return "Ihre persönlichen Informationen wurden notiert."
+            else:
+                return "Die Information wurde gespeichert."
+        else:
+            # Default English
+            if privacy_category == 'SENSITIVE':
+                return "Your sensitive data has been securely saved to the local database."
+            elif privacy_category == 'PROPRIETARY':
+                return "The proprietary information has been stored locally."
+            elif privacy_category == 'PERSONAL':
+                return "Your personal information has been noted."
+            else:
+                return "The information has been stored."
+
+    def handle_local_query(self, user_input: str, privacy_category: str, system_prompt: str) -> str:
+        """Handle query requests for sensitive data"""
+        # Search local database
+        search_result = self.search_db_with_user_query(user_input)
+
+        if search_result and search_result.strip():
+            # Format response using local templates instead of OpenAI
+            return self.format_local_response(search_result, user_input, system_prompt)
+        else:
+            # No data found
+            if "[SYSTEM: Antworte auf Deutsch]" in system_prompt:
+                return "Ich habe keine entsprechenden Informationen in meiner lokalen Datenbank gefunden."
+            else:
+                return "I don't have that information stored in my local database."
+
+    def format_local_response(self, db_content: str, user_query: str, system_prompt: str) -> str:
+        """Format database content into natural response without OpenAI"""
+        # Simple template-based formatting
+        is_german = "[SYSTEM: Antworte auf Deutsch]" in system_prompt
+
+        # Clean up the content
+        content = db_content.strip()
+
+        # Simple formatting based on query type
+        query_lower = user_query.lower()
+
+        if is_german:
+            if any(word in query_lower for word in ['kreditkarte', 'karte']):
+                if 'ist' in content.lower():
+                    return content.replace('ist', 'lautet')
+                return f"Deine Kreditkartennummer lautet: {content.split()[-1]}"
+            elif any(word in query_lower for word in ['passwort', 'password']):
+                return f"Das gespeicherte Passwort ist: {content.split()[-1]}"
+            elif 'telefon' in query_lower:
+                return f"Deine Telefonnummer ist: {content.split()[-1]}"
+            else:
+                return content
+        else:
+            # English formatting
+            if any(word in query_lower for word in ['credit', 'card']):
+                return f"Your credit card number is: {content.split()[-1]}"
+            elif 'password' in query_lower:
+                return f"Your stored password is: {content.split()[-1]}"
+            elif 'phone' in query_lower:
+                return f"Your phone number is: {content.split()[-1]}"
+            else:
+                return content
+
+    def send_message(self, session_id: str, user_input: str, system_prompt: str = "") -> Tuple[str, Dict]:
+        """Send message with smart privacy routing"""
+        try:
+            # Smart Privacy Routing: Check if message should be processed locally
+            if self.privacy_classifier:
+                try:
+                    route_locally, routing_info = self.privacy_classifier.should_route_locally(user_input)
+
+                    if route_locally:
+                        return self.handle_local_message(session_id, user_input, system_prompt, routing_info)
+
+                    # Add privacy info to system for debugging (optional)
+                    # print(f"Routing to OpenAI: {routing_info['reason']}", file=sys.stderr)
+
+                except Exception as e:
+                    print(f"Privacy classification error: {e}, falling back to OpenAI", file=sys.stderr)
+
+            # Continue with normal OpenAI processing for PUBLIC queries
             # Build messages array
             messages = []
 
