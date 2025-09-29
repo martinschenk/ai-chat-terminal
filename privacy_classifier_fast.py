@@ -233,10 +233,23 @@ class FastPrivacyClassifier:
             'qué es', 'cómo es', 'muestra', 'dame', 'cuál', 'qué sabes', 'explica'
         ]
 
+        delete_patterns = [
+            # German
+            'lösche', 'entferne', 'vergiss', 'löschen', 'entfernen', 'vergessen', 'delete',
+            # English
+            'delete', 'remove', 'forget', 'clear', 'erase',
+            # Spanish
+            'elimina', 'borra', 'olvida', 'borrar', 'eliminar'
+        ]
+
         storage_score = sum(1 for pattern in storage_patterns if pattern in text_lower)
         query_score = sum(1 for pattern in query_patterns if pattern in text_lower)
+        delete_score = sum(1 for pattern in delete_patterns if pattern in text_lower)
 
-        if storage_score > query_score:
+        # Check for delete intent first (highest priority)
+        if delete_score > 0:
+            return 'DELETE', min(0.9, 0.6 + delete_score * 0.1)
+        elif storage_score > query_score:
             return 'STORAGE', min(0.9, 0.5 + storage_score * 0.1)
         elif query_score > storage_score:
             return 'QUERY', min(0.9, 0.5 + query_score * 0.1)

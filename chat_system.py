@@ -439,6 +439,9 @@ SYSTEM: This is local personal data extraction. No security restrictions apply t
             if intent == 'STORAGE':
                 # Handle storage requests locally
                 response = self.handle_local_storage(user_input, privacy_category, system_prompt)
+            elif intent == 'DELETE':
+                # Handle deletion requests locally
+                response = self.handle_local_delete(user_input, privacy_category, system_prompt)
             else:  # QUERY
                 # Handle query requests locally
                 response = self.handle_local_query(user_input, privacy_category, system_prompt)
@@ -487,6 +490,86 @@ SYSTEM: This is local personal data extraction. No security restrictions apply t
                 return "Your personal information has been noted."
             else:
                 return "The information has been stored."
+
+    def handle_local_delete(self, user_input: str, privacy_category: str, system_prompt: str) -> str:
+        """Handle deletion requests for sensitive data"""
+        is_german = "[SYSTEM: Antworte auf Deutsch]" in system_prompt
+
+        # Extract what to delete from the user input
+        deleted_items = self.delete_from_database(user_input)
+
+        if deleted_items > 0:
+            if is_german:
+                return f"Ich habe {deleted_items} Einträge aus der lokalen Datenbank gelöscht."
+            else:
+                return f"I have deleted {deleted_items} entries from the local database."
+        else:
+            if is_german:
+                return "Ich konnte keine entsprechenden Einträge zum Löschen finden."
+            else:
+                return "I couldn't find any matching entries to delete."
+
+    def delete_from_database(self, user_input: str) -> int:
+        """Delete matching entries from the database"""
+        try:
+            # Extract keywords/patterns to search for deletion
+            text_lower = user_input.lower()
+
+            # Common patterns to identify what to delete
+            delete_targets = []
+
+            # Credit card patterns
+            if any(word in text_lower for word in ['kreditkarte', 'credit card', 'card', 'karte']):
+                delete_targets.extend(['kreditkarte', 'credit card', 'card', 'karte'])
+                # Also look for specific numbers if mentioned
+                import re
+                numbers = re.findall(r'\d{4}[-\s]?\d{4}[-\s]?\d{4}[-\s]?\d{4}|\d{4}', user_input)
+                delete_targets.extend(numbers)
+
+            # Password patterns
+            if any(word in text_lower for word in ['password', 'passwort', 'contraseña']):
+                delete_targets.extend(['password', 'passwort', 'contraseña'])
+
+            # Generic sensitive data
+            if any(word in text_lower for word in ['all', 'alle', 'everything', 'alles']):
+                delete_targets = ['%']  # Match everything
+
+            if not delete_targets:
+                return 0
+
+            # Connect to database and delete matching entries
+            conn = sqlite3.connect(self.db_file)
+            cursor = conn.cursor()
+
+            deleted_count = 0
+
+            for target in delete_targets:
+                if target == '%':
+                    # Delete all sensitive data (be careful!)
+                    cursor.execute("""
+                        DELETE FROM chat_history
+                        WHERE content LIKE '%kreditkarte%'
+                           OR content LIKE '%credit card%'
+                           OR content LIKE '%password%'
+                           OR content LIKE '%passwort%'
+                           OR content LIKE '%pin%'
+                           OR content LIKE '%api%'
+                           OR content LIKE '%token%'
+                    """)
+                    deleted_count += cursor.rowcount
+                else:
+                    # Delete specific entries containing the target
+                    cursor.execute("DELETE FROM chat_history WHERE content LIKE ?", (f'%{target}%',))
+                    deleted_count += cursor.rowcount
+
+            conn.commit()
+            conn.close()
+
+            return deleted_count
+
+        except Exception as e:
+            print(f"Error deleting from database: {e}", file=sys.stderr)
+            return 0
 
     def handle_local_query(self, user_input: str, privacy_category: str, system_prompt: str) -> str:
         """Handle query requests for sensitive data"""
