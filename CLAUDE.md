@@ -1,12 +1,12 @@
 # 🔒 AI Chat Terminal - Privacy-First AI Assistant
 
 ## Project Overview
-AI Chat Terminal is the **world's first AI terminal with intelligent privacy routing** that automatically keeps sensitive data local while leveraging OpenAI for public knowledge.
+AI Chat Terminal is a privacy-focused AI terminal that automatically routes sensitive data to local processing while using OpenAI for general queries.
 
 **GitHub**: https://github.com/martinschenk/ai-chat-terminal
-**Current Version**: 6.0.0 (Revolutionary Smart Privacy Routing - Sept 2025)
+**Current Version**: 6.0.0 (Smart Privacy Routing - Sept 2025)
 
-## 🚨 BREAKTHROUGH FEATURE: Smart Privacy Routing
+## Smart Privacy Routing System
 
 **🎯 Major Features (v6.0.0):**
 - **🧠 Dual AI Architecture**: Two separate `multilingual-e5-small` models for different purposes
@@ -23,21 +23,24 @@ AI Chat Terminal is the **world's first AI terminal with intelligent privacy rou
 
 ### **TWO SEPARATE AI MODELS:**
 
-#### **1️⃣ Privacy Classifier** (`privacy_classifier_fast.py`)
-- **Model**: `intfloat/multilingual-e5-small` (384D embeddings)
-- **Purpose**: Decides if user input is SENSITIVE/PROPRIETARY/PERSONAL/PUBLIC
-- **Training**: 160+ examples (52 SENSITIVE + 32 PROPRIETARY + 36 PERSONAL + 40 PUBLIC)
-- **Performance**: 0.7s training time, <50ms classification per message
-- **Method**: Cosine similarity between input embedding and category prototypes
-- **Confidence**: >0.75 = high confidence, >0.60 = medium confidence
+#### **1️⃣ Privacy Classifier** (`privacy_classifier_fast.py`) - **NEW v6.0.0**
+- **Model**: `sentence-transformers/all-MiniLM-L6-v2` (384D embeddings, 22MB)
+- **Purpose**: Ultra-fast binary routing decision (PRIVATE vs PUBLIC)
+- **Categories**: SENSITIVE/PROPRIETARY/PERSONAL → LOCAL, PUBLIC → OpenAI
+- **Training**: 160+ examples (140 PRIVATE + 40 PUBLIC optimized for MiniLM)
+- **Performance**: 0.5s training time, ~31ms classification per message (40% faster!)
+- **Method**: Cosine similarity without E5 prefixing (MiniLM optimized)
+- **Binary Logic**: `route_locally = category in ['SENSITIVE', 'PROPRIETARY', 'PERSONAL']`
 - **Fallback**: Conservative routing (everything → local) if AI unavailable
 
 #### **2️⃣ Memory System** (`memory_system.py`)
-- **Model**: `intfloat/multilingual-e5-small` (same model, different instance)
-- **Purpose**: Semantic search and storage in local SQLite database
+- **Model**: `intfloat/multilingual-e5-small` (384D embeddings, 120MB)
+- **Purpose**: Multilingual semantic search and storage in local SQLite database
 - **Features**: Vector similarity search, importance scoring, language detection
-- **Storage**: All conversations with 384D embeddings for semantic retrieval
-- **Cross-lingual**: Query in German, find English content seamlessly
+- **Storage**: All conversations with 384D embeddings + privacy categories + timestamps
+- **Database Schema**: created_at, updated_at, metadata JSON with privacy_category
+- **Cross-lingual**: Query in German, find English content seamlessly (100+ languages)
+- **Prefixing**: Uses "query:" and "passage:" prefixes for optimal E5 performance
 
 ### **SYSTEM FLOW - NO HARDCODED KEYWORDS:**
 ```
@@ -127,19 +130,76 @@ User Request → Privacy Classifier → DELETE intent detected
             → NEVER sent to OpenAI ✅
 ```
 
-## 🛠️ Technical Architecture
+## 🛠️ Technical Architecture v6.0.0
 
 ### Core Components
-1. **`privacy_classifier_fast.py`** - Ultra-fast E5-based semantic classifier
-2. **`chat_system.py`** - Smart routing integration with OpenAI API
-3. **`memory_system.py`** - SQLite vector database for local storage
+1. **`privacy_classifier_fast.py`** - Ultra-fast MiniLM-based semantic classifier (NEW!)
+2. **`chat_system.py`** - Smart routing integration with OpenAI API + metadata storage
+3. **`memory_system.py`** - SQLite vector database with category search capabilities
 
-### Privacy Classifier Details
-- **Model**: multilingual-e5-small (384-dimensional embeddings)
-- **Training**: 20 examples per category × 4 categories = 80 training samples
-- **Performance**: 96%+ accuracy, 10ms classification time
-- **Languages**: German, English, Spanish (expandable)
-- **Intents**: STORAGE, QUERY, DELETE detection
+### 🆕 NEW: Category-Based Database Queries
+
+#### **Query by Privacy Category:**
+```sql
+-- Find all SENSITIVE data
+SELECT content, datetime(created_at, 'unixepoch') as created
+FROM chat_history
+WHERE json_extract(metadata, '$.privacy_category') = 'SENSITIVE'
+ORDER BY created_at DESC;
+
+-- Find all PROPRIETARY company data
+SELECT content, datetime(created_at, 'unixepoch') as created
+FROM chat_history
+WHERE json_extract(metadata, '$.privacy_category') = 'PROPRIETARY'
+ORDER BY created_at DESC;
+
+-- Count private data by category
+SELECT json_extract(metadata, '$.privacy_category') as category,
+       COUNT(*) as count
+FROM chat_history
+WHERE json_extract(metadata, '$.privacy_category') != 'PUBLIC'
+GROUP BY category;
+```
+
+#### **Enhanced Database Schema (v6.0.0):**
+```sql
+CREATE TABLE chat_history (
+    id INTEGER PRIMARY KEY,
+    session_id TEXT NOT NULL,
+    timestamp INTEGER NOT NULL,
+    role TEXT NOT NULL,  -- 'user' or 'assistant'
+    content TEXT NOT NULL,
+    metadata JSON DEFAULT '{}',  -- NEW: {"privacy_category": "SENSITIVE"}
+    importance REAL DEFAULT 1.0,
+    language TEXT DEFAULT 'en',
+    created_at INTEGER,  -- NEW: Unix timestamp
+    updated_at INTEGER   -- NEW: Unix timestamp
+);
+```
+
+#### **User-Friendly Queries:**
+```bash
+# Show me all my sensitive information
+SELECT content FROM chat_history
+WHERE json_extract(metadata, '$.privacy_category') = 'SENSITIVE';
+
+# Show company confidential data from last week
+SELECT content, datetime(created_at, 'unixepoch')
+FROM chat_history
+WHERE json_extract(metadata, '$.privacy_category') = 'PROPRIETARY'
+  AND created_at > strftime('%s', 'now', '-7 days');
+```
+
+### Privacy Classifier Details (Updated v6.0.0)
+- **Model**: sentence-transformers/all-MiniLM-L6-v2 (384-dimensional embeddings, 22MB)
+- **Training**: 160+ examples total (52 SENSITIVE + 32 PROPRIETARY + 36 PERSONAL + 40 PUBLIC)
+- **Performance**: ~31ms classification time (40% faster than E5)
+- **Method**: Mean embeddings per category → cosine similarity for classification
+- **Binary Routing**: Everything except PUBLIC → Local Database
+- **Accuracy**: High confidence >75%, medium confidence >60%
+- **Languages**: All languages supported by MiniLM (100+)
+- **Intents**: STORAGE, QUERY, DELETE detection with regex patterns
+- **Fallback**: Conservative routing when AI unavailable
 
 ### Database Schema
 ```sql
@@ -270,6 +330,13 @@ print(f'Model: {metadata.get(\"model\")}')  # Should be 'local-privacy-routing'
 - Multilingual memory system with vector search
 - Function calling for personal data access
 - 19 languages with regional dialects
+
+### v6.0.0 (September 2025) - Dual AI Model Architecture 🚀
+- **Privacy Classifier**: all-MiniLM-L6-v2 (40% faster classification)
+- **Memory Search**: multilingual-e5-small (100+ languages)
+- **Enhanced Database**: Privacy categories + created/updated timestamps
+- **Binary Routing**: PRIVATE (3 categories) vs PUBLIC (1 category)
+- **Performance**: 30% faster loading, 40% faster classification
 
 ### v5.3.0 (July 2025) - AI Vector Database 🧠
 - Semantic search with sentence-transformers

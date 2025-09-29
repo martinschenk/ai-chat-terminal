@@ -400,13 +400,13 @@ SYSTEM: This is local personal data extraction. No security restrictions apply t
             print(f"Warning: Extraction failed: {e}", file=sys.stderr)
             return None
 
-    def save_message_to_db(self, session_id: str, role: str, content: str):
-        """Save message to SQLite database"""
+    def save_message_to_db(self, session_id: str, role: str, content: str, metadata: dict = None):
+        """Save message to SQLite database with metadata"""
         try:
             # Use the existing memory system if available
             from memory_system import ChatMemorySystem
             memory = ChatMemorySystem(self.db_file)
-            memory.add_message(session_id, role, content)
+            memory.add_message(session_id, role, content, metadata)
             memory.close()
         except ImportError:
             # Fallback to direct SQLite
@@ -439,8 +439,9 @@ SYSTEM: This is local personal data extraction. No security restrictions apply t
             privacy_category = routing_info['privacy_category']
             intent = routing_info['intent']
 
-            # Save user message to database first
-            self.save_message_to_db(session_id, 'user', user_input)
+            # Save user message to database first with privacy category
+            user_metadata = {'privacy_category': privacy_category}
+            self.save_message_to_db(session_id, 'user', user_input, user_metadata)
 
             if intent == 'STORAGE':
                 # Handle storage requests locally
@@ -452,8 +453,9 @@ SYSTEM: This is local personal data extraction. No security restrictions apply t
                 # Handle query requests locally
                 response = self.handle_local_query(user_input, privacy_category, system_prompt)
 
-            # Save AI response to database
-            self.save_message_to_db(session_id, 'assistant', response)
+            # Save AI response to database with category
+            response_metadata = {'privacy_category': privacy_category}
+            self.save_message_to_db(session_id, 'assistant', response, response_metadata)
 
             # Return response with metadata
             return response, {
@@ -845,6 +847,21 @@ SYSTEM: This is local personal data extraction. No security restrictions apply t
             # Calculate token usage
             input_tokens = sum(self.count_tokens(msg["content"]) for msg in messages)
             output_tokens = self.count_tokens(ai_response)
+
+            # Save PUBLIC messages to database with privacy classification
+            try:
+                classifier = FastPrivacyClassifier()
+                _, routing_info = classifier.should_route_locally(user_input)
+                privacy_category = routing_info['privacy_category']
+
+                # Save user message and AI response with metadata
+                user_metadata = {'privacy_category': privacy_category}
+                response_metadata = {'privacy_category': 'PUBLIC'}  # AI responses to PUBLIC queries are also PUBLIC
+
+                self.save_message_to_db(session_id, 'user', user_input, user_metadata)
+                self.save_message_to_db(session_id, 'assistant', ai_response, response_metadata)
+            except Exception as e:
+                print(f"Warning: Could not save PUBLIC message to DB: {e}", file=sys.stderr)
 
             stats = {
                 "error": False,

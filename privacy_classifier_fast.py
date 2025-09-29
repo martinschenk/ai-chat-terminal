@@ -51,7 +51,7 @@ class FastPrivacyClassifier:
 
     @property
     def model(self):
-        """Lazy load the E5 model for AI-based classification"""
+        """Lazy load the MiniLM model for ultra-fast privacy classification"""
         if not HAS_AI_MODELS:
             return None
 
@@ -60,9 +60,9 @@ class FastPrivacyClassifier:
                 # Suppress any warnings during model loading
                 with warnings.catch_warnings():
                     warnings.simplefilter("ignore")
-                    self._model = SentenceTransformer('intfloat/multilingual-e5-small')
+                    self._model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
             except Exception as e:
-                print(f"Warning: Could not load E5 model: {e}", file=sys.stderr)
+                print(f"Warning: Could not load MiniLM model: {e}", file=sys.stderr)
                 return None
         return self._model
 

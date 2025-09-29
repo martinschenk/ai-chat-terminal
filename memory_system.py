@@ -235,6 +235,19 @@ class ChatMemorySystem:
                 # Column already exists, ignore
                 pass
 
+            # Add created_at and updated_at columns (migration)
+            try:
+                self.db.execute("ALTER TABLE chat_history ADD COLUMN created_at INTEGER DEFAULT (strftime('%s','now'))")
+            except sqlite3.OperationalError:
+                # Column already exists, ignore
+                pass
+
+            try:
+                self.db.execute("ALTER TABLE chat_history ADD COLUMN updated_at INTEGER DEFAULT (strftime('%s','now'))")
+            except sqlite3.OperationalError:
+                # Column already exists, ignore
+                pass
+
             # For vector table migration (if exists)
             if self.vector_support:
                 try:
@@ -264,8 +277,8 @@ class ChatMemorySystem:
 
             # Insert into chat history
             cursor = self.db.execute(
-                "INSERT INTO chat_history (session_id, role, content, metadata, timestamp, importance, language) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                (session_id, role, content, json.dumps(metadata or {}), timestamp, importance, detected_language)
+                "INSERT INTO chat_history (session_id, role, content, metadata, timestamp, importance, language, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (session_id, role, content, json.dumps(metadata or {}), timestamp, importance, detected_language, timestamp, timestamp)
             )
             message_id = cursor.lastrowid
 
