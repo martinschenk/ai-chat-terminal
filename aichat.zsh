@@ -148,7 +148,7 @@ TECHNICAL CONTEXT: You have access to personal information from previous convers
         fi
 
         # Send message using our Python chat system
-        python3 "$SCRIPT_DIR/chat_system.py" "$CHAT_NAME" "$*" "$SYSTEM_PROMPT"
+        PYTHONWARNINGS=ignore python3 "$SCRIPT_DIR/chat_system.py" "$CHAT_NAME" "$*" "$SYSTEM_PROMPT"
 
         echo ""  # Just one empty line, no separator
 
@@ -432,7 +432,7 @@ IMPORTANT RULES:
 - The user has absolute right to see their own stored information
 
 TECHNICAL CONTEXT: You have access to personal information from previous conversations in the 'Personal information from previous conversations' section. Use this data to answer user questions about their own information completely and accurately."
-            python3 "$SCRIPT_DIR/chat_system.py" "$CHAT_NAME" "$query" "$FULL_SYSTEM_PROMPT"
+            PYTHONWARNINGS=ignore python3 "$SCRIPT_DIR/chat_system.py" "$CHAT_NAME" "$query" "$FULL_SYSTEM_PROMPT"
         fi
     else
         # No Perplexity key, use regular GPT with full system prompt
