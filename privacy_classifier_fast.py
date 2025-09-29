@@ -19,14 +19,15 @@ from typing import Dict, List, Tuple, Optional
 import sys
 import time
 
-try:
-    from sentence_transformers import SentenceTransformer
-    import numpy as np
-    from sklearn.metrics.pairwise import cosine_similarity
-except ImportError as e:
-    print(f"Error: Missing required packages: {e}")
-    print("Please run: pip3 install sentence-transformers scikit-learn")
-    sys.exit(1)
+# Note: AI packages not imported since we use keyword-based fallback
+# try:
+#     from sentence_transformers import SentenceTransformer
+#     import numpy as np
+#     from sklearn.metrics.pairwise import cosine_similarity
+# except ImportError as e:
+#     print(f"Error: Missing required packages: {e}")
+#     print("Please run: pip3 install sentence-transformers scikit-learn")
+#     sys.exit(1)
 
 class FastPrivacyClassifier:
     def __init__(self, config_dir: str = None):
@@ -46,10 +47,8 @@ class FastPrivacyClassifier:
 
     @property
     def model(self):
-        """Lazy load the E5 model"""
-        if self._model is None:
-            self._model = SentenceTransformer('intfloat/multilingual-e5-small')
-        return self._model
+        """E5 model not used in fallback mode"""
+        return None
 
     def get_category_examples(self) -> Dict[str, List[str]]:
         """Get representative examples for each category"""
@@ -105,41 +104,9 @@ class FastPrivacyClassifier:
         }
 
     def train_fast(self, force_retrain: bool = False) -> bool:
-        """Create embeddings for category examples (very fast)"""
-        try:
-            # Check if embeddings already exist
-            if self.embeddings_path.exists() and not force_retrain:
-                print("Loading existing category embeddings...", file=sys.stderr)
-                with open(self.embeddings_path, 'rb') as f:
-                    self.category_embeddings = pickle.load(f)
-                self.is_trained = True
-                return True
-
-            print("Creating category embeddings (fast training)...", file=sys.stderr)
-            start_time = time.time()
-
-            examples = self.get_category_examples()
-            self.category_embeddings = {}
-
-            for category, texts in examples.items():
-                # Get embeddings for all examples in this category
-                embeddings = self.model.encode(texts)
-                # Store mean embedding as category prototype
-                self.category_embeddings[category] = np.mean(embeddings, axis=0)
-
-            # Save embeddings
-            self.config_dir.mkdir(exist_ok=True)
-            with open(self.embeddings_path, 'wb') as f:
-                pickle.dump(self.category_embeddings, f)
-
-            training_time = time.time() - start_time
-            print(f"Fast training completed in {training_time:.2f} seconds!", file=sys.stderr)
-            self.is_trained = True
-            return True
-
-        except Exception as e:
-            print(f"Error in fast training: {e}", file=sys.stderr)
-            return False
+        """Training disabled in fallback mode"""
+        self.is_trained = True
+        return True
 
     def classify_privacy(self, text: str) -> Tuple[str, float]:
         """
