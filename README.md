@@ -9,11 +9,17 @@
 
 ## 🚀 Revolutionary Smart Privacy Routing
 
-This AI terminal is **the world's first** to intelligently route conversations:
-- **🔒 SENSITIVE** (Credit cards, passwords) → **100% Local Processing**
-- **🏢 PROPRIETARY** (Business secrets) → **100% Local Processing**
-- **👤 PERSONAL** (Family, private notes) → **100% Local Processing**
-- **🌐 PUBLIC** (General knowledge) → **OpenAI Processing**
+This AI terminal is **the world's first** to intelligently route conversations using **dual AI models**:
+
+### 🧠 **Dual AI Architecture:**
+1. **🔍 Privacy Classifier**: `multilingual-e5-small` - Decides if data is sensitive
+2. **💾 Memory System**: `multilingual-e5-small` - Semantic search in local database
+
+### 📊 **Privacy Categories:**
+- **🔒 SENSITIVE** (Credit cards, passwords, API keys) → **100% Local Processing**
+- **🏢 PROPRIETARY** (Business secrets, internal data) → **100% Local Processing**
+- **👤 PERSONAL** (Names, family, appointments) → **100% Local Processing**
+- **🌐 PUBLIC** (General knowledge, tutorials) → **OpenAI Processing**
 
 **RESULT**: Enterprise-grade privacy + full AI capabilities in one terminal!
 
@@ -100,9 +106,37 @@ chat
 
 ---
 
-## 🧠 Smart Memory System
+## 🧠 Technical Architecture - Dual AI Models
 
-### Dual-Layer Architecture
+### 1️⃣ **Privacy Classifier** (`privacy_classifier_fast.py`)
+- **Model**: `intfloat/multilingual-e5-small` (384-dimensional embeddings)
+- **Purpose**: Classifies user input into 4 privacy levels
+- **Training**: 160+ examples across all categories (0.7s training time)
+- **Performance**: <50ms classification per message
+- **Languages**: Works in 100+ languages automatically
+
+### 2️⃣ **Memory System** (`memory_system.py`)
+- **Model**: `intfloat/multilingual-e5-small` (same model, different instance)
+- **Purpose**: Semantic search in local SQLite database
+- **Features**: Vector similarity search + graceful degradation
+- **Storage**: All local conversations with embeddings
+- **Cross-lingual**: Query in any language, find content in any other
+
+### 🔄 **Smart Training Process:**
+```bash
+# First run (automatic):
+Creating category embeddings (AI training)...
+  Processing SENSITIVE: 52 examples     # Credit cards, passwords, APIs
+  Processing PROPRIETARY: 32 examples   # Business secrets, internal data
+  Processing PERSONAL: 36 examples      # Names, family, appointments
+  Processing PUBLIC: 40 examples        # General knowledge, tutorials
+AI training completed in 0.70 seconds!
+
+# Subsequent runs (cached):
+Loading existing category embeddings...  # Instant loading
+```
+
+### Dual-Layer Memory Architecture
 - **Short-term**: Recent context (5-50 messages) sent to OpenAI
 - **Long-term**: SQLite vector database with semantic search
 - **Cross-lingual**: Query in German, find English content

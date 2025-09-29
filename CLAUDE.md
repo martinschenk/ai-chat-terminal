@@ -9,13 +9,64 @@ AI Chat Terminal is the **world's first AI terminal with intelligent privacy rou
 ## 🚨 BREAKTHROUGH FEATURE: Smart Privacy Routing
 
 **🎯 Major Features (v6.0.0):**
-- **🧠 Intelligent Privacy Classification**: 4-level semantic categorization (SENSITIVE/PROPRIETARY/PERSONAL/PUBLIC)
+- **🧠 Dual AI Architecture**: Two separate `multilingual-e5-small` models for different purposes
+- **🔍 Model #1 - Privacy Classifier**: Semantic classification of 4 privacy levels (160+ training examples)
+- **💾 Model #2 - Memory System**: Vector-based semantic search in local SQLite database
 - **🔒 100% Local Processing**: Credit cards, passwords, business secrets never sent to OpenAI
-- **⚡ Ultra-Fast Classification**: E5 model training in 3.7s, inference in 10ms
-- **🌍 Multilingual Privacy**: Works across all 19 supported languages
+- **⚡ Ultra-Fast Training**: AI embeddings created in 0.7s, cached for instant loading
+- **🌍 Multilingual Privacy**: Works across all 19 supported languages without hardcoded keywords
 - **🗑️ Secure Deletion**: "Delete my credit card info" removes data permanently
 - **💰 Cost Optimization**: 70-80% reduction in OpenAI API calls
 - **🏢 Enterprise-Ready**: GDPR/CCPA compliant by design
+
+## 🧠 DUAL AI MODEL ARCHITECTURE - CRITICAL UNDERSTANDING
+
+### **TWO SEPARATE AI MODELS:**
+
+#### **1️⃣ Privacy Classifier** (`privacy_classifier_fast.py`)
+- **Model**: `intfloat/multilingual-e5-small` (384D embeddings)
+- **Purpose**: Decides if user input is SENSITIVE/PROPRIETARY/PERSONAL/PUBLIC
+- **Training**: 160+ examples (52 SENSITIVE + 32 PROPRIETARY + 36 PERSONAL + 40 PUBLIC)
+- **Performance**: 0.7s training time, <50ms classification per message
+- **Method**: Cosine similarity between input embedding and category prototypes
+- **Confidence**: >0.75 = high confidence, >0.60 = medium confidence
+- **Fallback**: Conservative routing (everything → local) if AI unavailable
+
+#### **2️⃣ Memory System** (`memory_system.py`)
+- **Model**: `intfloat/multilingual-e5-small` (same model, different instance)
+- **Purpose**: Semantic search and storage in local SQLite database
+- **Features**: Vector similarity search, importance scoring, language detection
+- **Storage**: All conversations with 384D embeddings for semantic retrieval
+- **Cross-lingual**: Query in German, find English content seamlessly
+
+### **SYSTEM FLOW - NO HARDCODED KEYWORDS:**
+```
+User Input → Privacy Classifier (Model #1) → Classification Decision
+                    ↓
+    ┌─────────────────────────────────────────────────────────┐
+    │                                                         │
+    ▼ LOCAL (SENSITIVE/PROPRIETARY/PERSONAL)                  ▼ OPENAI (PUBLIC)
+┌─────────────────┐                                    ┌──────────────────┐
+│ Intent Detection│                                    │ Standard OpenAI  │
+│ STORAGE/QUERY/  │                                    │ API Processing   │
+│ DELETE          │                                    │ + Function Calls │
+└─────────────────┘                                    └──────────────────┘
+          │
+          ▼
+┌─────────────────┐
+│ Memory System   │
+│ (Model #2)      │
+│ Store/Search    │
+│ using Embeddings│
+└─────────────────┘
+```
+
+### **KEY BREAKTHROUGH - AI REPLACES ALL HARDCODED LOGIC:**
+- ❌ **OLD v5.x**: `if 'kreditkarte' in text or 'password' in text` (hardcoded keywords)
+- ✅ **NEW v6.0**: AI learns from examples, understands context semantically
+- ✅ **SCALABLE**: Add 100s more examples without touching code
+- ✅ **MULTILINGUAL**: Recognizes "tarjeta de crédito" = "credit card" = "Kreditkarte" automatically
+- ✅ **CONTEXT-AWARE**: "I need a card for the presentation" ≠ "My card number is 1234"
 
 ## 🔄 Smart Privacy Routing System Flow
 
