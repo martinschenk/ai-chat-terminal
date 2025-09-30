@@ -97,6 +97,30 @@ class ChatMemorySystem:
         # APSW doesn't have execute() on connection, add wrapper
         original_db = self.db
 
+        class APSWCursorWrapper:
+            """Wrapper to make APSW cursor compatible with sqlite3"""
+            def __init__(self, cursor, conn):
+                self._cursor = cursor
+                self._conn = conn
+
+            def execute(self, sql, params=()):
+                return self._cursor.execute(sql, params)
+
+            def fetchone(self):
+                return self._cursor.fetchone()
+
+            def fetchall(self):
+                return self._cursor.fetchall()
+
+            @property
+            def lastrowid(self):
+                # APSW uses last_insert_rowid() on connection
+                return self._conn.last_insert_rowid()
+
+            def __getattr__(self, name):
+                # Delegate other attributes to wrapped cursor
+                return getattr(self._cursor, name)
+
         class APSWWrapper:
             def __init__(self, conn):
                 self._conn = conn
@@ -104,7 +128,7 @@ class ChatMemorySystem:
             def execute(self, sql, params=()):
                 cursor = self._conn.cursor()
                 cursor.execute(sql, params)
-                return cursor
+                return APSWCursorWrapper(cursor, self._conn)
 
             def executescript(self, script):
                 cursor = self._conn.cursor()
@@ -113,7 +137,7 @@ class ChatMemorySystem:
                     statement = statement.strip()
                     if statement:
                         cursor.execute(statement)
-                return cursor
+                return APSWCursorWrapper(cursor, self._conn)
 
             def commit(self):
                 pass  # APSW auto-commits
@@ -122,7 +146,8 @@ class ChatMemorySystem:
                 self._conn.close()
 
             def cursor(self):
-                return self._conn.cursor()
+                cursor = self._conn.cursor()
+                return APSWCursorWrapper(cursor, self._conn)
 
             def enable_load_extension(self, enabled):
                 return self._conn.enable_load_extension(enabled)
@@ -328,13 +353,7 @@ class ChatMemorySystem:
                 # Column already exists, ignore
                 pass
 
-            # For vector table migration (if exists)
-            if self.vector_support:
-                try:
-                    self.db.execute("ALTER TABLE chat_embeddings ADD COLUMN language TEXT DEFAULT 'en'")
-                except Exception:
-                    # Column already exists or table doesn't exist, ignore
-                    pass
+            # Vector table doesn't need migrations - it's just embeddings
 
             self.db.commit()
         except Exception as e:
@@ -369,13 +388,13 @@ class ChatMemorySystem:
                     prefixed_content = f"passage: {content}"
 
                     # Generate embedding
-                    embedding = self.model.encode([prefixed_content])[0]
-                    embedding_list = embedding.tolist()
+                    embedding = self.model.encode([prefixed_content], convert_to_numpy=True)[0]
 
-                    # Insert embedding
+                    # Insert embedding with explicit rowid to match chat_history.id
+                    # sqlite-vec expects embeddings as bytes (numpy array converted)
                     self.db.execute(
-                        "INSERT INTO chat_embeddings (rowid, message_embedding, session_id, timestamp, message_type, importance, language) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                        (message_id, json.dumps(embedding_list), session_id, timestamp, role, importance, detected_language)
+                        "INSERT INTO chat_embeddings (rowid, message_embedding) VALUES (?, ?)",
+                        (message_id, embedding.astype('float32').tobytes())
                     )
                 except Exception as embedding_error:
                     # If embedding fails, continue without it
@@ -635,16 +654,23 @@ class ChatMemorySystem:
                 placeholders = ','.join('?' * len(TRULY_SENSITIVE))
 
                 # Search ONLY truly sensitive data (not LOCATION, PERSON, etc.)
+                # Note: sqlite-vec uses vec_distance_L2, not vec_distance
+                query_bytes = query_embedding.astype('float32').tobytes()
+
+                # Use subquery to filter by distance (can't use alias in WHERE)
                 cursor.execute(f"""
-                    SELECT h.content, h.metadata, h.created_at,
-                           vec_distance(e.message_embedding, ?) as distance
-                    FROM chat_history h
-                    JOIN chat_embeddings e ON h.id = e.rowid
-                    WHERE json_extract(h.metadata, '$.privacy_category') IN ({placeholders})
-                      AND distance < 0.7
+                    SELECT content, metadata, created_at, distance
+                    FROM (
+                        SELECT h.content, h.metadata, h.created_at,
+                               vec_distance_L2(e.message_embedding, ?) as distance
+                        FROM chat_history h
+                        JOIN chat_embeddings e ON h.id = e.rowid
+                        WHERE json_extract(h.metadata, '$.privacy_category') IN ({placeholders})
+                    )
+                    WHERE distance < 0.7
                     ORDER BY distance
                     LIMIT ?
-                """, (query_embedding.tobytes(), *TRULY_SENSITIVE, limit))
+                """, (query_bytes, *TRULY_SENSITIVE, limit))
             else:
                 # Define truly sensitive categories (matches pii_detector.py whitelist)
                 TRULY_SENSITIVE = [
@@ -765,10 +791,11 @@ class ChatMemorySystem:
             # Store embedding if vector support is available
             if self.vector_support:
                 embedding = self.encode_for_storage(full_message)
+                # sqlite-vec expects embeddings as bytes (numpy array converted)
                 cursor.execute("""
-                    INSERT INTO chat_embeddings (message_embedding, session_id, timestamp, message_type)
-                    VALUES (?, ?, ?, ?)
-                """, (embedding.tobytes(), 'private_data', timestamp, data_type))
+                    INSERT INTO chat_embeddings (rowid, message_embedding)
+                    VALUES (?, ?)
+                """, (message_id, embedding.astype('float32').tobytes()))
 
             self.db.commit()
             return message_id
