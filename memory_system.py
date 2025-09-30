@@ -61,10 +61,8 @@ class ChatMemorySystem:
             # Load sqlite-vec extension
             sqlite_vec.load(self.db)
             self.vector_support = True
-            if not _VECTOR_WARNING_SHOWN:
-                backend = "APSW" if USE_APSW else "sqlite3"
-                print(f"✅ Vector search enabled ({backend} + sqlite-vec v0.1.6)", file=sys.stderr)
-                _VECTOR_WARNING_SHOWN = True
+            # Don't show success message - only show if vector search FAILS
+            _VECTOR_WARNING_SHOWN = True
         except AttributeError as e:
             # Python's SQLite was compiled without extension support
             if not _VECTOR_WARNING_SHOWN:
@@ -631,7 +629,7 @@ class ChatMemorySystem:
         """Encode text for storage (with 'passage:' prefix for E5 optimization)"""
         return self.model.encode(f"passage: {text}", convert_to_tensor=False)
 
-    def search_private_data(self, query: str, limit: int = 5):
+    def search_private_data(self, query: str, limit: int = 5, silent: bool = False):
         """Search for private data in chat_history by metadata"""
         try:
             # Search for messages with SENSITIVE, PROPRIETARY, or PERSONAL categories

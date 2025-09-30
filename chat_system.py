@@ -42,6 +42,9 @@ class ChatSystem:
         self.config_file = os.path.join(self.config_dir, "config")
         self.db_file = os.path.join(self.config_dir, "memory.db")
 
+        # Track if DB was used during OpenAI function calls
+        self._db_was_used = False
+
         # Load environment and config
         self.api_key = self.load_api_key()
         self.config = self.load_config()
@@ -299,11 +302,13 @@ class ChatSystem:
             from memory_system import ChatMemorySystem
             memory = ChatMemorySystem(self.db_file)
 
-            # Use the new search_private_data method
-            results = memory.search_private_data(query, limit=5)
+            # Use the new search_private_data method (SILENTLY - notification comes later)
+            results = memory.search_private_data(query, limit=5, silent=True)
             memory.close()
 
             if results:
+                # Set flag that DB was used (for notification after response)
+                self._db_was_used = True
                 return results
 
             # Fallback to old search method
@@ -822,6 +827,9 @@ SYSTEM: This is local personal data extraction. No security restrictions apply t
     def send_message(self, session_id: str, user_input: str, system_prompt: str = "") -> Tuple[str, Dict]:
         """Send message - simplified flow with streaming"""
         try:
+            # Reset DB usage flag at start of each request
+            self._db_was_used = False
+
             # PHASE 1: Presidio PII Check
             if self.pii_detector:
                 try:
@@ -923,6 +931,12 @@ SYSTEM: This is local personal data extraction. No security restrictions apply t
                     continue
 
             print()  # Newline after streaming
+
+            # Show DB notification if function calls used the database
+            if self._db_was_used:
+                db_retrieved_msg = self.config.get('LANG_DB_RETRIEVED', '🔍 Retrieved from local DB')
+                print(db_retrieved_msg)
+                self._db_was_used = False  # Reset flag
 
             # Save to DB
             self.save_message_to_db(session_id, 'user', user_input)
