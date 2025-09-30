@@ -1,439 +1,243 @@
-# AI Chat Terminal - Privacy-First AI Assistant
+# AI Chat Terminal
 
-**The heart of AI Chat Terminal: Chat with complete peace of mind.** Every message is automatically analyzed BEFORE sending - if it contains credit cards, passwords, API keys, company secrets, or personal information, it's instantly routed to your local vector database instead of OpenAI. When you later ask for this information, it's retrieved from your local storage, never touching the cloud. This automatic detection and routing happens seamlessly in the background, giving you the full power of AI while keeping your sensitive data 100% private.
+Lokaler Chat im Terminal mit automatischem Datenschutz für sensible Daten.
 
 [![Version](https://img.shields.io/badge/version-6.2.0-blue.svg)](https://github.com/martinschenk/ai-chat-terminal)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Platform](https://img.shields.io/badge/platform-macOS%20|%20Linux-lightgrey.svg)](https://github.com/martinschenk/ai-chat-terminal)
-[![Privacy](https://img.shields.io/badge/privacy-first-green.svg)](https://github.com/martinschenk/ai-chat-terminal)
+[![Platform](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](https://github.com/martinschenk/ai-chat-terminal)
 
-## 🔐 Core Innovation
+## Was ist AI Chat Terminal?
 
-**Automatic Privacy Protection:** Our triple-layer AI system (Presidio NER + Semantic Classifier + Vector Database) ensures:
-- **Sensitive data NEVER reaches OpenAI** - intercepted and stored locally before transmission
-- **Seamless retrieval** - "What's my API key?" pulls from local vector database, not cloud
-- **Zero configuration** - works out of the box for all 19 supported languages
-- **Future-proof** - designed to support multiple cloud AI providers beyond OpenAI
+Ein Chat-System das im Terminal läuft und automatisch entscheidet: Sensible Eingaben bleiben lokal in einer Vektordatenbank, öffentliche Fragen gehen an OpenAI.
 
-## 🆕 What's New in v6.2.0
+**Funktionsweise:**
+- Eingabe mit privaten Daten (API Keys, Passwörter) → Lokale Speicherung
+- Öffentliche Fragen (z.B. "Hauptstadt Frankreich?") → OpenAI
+- Abfrage privater Daten → Lokale Datenbank (nie Cloud)
 
-### 🎯 **Smart Interactive Installation**
-- **System Analysis on Start**: Detects RAM, CPU cores, and already-installed models
-- **Intelligent Recommendations**: Suggests models based on your system specs
-  - 16+ GB RAM → All models recommended
-  - 8-16 GB RAM → Presidio recommended, Phi-3 optional
-  - <8 GB RAM → Only core models
-- **Multilingual Setup**: Choose language at start (EN/DE/ES), all messages shown in selected language
-- **Guided Installation**: Clear explanations for each component with sensible defaults
-- **Progress Indicators**: Visual progress bars for large downloads (Phi-3, models)
+### Datenfluss: Eingabe & Speicherung
 
-### ⚙️ **Full Post-Install Configuration**
-- **New Config Menu**: `/config` → [8] Privacy & AI Models
-- **Install/Remove Models**: Presidio, Phi-3, spaCy languages after installation
-- **Privacy Levels**: Switch between Enhanced/Basic/Off anytime
-- **Response Modes**: Toggle between natural (Phi-3) and template-based responses
-- **Language Management**: Add/remove spaCy models for 15+ languages on demand
+```
+┌───────────────────────────────────────────────┐
+│ Eingabe: "Meine API Key ist sk-abc123..."    │
+└────────────────────┬──────────────────────────┘
+                     ↓
+          ┌──────────────────────┐
+          │ Privacy Classifier   │ ← KI entscheidet automatisch
+          │   (lokal auf Mac)    │
+          └──────────┬───────────┘
+                     ↓
+         ┌───────────┴───────────┐
+         ↓                       ↓
+   🔒 SENSIBEL              🌐 ÖFFENTLICH
+   (lokal speichern)        (→ OpenAI)
+         ↓                       ↓
+   [Vektordatenbank]        [OpenAI GPT-4]
+   ~/.aichat/memory.db
+```
 
-### 🔍 **Enhanced PII Detection with Microsoft Presidio**
-- Professional-grade PII detection using Named Entity Recognition
-- Supports 15+ languages with spaCy models
-- Custom patterns for API keys, credit cards, passwords
-- Graceful fallback to regex when Presidio unavailable
+### Datenfluss: Abruf privater Daten
 
-### 🤖 **Natural Response Generation with Phi-3**
-- Phi-3 integration via Ollama for contextual responses
-- Template fallback system for lightweight operation
-- Multilingual response generation
-- Works perfectly without Phi-3 installed
+```
+┌────────────────────────────────────┐
+│ Frage: "Was ist meine API Key?"   │
+└─────────────┬──────────────────────┘
+              ↓
+    ┌─────────────────────┐
+    │ Erkennt: Private     │
+    │ Daten-Abfrage       │
+    └─────────┬───────────┘
+              ↓
+       🔒 Lokale DB
+       ├─ Semantische Suche in Vektordatenbank
+       └─ Gibt zurück: "sk-abc123..."
 
-### 📈 **Upgraded Memory System**
-- Migrated from `multilingual-e5-small` to `multilingual-e5-base`
-- 15% better cross-language search performance
-- Proper E5 prefixing for optimal results
-- Migration script for existing users
+    ❌ Nie an OpenAI gesendet!
+```
 
 ---
 
-## ⚡ Quick Start
+## Quick Start
 
-**Step 1: Install**
+**Schritt 1: Installation**
 ```bash
-curl -sL https://raw.githubusercontent.com/martinschenk/ai-chat-terminal/main/install.sh | zsh
+curl -fsSL https://raw.githubusercontent.com/martinschenk/ai-chat-terminal/main/install.sh | zsh
 ```
-*Note: Use `zsh` for compatibility. On older systems, `bash` might not support associative arrays.*
 
-**Step 2: Reload shell**
+**Schritt 2: Shell neu laden**
 ```bash
 source ~/.zshrc
 ```
 
-**Step 3: Start chatting**
+**Schritt 3: Starten**
 ```bash
 chat
 ```
 
-**Installation Experience:**
-1. **Language Selection**: Choose English, German, or Spanish (more coming)
-2. **System Analysis**: See your RAM, CPU, and already-installed models
-3. **Smart Recommendations**: Get model suggestions based on your specs
-4. **Guided Choices**: Install Presidio (350MB) and/or Phi-3 (2.3GB) with clear explanations
-5. **First Run**: Enter your [OpenAI API key](https://platform.openai.com/api-keys)
+---
 
-The installer analyzes your system and only asks about large models (>500MB). Small models are installed automatically for the best experience.
+## Requirements
+
+| | Minimum | Empfohlen |
+|---|---|---|
+| **macOS** | Catalina 10.15+ | Monterey 12+ |
+| **RAM** | 8 GB | 16 GB |
+| **Speicher** | 5 GB frei | 10 GB frei |
+| **Prozessor** | Intel 2015+ | Apple Silicon M1+ |
+
+### Kompatibilität
+
+- ✅ **M1/M2/M3 Mac mit 16+ GB RAM** → Alle Modelle empfohlen
+- ✅ **Intel Mac mit 16 GB RAM** → Alle Modelle funktionieren
+- ⚠️ **8 GB RAM** → Basis-Modelle (ohne Phi-3)
+- ❌ **< macOS Catalina** → Nicht unterstützt (Linux/Windows: Coming soon)
 
 ---
 
-## 📦 What Gets Installed WHERE
+## Beispiele
 
-Understanding exactly what goes where on your system:
+### Sensible Daten (bleiben lokal)
 
-### **In `~/.aichat/` (Application-specific)**
-| Component | Description | Size |
-|-----------|-------------|------|
-| Python scripts (*.py) | Core application logic | ~5MB |
-| Shell modules | ZSH integration | ~1MB |
-| Language configs | 19 language files | ~500KB |
-| Your data | memory.db, config, .env | Variable |
-| Embeddings cache | privacy_embeddings.pkl | ~100KB |
-
-### **Global (Shared with other applications)**
-
-#### **Python Packages** (`~/.local/lib/python/`)
-| Package | Purpose | Size | Shareable |
-|---------|---------|------|-----------|
-| sentence-transformers | AI embeddings | ~100MB | ✅ Yes |
-| presidio-analyzer | PII detection | ~30MB | ✅ Yes |
-| presidio-anonymizer | Data anonymization | ~10MB | ✅ Yes |
-| spacy | NLP engine | ~50MB | ✅ Yes |
-| sqlite-vec | Vector search | ~5MB | ✅ Yes |
-
-#### **AI Models** (`~/.cache/huggingface/hub/`)
-| Model | Purpose | Size | Auto-shared |
-|-------|---------|------|-------------|
-| all-MiniLM-L6-v2 | Privacy classification | 22MB | ✅ Yes |
-| multilingual-e5-base | Semantic search | 278MB | ✅ Yes |
-
-#### **spaCy Language Models** (`~/Library/Python/` or `~/.local/`)
-| Languages | Models Available | Size Each |
-|-----------|-----------------|-----------|
-| Core (EN, DE) | Always installed | ~15MB |
-| European (12 models) | ES, FR, IT, PT, NL, PL, DA, SV, NO, FI, RU, CA | ~15MB |
-| Asian (3 models) | ZH, JA, KO | ~20-40MB |
-
-#### **Ollama & Phi-3** (`~/.ollama/models/`)
-| Component | Purpose | Size | Usage |
-|-----------|---------|------|--------|
-| Ollama | Model manager | ~50MB | System-wide |
-| Phi-3 | Natural responses | ~2GB | `ollama run phi3` |
-
----
-
-## 🎯 Smart Features
-
-### **Automatic Model Sharing**
-- **Models are NEVER downloaded twice** - if you have `multilingual-e5-base` from another project, we use it!
-- **Automatic cache detection** - checks `~/.cache/huggingface/hub/` first
-- **Version management** - updates shared across all applications
-
-### **Existing Model Detection**
-The installer automatically detects:
 ```bash
-# HuggingFace models
-~/.cache/huggingface/hub/models--intfloat--multilingual-e5-base/
+Du: Meine Kreditkarte ist 4532-1234-5678-9012
+AI: [Gespeichert in lokaler DB] 🔒
 
-# Ollama models
-ollama list | grep phi3
+Du: API Key ist sk-proj-abc123def456
+AI: [Gespeichert] 🔒
 
-# Python packages
-pip3 list | grep presidio
-
-# spaCy models
-python3 -m spacy info
+Du: Was war meine Kreditkarte?
+AI: 4532-1234-5678-9012 [Aus lokaler DB] 🔒
 ```
 
-### **Zero Redundancy**
-- If Presidio is installed → Skip installation
-- If Phi-3 exists → Use existing model
-- If E5-base cached → No download needed
-- If spaCy model present → Reuse it
+### Öffentliche Fragen (an OpenAI)
 
----
-
-## 📊 Storage Overview
-
-| Component | Location | Size | Shared? | Removable? |
-|-----------|----------|------|---------|------------|
-| **Core App** | ~/.aichat/ | ~5MB | No | Yes - loses all data |
-| **MiniLM** | ~/.cache/huggingface/ | 22MB | Yes | Yes - re-downloads |
-| **E5-base** | ~/.cache/huggingface/ | 278MB | Yes | Yes - re-downloads |
-| **Presidio** | ~/.local/lib/python/ | 50MB | Yes | Keep for other apps |
-| **spaCy Models** | ~/Library/Python/ | 15-40MB each | Yes | Keep for NLP |
-| **Phi-3** | ~/.ollama/models/ | 2GB | Yes | Keep for Ollama |
-
-**Total fresh install:** ~350MB (without Phi-3) or ~2.3GB (with Phi-3)
-
----
-
-## 🧠 Technical Architecture
-
-### **Triple-Layer Privacy Protection**
-
-```
-User Input
-    ↓
-[1. Presidio PII Check] ← NEW! Professional NER detection
-    ├─→ Concrete PII found → Store locally
-    └─→ No PII → Continue
-    ↓
-[2. Privacy Classifier] ← Semantic understanding
-    ├─→ SENSITIVE/PROPRIETARY/PERSONAL → Local
-    └─→ PUBLIC → Continue
-    ↓
-[3. OpenAI Processing] ← General knowledge
-    └─→ Function Calling for private data queries
-```
-
-### **Core Components**
-
-1. **PII Detector** (`pii_detector.py`)
-   - Microsoft Presidio integration
-   - Custom API key patterns
-   - Multilingual NER support
-   - Regex fallback system
-
-2. **Privacy Classifier** (`privacy_classifier_fast.py`)
-   - Model: `all-MiniLM-L6-v2` (22MB)
-   - 4-category classification
-   - 160+ training examples
-   - ~31ms classification time
-
-3. **Memory System** (`memory_system.py`)
-   - Model: `multilingual-e5-base` (278MB)
-   - Vector similarity search
-   - E5 prefix optimization
-   - Cross-language retrieval
-
-4. **Response Generator** (`response_generator.py`)
-   - Phi-3 via Ollama (optional)
-   - Template-based fallback
-   - Multilingual support
-   - Context-aware responses
-
----
-
-## 🌍 Multi-Language Support
-
-### **Interface Languages** (19 total)
-- **European**: English, German, Spanish, French, Italian, Portuguese, Dutch, Swedish, Norwegian, Danish, Finnish, Polish, Russian
-- **Asian**: Chinese, Japanese, Korean, Hindi
-- **Regional**: Catalan, Basque, Galician
-- **Dialects**: German (Schwäbisch, Bayerisch), Spanish (Mexican, Argentinian)
-
-### **PII Detection Languages** (spaCy models)
-The installer offers models for 15+ languages. Each model enables professional NER-based PII detection:
-
-| Region | Languages | Models |
-|--------|-----------|---------|
-| **Core** | English, German | Installed by default |
-| **European** | Spanish, French, Italian, Portuguese, Dutch, Polish, Danish, Swedish, Norwegian, Finnish, Russian, Catalan | Optional |
-| **Asian** | Chinese, Japanese, Korean | Optional |
-
----
-
-## 💡 Installation Options
-
-### **Minimal Installation** (~100MB)
 ```bash
-# Choose during install:
-- Privacy Level: Basic (semantic only)
-- Additional languages: 0 (skip)
-- Phi-3: N (skip)
+Du: Hauptstadt von Frankreich?
+AI: Paris [OpenAI GPT-4] 🌐
+
+Du: Erkläre Quantenphysik
+AI: [Antwort von OpenAI] 🌐
 ```
 
-### **Standard Installation** (~350MB)
+---
+
+## Features
+
+- **Automatischer Datenschutz**: KI-basierte Klassifizierung
+- **19 Sprachen**: DE, EN, ES, FR, IT, CA, ZH, HI, etc.
+- **Vektordatenbank**: SQLite mit semantischer Suche
+- **Konfigurierbar**: `/config` Menü für alle Einstellungen
+- **OpenAI Integration**: GPT-4, GPT-4o, GPT-4o-mini
+
+---
+
+## Installation Details
+
+### Was wird wo installiert?
+
+**Lokal (~/.aichat/)**
+- Scripts, Config, Chat-Historie
+- Deine privaten Daten in Vektordatenbank
+- Nur von diesem Tool genutzt
+
+**Global (shared)**
+- AI-Modelle (HuggingFace Cache)
+- Python-Pakete (pip --user)
+- Kann von anderen Apps genutzt werden
+
+### Intelligente Model-Auswahl
+
+Das Installer-Script analysiert deinen Mac und empfiehlt:
+
+| Dein Mac | Empfehlung |
+|----------|-----------|
+| 16+ GB RAM | Presidio ✅ + Phi-3 ✅ |
+| 8-16 GB RAM | Presidio ✅, Phi-3 optional |
+| <8 GB RAM | Nur Basis-Modelle |
+
+**Beispiel-Output bei 16 GB RAM:**
+```
+💬 Warum empfohlen für dich?
+   Dein Mac hat 16 GB RAM - perfekt für Presidio!
+   Schützt Kreditkarten, API-Keys, Passwörter.
+```
+
+---
+
+## Technische Details
+
+### Komponenten
+
+| Komponente | Modell | Größe | Zweck |
+|------------|--------|-------|-------|
+| Privacy Classifier | all-MiniLM-L6-v2 | 22 MB | Routing-Entscheidung |
+| Memory System | multilingual-e5-base | 278 MB | Semantische Suche |
+| PII Detection | Microsoft Presidio | 350 MB | Erkennung sensibler Daten |
+| Response Generator | Phi-3 via Ollama | 2.3 GB | Natürliche Antworten |
+
+### Privacy Layers
+
+1. **PII Detector**: Erkennt konkrete Datentypen (Kreditkarten, API-Keys)
+2. **Semantic Classifier**: Versteht Kontext (SENSITIVE/PUBLIC)
+3. **Vector Database**: Lokale Speicherung mit Embeddings
+
+---
+
+## Konfiguration
+
 ```bash
-# Choose during install:
-- Privacy Level: Enhanced (Presidio + semantic)
-- Additional languages: Select your needs
-- Phi-3: N (templates work great)
+chat           # Starten
+/config        # Einstellungen
 ```
 
-### **Full Installation** (~2.5GB)
+**Verfügbare Optionen:**
+- Sprache wählen (19 verfügbar)
+- OpenAI Modell ändern
+- Privacy-Level anpassen
+- Modelle nachträglich installieren/entfernen
+- Context-Window konfigurieren
+
+---
+
+## Deinstallation
+
+**Im Chat:**
 ```bash
-# Choose during install:
-- Privacy Level: Enhanced
-- Additional languages: all
-- Phi-3: Y (natural responses)
+chat
+/config
+→ [12] Vollständig deinstallieren
 ```
 
----
-
-## 🔒 Privacy Examples
-
-### **What Stays Local (NEVER sent to OpenAI)**
-```
-"My credit card is 4532-1234-5678-9012"      → Stored locally
-"API key: sk-proj-abc123..."                 → Stored locally
-"Company revenue target is $5M"              → Stored locally
-"My sister lives in Berlin"                  → Stored locally
-```
-
-### **What Goes to OpenAI (PUBLIC queries)**
-```
-"Explain quantum physics"                    → OpenAI
-"What's the capital of Japan?"              → OpenAI
-"How to center a div in CSS?"               → OpenAI
-"Convert 100 Fahrenheit to Celsius"         → OpenAI
-```
-
-### **Smart Retrieval (from local database)**
-```
-"What's my API key?"                        → Retrieved locally
-"Show me my credit card"                    → Retrieved locally
-"What was that password?"                   → Retrieved locally
-"Delete my sensitive data"                  → Deleted locally
-```
-
----
-
-## 🛠️ Configuration
-
-### **Interactive Config Menu**
+**Manuell:**
 ```bash
-chat        # Start chatting
-/config     # Opens configuration menu
+rm -rf ~/.aichat
 ```
 
-**Options available:**
-1. Change command alias
-2. Select language (19 options)
-3. Toggle ESC key behavior
-4. Choose AI model (gpt-4o, gpt-4o-mini, gpt-3.5-turbo)
-5. Adjust context window
-6. Configure OpenAI API key
-7. Memory system management
-8. **Privacy & AI Models** ← NEW!
-   - Change privacy level (Enhanced/Basic/Off)
-   - Install/Remove Presidio (350MB)
-   - Install/Remove Phi-3 (2.3GB)
-   - Manage spaCy language models
-   - Toggle response mode (natural/template)
-9. Clear cache
-10. About & version info
-
-### **Manual Configuration**
-Edit `~/.aichat/config`:
-```bash
-AI_CHAT_LANGUAGE="en"
-AI_CHAT_MODEL="gpt-4o-mini"
-PRIVACY_LEVEL="enhanced"
-PHI3_ENABLED="true"
-PRESIDIO_ENABLED="true"
-```
+*Hinweis: Globale Modelle bleiben erhalten (können von anderen Apps genutzt werden)*
 
 ---
 
-## 🧪 Testing & Validation
+## FAQ
 
-### **Test PII Detection**
-```bash
-cd ~/Development/ai-chat-terminal
-python3 test_pii.py
-```
+**Q: Sind meine Daten wirklich privat?**
+A: Ja. Sensible Daten werden nie an OpenAI gesendet. Prüfe den Indikator: 🔒 = lokal, 🌐 = OpenAI
 
-### **Test Individual Components**
-```bash
-# Privacy classifier
-python3 privacy_classifier_fast.py
+**Q: Funktioniert es offline?**
+A: Lokale Features ja. OpenAI-Abfragen benötigen Internet.
 
-# PII detector
-python3 -c "
-from pii_detector import PIIDetector
-d = PIIDetector()
-print(d.get_detection_info())
-"
+**Q: Wie funktioniert die Erkennung?**
+A: Dreistufig: PII-Detector → Semantic Classifier → Routing
 
-# Response generator
-python3 -c "
-from response_generator import ResponseGenerator
-g = ResponseGenerator()
-print(g.get_generator_info())
-"
-```
+**Q: Kann ich andere Modelle nutzen?**
+A: Aktuell nur OpenAI. Support für Claude/Gemini: In Planung
+
+**Q: Linux/Windows Support?**
+A: Aktuell nur macOS. Linux: Geplant für v7.0
 
 ---
 
-## 📈 Migration from Previous Versions
+## Lizenz
 
-### **For users upgrading from v6.0.0 or v6.1.0:**
-```bash
-# Run migration script
-python3 migrate_to_e5_base.py
+MIT License - siehe [LICENSE](LICENSE)
 
-# This will:
-# - Backup your database
-# - Re-encode embeddings with e5-base
-# - Preserve all your data
-# - Update configuration
-```
-
----
-
-## 🚀 Advanced Features
-
-### **Function Calling Integration**
-OpenAI function calling for private data queries - automatically triggered when asking for stored information.
-
-### **Vector Search**
-SQLite with vector extensions for semantic similarity search across all stored conversations.
-
-### **Smart Deletion**
-Pattern-based deletion of sensitive data: "Delete all credit card info" → Removes matching entries.
-
-### **Cross-Language Memory**
-Store in German, retrieve in English. Store in Spanish, query in French. True multilingual understanding.
-
----
-
-## 🤝 Contributing
-
-We welcome contributions! Areas of interest:
-
-- **Privacy Detection**: Improve PII patterns and detection
-- **Language Support**: Add more spaCy models
-- **Response Quality**: Enhance template responses
-- **Performance**: Optimize embedding generation
-
----
-
-## 📜 License
-
-MIT License - see [LICENSE](LICENSE) file for details.
-
----
-
-## ❓ FAQ
-
-### **Q: Is my data really private?**
-A: Yes! Check the routing indicator:
-- `🔒 local-privacy-routing` = Never sent to OpenAI
-- `🌐 gpt-4o` = Public query to OpenAI
-
-### **Q: Can I use this offline?**
-A: Local features work offline. OpenAI queries need internet.
-
-### **Q: How do I backup my data?**
-A: Copy `~/.aichat/memory.db` to backup all conversations.
-
-### **Q: Can I uninstall cleanly?**
-A: Yes! Use `/config` → [11] Complete uninstall, or manually:
-```bash
-rm -rf ~/.aichat  # Removes app and your data
-# Python packages and models remain (shared with other apps)
-```
-
----
-
-**Privacy-First AI for Everyone** 🔒🚀
-
-Built with ❤️ for privacy-conscious users.
+**Built with ❤️ for Privacy**

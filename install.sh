@@ -5,7 +5,68 @@
 
 set -e
 
-# Check for Bash 4+ or ZSH
+# ═══════════════════════════════════════════════════════════════════
+# System Requirements Check
+# ═══════════════════════════════════════════════════════════════════
+
+check_system_requirements() {
+    # Check macOS
+    if [[ "$OSTYPE" != "darwin"* ]]; then
+        echo "❌ This installer requires macOS"
+        echo ""
+        echo "   Your system: $OSTYPE"
+        echo "   Linux/Windows support: Coming soon"
+        echo ""
+        exit 1
+    fi
+
+    # Check macOS version (Catalina = 10.15 minimum)
+    local macos_version=$(sw_vers -productVersion 2>/dev/null || echo "unknown")
+    local major=$(echo $macos_version | cut -d. -f1)
+    local minor=$(echo $macos_version | cut -d. -f2)
+
+    if [[ "$macos_version" == "unknown" ]]; then
+        echo "⚠️  Warning: Could not detect macOS version"
+    elif [[ $major -lt 10 ]] || [[ $major -eq 10 && $minor -lt 15 ]]; then
+        echo "❌ Requires macOS Catalina (10.15) or newer"
+        echo ""
+        echo "   Your macOS: $macos_version"
+        echo "   Required: 10.15+"
+        echo ""
+        echo "   Please upgrade macOS first"
+        exit 1
+    fi
+
+    # Check ZSH
+    if ! command -v zsh &> /dev/null; then
+        echo "❌ ZSH not found"
+        echo ""
+        echo "   ZSH should be default on macOS Catalina+"
+        echo "   Please install ZSH first"
+        exit 1
+    fi
+
+    # Check disk space
+    local free_space=$(df -h ~ 2>/dev/null | awk 'NR==2 {print $4}' | sed 's/Gi//' | sed 's/G//')
+    if [[ -n "$free_space" ]] && (( $(echo "$free_space < 5" | bc -l 2>/dev/null || echo "0") )); then
+        echo "⚠️  Warning: Only ${free_space}GB free disk space"
+        echo "   Recommended: 5-10 GB free"
+        echo ""
+        read -p "Continue anyway? (y/N): " -n 1 -r
+        echo
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            echo "Installation cancelled"
+            exit 1
+        fi
+    fi
+
+    return 0
+}
+
+# Run system requirements check
+check_system_requirements
+
+# Check for Bash 4+ or ZSH (for associative arrays)
 if [[ -n "$BASH_VERSION" ]]; then
     BASH_MAJOR="${BASH_VERSION%%.*}"
     if [[ "$BASH_MAJOR" -lt 4 ]]; then
@@ -13,7 +74,7 @@ if [[ -n "$BASH_VERSION" ]]; then
         echo "Your Bash version: $BASH_VERSION"
         echo ""
         echo "Please run with ZSH instead:"
-        echo "  curl -sL https://raw.githubusercontent.com/martinschenk/ai-chat-terminal/main/install.sh | zsh"
+        echo "  curl -fsSL https://raw.githubusercontent.com/martinschenk/ai-chat-terminal/main/install.sh | zsh"
         exit 1
     fi
 fi
@@ -272,9 +333,14 @@ echo -e "${BLUE}${LANG_STRINGS[SYSTEM_ANALYSIS]}${RESET}"
 
 SYSTEM_RAM=$(get_system_ram)
 SYSTEM_CORES=$(get_cpu_cores)
+MACOS_VERSION=$(sw_vers -productVersion 2>/dev/null || echo "unknown")
+FREE_SPACE=$(df -h ~ 2>/dev/null | awk 'NR==2 {print $4}' || echo "unknown")
 
-echo -e "  ${GREEN}✓${RESET} ${LANG_STRINGS[RAM_DETECTED]}: ${BOLD}${SYSTEM_RAM} GB${RESET}"
-echo -e "  ${GREEN}✓${RESET} ${LANG_STRINGS[CPU_DETECTED]}: ${BOLD}${SYSTEM_CORES}${RESET}"
+echo -e "  ${GREEN}✓${RESET} macOS ${MACOS_VERSION}"
+echo -e "  ${GREEN}✓${RESET} ${SYSTEM_CORES} CPU cores"
+echo -e "  ${GREEN}✓${RESET} ${SYSTEM_RAM} GB RAM"
+echo -e "  ${GREEN}✓${RESET} ${FREE_SPACE} free space"
+echo -e "  ${GREEN}✓${RESET} ZSH available"
 
 # Check for existing models
 mapfile -t EXISTING_MODELS < <(check_installed_models)
@@ -398,19 +464,36 @@ fi
 
 # Presidio PII Detection
 if [[ "${MODEL_RECOMMENDATIONS[presidio]}" == "recommended" ]]; then
-    echo -e "${GREEN}[${LANG_STRINGS[RECOMMENDED]}]${RESET} ${BOLD}Microsoft Presidio${RESET} - PII Detection (350MB)"
-    echo -e "${DIM}  Erkennt 50+ sensible Datentypen (Namen, E-Mails, Kreditkarten)${RESET}"
-    echo -e "${DIM}  ${LANG_STRINGS[INSTALL_SHARED_INFO]:-Global install - reusable by other apps}${RESET}"
+    echo -e "${GREEN}[EMPFOHLEN]${RESET} ${BOLD}Microsoft Presidio${RESET} - PII Detection (350MB)"
+    echo -e "${DIM}  Erkennt 50+ sensible Datentypen (API-Keys, Kreditkarten, Passwörter)${RESET}"
+    echo ""
+    echo -e "  💬 ${BOLD}Warum empfohlen für dich?${RESET}"
+    echo -e "     ${DIM}Dein Mac hat ${SYSTEM_RAM} GB RAM - perfekt für Presidio!${RESET}"
+    echo -e "     ${DIM}Schützt private Daten professionell.${RESET}"
+    echo -e "     ${DIM}Global installiert - kann von anderen Apps genutzt werden.${RESET}"
+    echo ""
     default_presidio="Y"
-else
-    echo -e "${YELLOW}[${LANG_STRINGS[OPTIONAL]}]${RESET} ${BOLD}Microsoft Presidio${RESET} - PII Detection (350MB)"
-    echo -e "${DIM}  ${LANG_STRINGS[SIZE]}: 350MB | ${LANG_STRINGS[RAM_DETECTED]}: ${SYSTEM_RAM}GB < 8GB${RESET}"
-    echo -e "${DIM}  ${LANG_STRINGS[INSTALL_SHARED_INFO]:-Global install - reusable by other apps}${RESET}"
+elif [[ "${MODEL_RECOMMENDATIONS[presidio]}" == "optional" ]]; then
+    echo -e "${YELLOW}[OPTIONAL]${RESET} ${BOLD}Microsoft Presidio${RESET} - PII Detection (350MB)"
+    echo ""
+    echo -e "  💬 ${BOLD}Für deinen Mac (${SYSTEM_RAM} GB RAM):${RESET}"
+    echo -e "     ${DIM}Läuft, aber bei wenig RAM evtl. langsamer.${RESET}"
+    echo -e "     ${DIM}Basis-Schutz funktioniert auch ohne Presidio!${RESET}"
+    echo ""
     default_presidio="N"
+else
+    echo -e "${DIM}[ÜBERSPRUNGEN]${RESET} Presidio"
+    echo -e "  ${DIM}Braucht mindestens 8 GB RAM.${RESET}"
+    echo "PRESIDIO_ENABLED=false" >> "$INSTALL_DIR/config"
+    default_presidio="skip"
 fi
-echo -n "${LANG_STRINGS[INSTALL_QUESTION]} [Y/n, default=$default_presidio]: "
-read -r install_presidio
-install_presidio=${install_presidio:-$default_presidio}
+if [[ "$default_presidio" != "skip" ]]; then
+    echo -n "Installieren? [Y/n, default=$default_presidio]: "
+    read -r install_presidio
+    install_presidio=${install_presidio:-$default_presidio}
+else
+    install_presidio="N"
+fi
 
 if [[ "$install_presidio" =~ ^[Yy]$ ]]; then
     echo -n "  • Installing Presidio... "
@@ -434,28 +517,41 @@ fi
 # Phi-3 for Natural Responses
 echo ""
 if [[ "${MODEL_RECOMMENDATIONS[phi3]}" == "recommended" ]]; then
-    echo -e "${GREEN}[${LANG_STRINGS[RECOMMENDED]}]${RESET} ${BOLD}Phi-3${RESET} - Natural Language Responses (2.3GB)"
+    echo -e "${GREEN}[EMPFOHLEN]${RESET} ${BOLD}Phi-3${RESET} - Natural Language Responses (2.3GB)"
     echo -e "${DIM}  Generiert natürliche Antworten für private Daten (statt Templates)${RESET}"
-    echo -e "${DIM}  ${LANG_STRINGS[INSTALL_SHARED_INFO]:-Global install via Ollama - reusable!}${RESET}"
+    echo ""
+    echo -e "  💬 ${BOLD}Warum empfohlen für dich?${RESET}"
+    echo -e "     ${DIM}Dein Mac hat ${SYSTEM_RAM} GB RAM - Phi-3 läuft smooth!${RESET}"
+    echo -e "     ${DIM}Natürliche Antworten statt Template-Responses.${RESET}"
+    echo -e "     ${DIM}Global via Ollama - nutzbar für andere Projekte.${RESET}"
+    echo ""
     default_phi3="Y"
 elif [[ "${MODEL_RECOMMENDATIONS[phi3]}" == "skip" ]]; then
-    echo -e "${DIM}[SKIP] Phi-3 - Übersprungen (${SYSTEM_RAM}GB RAM < 8GB)${RESET}"
+    echo -e "${DIM}[ÜBERSPRUNGEN]${RESET} Phi-3 (2.3GB)"
+    echo -e "  ${DIM}Braucht mindestens 8 GB RAM für gute Performance.${RESET}"
+    echo -e "  ${DIM}Templates funktionieren hervorragend auch ohne Phi-3!${RESET}"
     echo "PHI3_ENABLED=false" >> "$INSTALL_DIR/config"
     echo "RESPONSE_MODE=template" >> "$INSTALL_DIR/config"
     default_phi3="skip"
 else
-    echo -e "${YELLOW}[${LANG_STRINGS[OPTIONAL]}]${RESET} ${BOLD}Phi-3${RESET} - Natural Responses (2.3GB)"
-    echo -e "${DIM}  ${LANG_STRINGS[SIZE]}: 2.3GB | System arbeitet auch ohne Phi-3 perfekt${RESET}"
-    echo -e "${DIM}  ${LANG_STRINGS[INSTALL_SHARED_INFO]:-Global install via Ollama - reusable!}${RESET}"
+    echo -e "${YELLOW}[OPTIONAL]${RESET} ${BOLD}Phi-3${RESET} - Natural Responses (2.3GB)"
+    echo ""
+    echo -e "  💬 ${BOLD}Für deinen Mac (${SYSTEM_RAM} GB RAM):${RESET}"
+    echo -e "     ${DIM}Läuft, aber Templates sind schneller und sparen RAM.${RESET}"
+    echo -e "     ${DIM}Empfehlung: Überspringe Phi-3 für bessere Performance.${RESET}"
+    echo ""
     default_phi3="N"
 fi
 
 if [[ "$default_phi3" != "skip" ]]; then
-    echo -n "${LANG_STRINGS[INSTALL_QUESTION]} [Y/n, default=$default_phi3]: "
+    echo -n "Installieren? [Y/n, default=$default_phi3]: "
     read -r install_phi3
     install_phi3=${install_phi3:-$default_phi3}
+else
+    install_phi3="N"
+fi
 
-    if [[ "$install_phi3" =~ ^[Yy]$ ]]; then
+if [[ "$install_phi3" =~ ^[Yy]$ ]]; then
         # Check/Install Ollama
         if ! command -v ollama &> /dev/null; then
             echo "  • Installing Ollama..."
