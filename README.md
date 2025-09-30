@@ -19,7 +19,7 @@ A terminal-based chat system that automatically decides: Sensitive inputs stay l
 
 ```
 ┌───────────────────────────────────────────────┐
-│ Input: "My API key is sk-abc123..."          │
+│ Input: "My phone number is +1-555-0123"      │
 └────────────────────┬──────────────────────────┘
                      ↓
           ┌──────────────────────┐
@@ -40,7 +40,7 @@ A terminal-based chat system that automatically decides: Sensitive inputs stay l
 
 ```
 ┌────────────────────────────────────┐
-│ Question: "What is my API key?"   │
+│ Question: "What's my phone number?"│
 └─────────────┬──────────────────────┘
               ↓
     ┌─────────────────────┐
@@ -50,7 +50,7 @@ A terminal-based chat system that automatically decides: Sensitive inputs stay l
               ↓
        🔒 Local DB
        ├─ Semantic search in vector database
-       └─ Returns: "sk-abc123..."
+       └─ Returns: "+1-555-0123"
 
     ❌ Never sent to OpenAI!
 ```
@@ -99,14 +99,14 @@ chat
 ### Sensitive Data (stays local)
 
 ```bash
-You: My credit card is 4532-1234-5678-9012
+You: My phone number is +1-555-0123
 AI: [Stored in local DB] 🔒
 
-You: API key is sk-proj-abc123def456
+You: I live at 123 Main Street, Springfield
 AI: [Stored] 🔒
 
-You: What was my credit card?
-AI: 4532-1234-5678-9012 [From local DB] 🔒
+You: What's my phone number?
+AI: +1-555-0123 [From local DB] 🔒
 ```
 
 ### Public Questions (to OpenAI)
@@ -159,7 +159,7 @@ The installer analyzes your Mac and recommends:
 ```
 💬 Why recommended for you?
    Your Mac has 16 GB RAM - perfect for Presidio!
-   Protects credit cards, API keys, passwords.
+   Protects phone numbers, addresses, personal info.
 ```
 
 ---

@@ -465,7 +465,7 @@ fi
 # Presidio PII Detection
 if [[ "${MODEL_RECOMMENDATIONS[presidio]}" == "recommended" ]]; then
     echo -e "${GREEN}[EMPFOHLEN]${RESET} ${BOLD}Microsoft Presidio${RESET} - PII Detection (350MB)"
-    echo -e "${DIM}  Erkennt 50+ sensible Datentypen (API-Keys, Kreditkarten, Passwörter)${RESET}"
+    echo -e "${DIM}  Erkennt 50+ sensible Datentypen (Telefonnummern, Adressen, Namen)${RESET}"
     echo ""
     echo -e "  💬 ${BOLD}Warum empfohlen für dich?${RESET}"
     echo -e "     ${DIM}Dein Mac hat ${SYSTEM_RAM} GB RAM - perfekt für Presidio!${RESET}"
