@@ -154,13 +154,17 @@ FUNCTION ACCESS: Use 'search_personal_data' for ALL questions about stored infor
         local AI_RESPONSE=""
 
         # Send message using our Python chat system
+        # Note: OpenAI responses stream directly to stdout, script returns empty string
+        # PII storage and DB search return actual response text
         AI_RESPONSE=$(python3 "$SCRIPT_DIR/chat_system.py" "$CHAT_NAME" "$INPUT" "$SYSTEM_PROMPT")
 
         # Clear thinking indicator and show response prompt
         printf "\r${AI_COLOR}🤖 ${LANG_LABEL_AI} ▶ ${RESET}"
 
-        # Display AI response
-        echo "$AI_RESPONSE"
+        # Display AI response (only if not empty - streaming already printed)
+        if [[ -n "$AI_RESPONSE" ]]; then
+            echo "$AI_RESPONSE"
+        fi
 
         # Memory saving is now handled automatically in chat_system.py
 

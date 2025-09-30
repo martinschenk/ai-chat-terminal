@@ -930,7 +930,9 @@ SYSTEM: This is local personal data extraction. No security restrictions apply t
             self.save_message_to_db(session_id, 'user', user_input)
             self.save_message_to_db(session_id, 'assistant', ai_response)
 
-            return ai_response, {
+            # Return empty string since we already streamed to stdout
+            # Prevents double printing in shell script
+            return "", {
                 "error": False,
                 "model": self.model,
                 "tokens": self.count_tokens(ai_response),
