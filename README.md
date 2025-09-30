@@ -1,75 +1,75 @@
 # AI Chat Terminal
 
-Lokaler Chat im Terminal mit automatischem Datenschutz für sensible Daten.
+Local terminal chat with automatic privacy protection for sensitive data.
 
-[![Version](https://img.shields.io/badge/version-6.2.0-blue.svg)](https://github.com/martinschenk/ai-chat-terminal)
+[![Version](https://img.shields.io/badge/version-6.3.0-blue.svg)](https://github.com/martinschenk/ai-chat-terminal)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](https://github.com/martinschenk/ai-chat-terminal)
 
-## Was ist AI Chat Terminal?
+## What is AI Chat Terminal?
 
-Ein Chat-System das im Terminal läuft und automatisch entscheidet: Sensible Eingaben bleiben lokal in einer Vektordatenbank, öffentliche Fragen gehen an OpenAI.
+A terminal-based chat system that automatically decides: Sensitive inputs stay local in a vector database, public questions go to OpenAI.
 
-**Funktionsweise:**
-- Eingabe mit privaten Daten (API Keys, Passwörter) → Lokale Speicherung
-- Öffentliche Fragen (z.B. "Hauptstadt Frankreich?") → OpenAI
-- Abfrage privater Daten → Lokale Datenbank (nie Cloud)
+**How it works:**
+- Input with private data (API keys, passwords) → Local storage
+- Public questions (e.g., "Capital of France?") → OpenAI
+- Query private data → Local database (never cloud)
 
-### Datenfluss: Eingabe & Speicherung
+### Data Flow: Input & Storage
 
 ```
 ┌───────────────────────────────────────────────┐
-│ Eingabe: "Meine API Key ist sk-abc123..."    │
+│ Input: "My API key is sk-abc123..."          │
 └────────────────────┬──────────────────────────┘
                      ↓
           ┌──────────────────────┐
-          │ Privacy Classifier   │ ← KI entscheidet automatisch
-          │   (lokal auf Mac)    │
+          │ Privacy Classifier   │ ← AI decides automatically
+          │   (local on Mac)     │
           └──────────┬───────────┘
                      ↓
          ┌───────────┴───────────┐
          ↓                       ↓
-   🔒 SENSIBEL              🌐 ÖFFENTLICH
-   (lokal speichern)        (→ OpenAI)
+   🔒 SENSITIVE             🌐 PUBLIC
+   (store locally)          (→ OpenAI)
          ↓                       ↓
-   [Vektordatenbank]        [OpenAI GPT-4]
+   [Vector Database]        [OpenAI GPT-4]
    ~/.aichat/memory.db
 ```
 
-### Datenfluss: Abruf privater Daten
+### Data Flow: Private Data Retrieval
 
 ```
 ┌────────────────────────────────────┐
-│ Frage: "Was ist meine API Key?"   │
+│ Question: "What is my API key?"   │
 └─────────────┬──────────────────────┘
               ↓
     ┌─────────────────────┐
-    │ Erkennt: Private     │
-    │ Daten-Abfrage       │
+    │ Detects: Private     │
+    │ Data Query          │
     └─────────┬───────────┘
               ↓
-       🔒 Lokale DB
-       ├─ Semantische Suche in Vektordatenbank
-       └─ Gibt zurück: "sk-abc123..."
+       🔒 Local DB
+       ├─ Semantic search in vector database
+       └─ Returns: "sk-abc123..."
 
-    ❌ Nie an OpenAI gesendet!
+    ❌ Never sent to OpenAI!
 ```
 
 ---
 
 ## Quick Start
 
-**Schritt 1: Installation**
+**Step 1: Install**
 ```bash
 curl -fsSL https://raw.githubusercontent.com/martinschenk/ai-chat-terminal/main/install.sh | zsh
 ```
 
-**Schritt 2: Shell neu laden**
+**Step 2: Reload shell**
 ```bash
 source ~/.zshrc
 ```
 
-**Schritt 3: Starten**
+**Step 3: Start**
 ```bash
 chat
 ```
@@ -78,166 +78,166 @@ chat
 
 ## Requirements
 
-| | Minimum | Empfohlen |
+| | Minimum | Recommended |
 |---|---|---|
 | **macOS** | Catalina 10.15+ | Monterey 12+ |
 | **RAM** | 8 GB | 16 GB |
-| **Speicher** | 5 GB frei | 10 GB frei |
-| **Prozessor** | Intel 2015+ | Apple Silicon M1+ |
+| **Storage** | 5 GB free | 10 GB free |
+| **Processor** | Intel 2015+ | Apple Silicon M1+ |
 
-### Kompatibilität
+### Compatibility
 
-- ✅ **M1/M2/M3 Mac mit 16+ GB RAM** → Alle Modelle empfohlen
-- ✅ **Intel Mac mit 16 GB RAM** → Alle Modelle funktionieren
-- ⚠️ **8 GB RAM** → Basis-Modelle (ohne Phi-3)
-- ❌ **< macOS Catalina** → Nicht unterstützt (Linux/Windows: Coming soon)
+- ✅ **M1/M2/M3 Mac with 16+ GB RAM** → All models recommended
+- ✅ **Intel Mac with 16 GB RAM** → All models work
+- ⚠️ **8 GB RAM** → Base models only (no Phi-3)
+- ❌ **< macOS Catalina** → Not supported (Linux/Windows: Coming soon)
 
 ---
 
-## Beispiele
+## Examples
 
-### Sensible Daten (bleiben lokal)
+### Sensitive Data (stays local)
 
 ```bash
-Du: Meine Kreditkarte ist 4532-1234-5678-9012
-AI: [Gespeichert in lokaler DB] 🔒
+You: My credit card is 4532-1234-5678-9012
+AI: [Stored in local DB] 🔒
 
-Du: API Key ist sk-proj-abc123def456
-AI: [Gespeichert] 🔒
+You: API key is sk-proj-abc123def456
+AI: [Stored] 🔒
 
-Du: Was war meine Kreditkarte?
-AI: 4532-1234-5678-9012 [Aus lokaler DB] 🔒
+You: What was my credit card?
+AI: 4532-1234-5678-9012 [From local DB] 🔒
 ```
 
-### Öffentliche Fragen (an OpenAI)
+### Public Questions (to OpenAI)
 
 ```bash
-Du: Hauptstadt von Frankreich?
+You: Capital of France?
 AI: Paris [OpenAI GPT-4] 🌐
 
-Du: Erkläre Quantenphysik
-AI: [Antwort von OpenAI] 🌐
+You: Explain quantum physics
+AI: [Response from OpenAI] 🌐
 ```
 
 ---
 
 ## Features
 
-- **Automatischer Datenschutz**: KI-basierte Klassifizierung
-- **19 Sprachen**: DE, EN, ES, FR, IT, CA, ZH, HI, etc.
-- **Vektordatenbank**: SQLite mit semantischer Suche
-- **Konfigurierbar**: `/config` Menü für alle Einstellungen
+- **Automatic Privacy**: AI-based classification
+- **19 Languages**: EN, DE, ES, FR, IT, CA, ZH, HI, etc.
+- **Vector Database**: SQLite with semantic search
+- **Configurable**: `/config` menu for all settings
 - **OpenAI Integration**: GPT-4, GPT-4o, GPT-4o-mini
 
 ---
 
 ## Installation Details
 
-### Was wird wo installiert?
+### What gets installed where?
 
-**Lokal (~/.aichat/)**
-- Scripts, Config, Chat-Historie
-- Deine privaten Daten in Vektordatenbank
-- Nur von diesem Tool genutzt
+**Local (~/.aichat/)**
+- Scripts, config, chat history
+- Your private data in vector database
+- Used only by this tool
 
 **Global (shared)**
-- AI-Modelle (HuggingFace Cache)
-- Python-Pakete (pip --user)
-- Kann von anderen Apps genutzt werden
+- AI models (HuggingFace cache)
+- Python packages (pip --user)
+- Can be used by other apps
 
-### Intelligente Model-Auswahl
+### Intelligent Model Selection
 
-Das Installer-Script analysiert deinen Mac und empfiehlt:
+The installer analyzes your Mac and recommends:
 
-| Dein Mac | Empfehlung |
-|----------|-----------|
+| Your Mac | Recommendation |
+|----------|---------------|
 | 16+ GB RAM | Presidio ✅ + Phi-3 ✅ |
 | 8-16 GB RAM | Presidio ✅, Phi-3 optional |
-| <8 GB RAM | Nur Basis-Modelle |
+| <8 GB RAM | Base models only |
 
-**Beispiel-Output bei 16 GB RAM:**
+**Example output with 16 GB RAM:**
 ```
-💬 Warum empfohlen für dich?
-   Dein Mac hat 16 GB RAM - perfekt für Presidio!
-   Schützt Kreditkarten, API-Keys, Passwörter.
+💬 Why recommended for you?
+   Your Mac has 16 GB RAM - perfect for Presidio!
+   Protects credit cards, API keys, passwords.
 ```
 
 ---
 
-## Technische Details
+## Technical Details
 
-### Komponenten
+### Components
 
-| Komponente | Modell | Größe | Zweck |
-|------------|--------|-------|-------|
-| Privacy Classifier | all-MiniLM-L6-v2 | 22 MB | Routing-Entscheidung |
-| Memory System | multilingual-e5-base | 278 MB | Semantische Suche |
-| PII Detection | Microsoft Presidio | 350 MB | Erkennung sensibler Daten |
-| Response Generator | Phi-3 via Ollama | 2.3 GB | Natürliche Antworten |
+| Component | Model | Size | Purpose |
+|-----------|-------|------|---------|
+| Privacy Classifier | all-MiniLM-L6-v2 | 22 MB | Routing decision |
+| Memory System | multilingual-e5-base | 278 MB | Semantic search |
+| PII Detection | Microsoft Presidio | 350 MB | Sensitive data detection |
+| Response Generator | Phi-3 via Ollama | 2.3 GB | Natural responses |
 
 ### Privacy Layers
 
-1. **PII Detector**: Erkennt konkrete Datentypen (Kreditkarten, API-Keys)
-2. **Semantic Classifier**: Versteht Kontext (SENSITIVE/PUBLIC)
-3. **Vector Database**: Lokale Speicherung mit Embeddings
+1. **PII Detector**: Recognizes concrete data types (credit cards, API keys)
+2. **Semantic Classifier**: Understands context (SENSITIVE/PUBLIC)
+3. **Vector Database**: Local storage with embeddings
 
 ---
 
-## Konfiguration
+## Configuration
 
 ```bash
-chat           # Starten
-/config        # Einstellungen
+chat           # Start
+/config        # Settings
 ```
 
-**Verfügbare Optionen:**
-- Sprache wählen (19 verfügbar)
-- OpenAI Modell ändern
-- Privacy-Level anpassen
-- Modelle nachträglich installieren/entfernen
-- Context-Window konfigurieren
+**Available options:**
+- Choose language (19 available)
+- Change OpenAI model
+- Adjust privacy level
+- Install/remove models after installation
+- Configure context window
 
 ---
 
-## Deinstallation
+## Uninstall
 
-**Im Chat:**
+**In chat:**
 ```bash
 chat
 /config
-→ [12] Vollständig deinstallieren
+→ [12] Complete uninstall
 ```
 
-**Manuell:**
+**Manual:**
 ```bash
 rm -rf ~/.aichat
 ```
 
-*Hinweis: Globale Modelle bleiben erhalten (können von anderen Apps genutzt werden)*
+*Note: Global models remain (can be used by other apps)*
 
 ---
 
 ## FAQ
 
-**Q: Sind meine Daten wirklich privat?**
-A: Ja. Sensible Daten werden nie an OpenAI gesendet. Prüfe den Indikator: 🔒 = lokal, 🌐 = OpenAI
+**Q: Is my data really private?**
+A: Yes. Sensitive data never goes to OpenAI. Check the indicator: 🔒 = local, 🌐 = OpenAI
 
-**Q: Funktioniert es offline?**
-A: Lokale Features ja. OpenAI-Abfragen benötigen Internet.
+**Q: Does it work offline?**
+A: Local features yes. OpenAI queries need internet.
 
-**Q: Wie funktioniert die Erkennung?**
-A: Dreistufig: PII-Detector → Semantic Classifier → Routing
+**Q: How does detection work?**
+A: Three-stage: PII Detector → Semantic Classifier → Routing
 
-**Q: Kann ich andere Modelle nutzen?**
-A: Aktuell nur OpenAI. Support für Claude/Gemini: In Planung
+**Q: Can I use other models?**
+A: Currently OpenAI only. Claude/Gemini support: Planned
 
-**Q: Linux/Windows Support?**
-A: Aktuell nur macOS. Linux: Geplant für v7.0
+**Q: Linux/Windows support?**
+A: Currently macOS only. Linux: Planned for v7.0
 
 ---
 
-## Lizenz
+## License
 
-MIT License - siehe [LICENSE](LICENSE)
+MIT License - see [LICENSE](LICENSE)
 
 **Built with ❤️ for Privacy**
