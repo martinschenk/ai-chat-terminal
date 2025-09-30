@@ -56,16 +56,18 @@
 
 ## ⚡ Quick Start
 
-**60-second setup:**
-
+**Step 1: Install**
 ```bash
-# Install with automatic configuration
 curl -sL https://raw.githubusercontent.com/martinschenk/ai-chat-terminal/main/install.sh | bash
+```
 
-# Reload shell
+**Step 2: Reload shell**
+```bash
 source ~/.zshrc
+```
 
-# Start chatting
+**Step 3: Start chatting**
+```bash
 chat
 ```
 
