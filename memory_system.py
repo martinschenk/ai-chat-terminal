@@ -20,6 +20,9 @@ except ImportError as e:
     print(f"pip3 install sentence-transformers sqlite-vec")
     sys.exit(1)
 
+# Global flag to show vector warning only once per session
+_VECTOR_WARNING_SHOWN = False
+
 class ChatMemorySystem:
     def __init__(self, db_path=None):
         if db_path is None:
@@ -32,30 +35,37 @@ class ChatMemorySystem:
         self.db = sqlite3.connect(str(db_path))
 
         # Check for vector extension support
+        global _VECTOR_WARNING_SHOWN
         self.vector_support = False
         try:
             self.db.enable_load_extension(True)
             # Load sqlite-vec extension
             sqlite_vec.load(self.db)
             self.vector_support = True
-            print("✅ Vector search enabled (sqlite-vec loaded)", file=sys.stderr)
+            if not _VECTOR_WARNING_SHOWN:
+                print("✅ Vector search enabled (sqlite-vec loaded)", file=sys.stderr)
+                _VECTOR_WARNING_SHOWN = True
         except AttributeError as e:
             # Python's SQLite was compiled without extension support
-            print("\n" + "="*70, file=sys.stderr)
-            print("⚠️  WARNUNG: Vector-Suche NICHT verfügbar!", file=sys.stderr)
-            print("="*70, file=sys.stderr)
-            print(f"Grund: Python's SQLite wurde OHNE Extension-Support kompiliert", file=sys.stderr)
-            print(f"Fallback: Keyword-basierte Suche (funktioniert, aber weniger präzise)", file=sys.stderr)
-            print("="*70 + "\n", file=sys.stderr)
+            if not _VECTOR_WARNING_SHOWN:
+                print("\n" + "="*70, file=sys.stderr)
+                print("⚠️  WARNUNG: Vector-Suche NICHT verfügbar!", file=sys.stderr)
+                print("="*70, file=sys.stderr)
+                print(f"Grund: Python's SQLite wurde OHNE Extension-Support kompiliert", file=sys.stderr)
+                print(f"Fallback: Keyword-basierte Suche (funktioniert, aber weniger präzise)", file=sys.stderr)
+                print("="*70 + "\n", file=sys.stderr)
+                _VECTOR_WARNING_SHOWN = True
             self.vector_support = False
         except Exception as e:
             # sqlite-vec not available or other error
-            print("\n" + "="*70, file=sys.stderr)
-            print("⚠️  WARNUNG: Vector-Suche NICHT verfügbar!", file=sys.stderr)
-            print("="*70, file=sys.stderr)
-            print(f"Grund: {e}", file=sys.stderr)
-            print(f"Fallback: Keyword-basierte Suche (funktioniert, aber weniger präzise)", file=sys.stderr)
-            print("="*70 + "\n", file=sys.stderr)
+            if not _VECTOR_WARNING_SHOWN:
+                print("\n" + "="*70, file=sys.stderr)
+                print("⚠️  WARNUNG: Vector-Suche NICHT verfügbar!", file=sys.stderr)
+                print("="*70, file=sys.stderr)
+                print(f"Grund: {e}", file=sys.stderr)
+                print(f"Fallback: Keyword-basierte Suche (funktioniert, aber weniger präzise)", file=sys.stderr)
+                print("="*70 + "\n", file=sys.stderr)
+                _VECTOR_WARNING_SHOWN = True
             self.vector_support = False
 
         # Initialize embedding model (lazy loading)
