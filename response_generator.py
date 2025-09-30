@@ -73,18 +73,11 @@ class ResponseGenerator:
             return False
 
     def _get_templates(self) -> Dict[str, Dict[str, str]]:
-        """Get response templates for different languages and data types"""
+        """Get response templates - ONLY for fallback when Phi-3 unavailable"""
         return {
             'de': {
-                'api_key': "✅ Gespeichert 🔒",
-                'openai_api_key': "✅ Gespeichert 🔒",
-                'credit_card': "✅ Gespeichert 🔒",
-                'email': "✅ Gespeichert 🔒",
-                'phone': "✅ Gespeichert 🔒",
-                'password': "✅ Gespeichert 🔒",
+                # Single generic template - Phi-3 handles variations
                 'generic_sensitive': "✅ Gespeichert 🔒",
-                'proprietary': "✅ Gespeichert 🔒",
-                'personal': "✅ Gespeichert 🔒",
                 'not_found': "❌ Ich habe keine Informationen zu '{query}' in der lokalen Datenbank gefunden.",
                 'found_credit_card': "💳 Deine Kreditkarte: {value}",
                 'found_api_key': "🔑 Dein {service} API-Key: `{value}`",
@@ -96,15 +89,8 @@ class ResponseGenerator:
                 'delete_not_found': "❌ Keine passenden Einträge zum Löschen gefunden."
             },
             'en': {
-                'api_key': "✅ Stored 🔒",
-                'openai_api_key': "✅ Stored 🔒",
-                'credit_card': "✅ Stored 🔒",
-                'email': "✅ Stored 🔒",
-                'phone': "✅ Stored 🔒",
-                'password': "✅ Stored 🔒",
+                # Single generic template - Phi-3 handles variations
                 'generic_sensitive': "✅ Stored 🔒",
-                'proprietary': "✅ Stored 🔒",
-                'personal': "✅ Stored 🔒",
                 'not_found': "❌ I don't have any information about '{query}' in the local database.",
                 'found_credit_card': "💳 Your credit card: {value}",
                 'found_api_key': "🔑 Your {service} API key: `{value}`",
@@ -116,15 +102,8 @@ class ResponseGenerator:
                 'delete_not_found': "❌ No matching entries found to delete."
             },
             'es': {
-                'api_key': "✅ Guardado 🔒",
-                'openai_api_key': "✅ Guardado 🔒",
-                'credit_card': "✅ Guardado 🔒",
-                'email': "✅ Guardado 🔒",
-                'phone': "✅ Guardado 🔒",
-                'password': "✅ Guardado 🔒",
+                # Single generic template - Phi-3 handles variations
                 'generic_sensitive': "✅ Guardado 🔒",
-                'proprietary': "✅ Guardado 🔒",
-                'personal': "✅ Guardado 🔒",
                 'not_found': "❌ No tengo información sobre '{query}' en la base de datos local.",
                 'found_credit_card': "💳 Tu tarjeta de crédito: {value}",
                 'found_api_key': "🔑 Tu clave API de {service}: `{value}`",
@@ -149,31 +128,17 @@ class ResponseGenerator:
 
         templates = self.templates[base_lang]
 
-        # If Phi-3 is available, use it for more natural responses
+        # Prefer Phi-3 for dynamic, varied responses
         if self.phi3_available and self.config.get('PHI3_ENABLED', 'false').lower() == 'true':
             try:
                 return self._generate_with_phi3_storage(pii_types, language)
             except Exception as e:
                 print(f"Phi-3 generation failed: {e}", file=sys.stderr)
-                # Fall through to template
+                # Fall through to simple fallback
 
-        # Template-based response
-        if len(pii_types) == 1:
-            pii_type = pii_types[0].lower()
-
-            # Map specific types to templates
-            if 'openai' in pii_type.lower() or 'api_key' in pii_type.lower():
-                return templates['generic_sensitive']
-            elif 'credit' in pii_type.lower() or 'card' in pii_type.lower():
-                return templates['generic_sensitive']
-            elif 'password' in pii_type.lower():
-                return templates['generic_sensitive']
-            else:
-                return templates['generic_sensitive']
-        else:
-            # Multiple types
-            types_str = ', '.join(pii_types)
-            return templates['generic_sensitive']
+        # Simple fallback when Phi-3 unavailable
+        # No hardcoded cases - one template for all
+        return templates['generic_sensitive']
 
     def generate_response(self, query: str, db_results: List[Dict], intent: str = 'QUERY', language: str = None) -> str:
         """Generate response based on database results"""
@@ -229,23 +194,31 @@ class ResponseGenerator:
             return templates['found_generic'].format(value=content)
 
     def _generate_with_phi3_storage(self, pii_types: List[str], language: str) -> str:
-        """Generate storage confirmation using Phi-3"""
+        """Generate storage confirmation using Phi-3 - DYNAMIC & COOL"""
         lang_instruction = self._get_language_instruction(language)
 
-        prompt = f"""You are a helpful privacy-focused assistant. {lang_instruction}
+        prompt = f"""TASK: Confirm data stored. {lang_instruction}
 
-The user has just stored sensitive information of these types: {', '.join(pii_types)}
+Data: {', '.join(pii_types)}
 
-Generate a brief, friendly confirmation message that:
-1. Confirms the data was stored locally
-2. Emphasizes it was NOT sent to OpenAI
-3. Mentions the data is secure
-4. Uses appropriate emojis
-5. Is conversational and reassuring
+RULES (STRICT):
+1. Maximum 4 words total (including emoji)
+2. Must include exactly 1 emoji
+3. Be cool and modern
+4. Vary your response
 
-Keep it under 50 words.
+VALID EXAMPLES:
+✅ Safe! 🔒
+💾 Got it!
+🔐 Secured locally
+✨ Locked down!
+🎯 Stored securely
 
-Response:"""
+INVALID (TOO LONG):
+✅ Safe & encrypted 🔐 Data stored
+🛡️ Local backup complete now
+
+Your response (4 words max):"""
 
         return self._call_phi3(prompt)
 
