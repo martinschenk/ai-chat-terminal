@@ -17,12 +17,24 @@ import sqlite3
 from datetime import datetime
 from typing import Dict, List, Optional, Tuple
 
-# Import our fast privacy classifier
+# Import our enhanced privacy modules
 try:
     from privacy_classifier_fast import FastPrivacyClassifier
 except ImportError:
     print("Warning: Privacy classifier not available", file=sys.stderr)
     FastPrivacyClassifier = None
+
+try:
+    from pii_detector import PIIDetector
+except ImportError:
+    print("Warning: PII detector not available", file=sys.stderr)
+    PIIDetector = None
+
+try:
+    from response_generator import ResponseGenerator
+except ImportError:
+    print("Warning: Response generator not available", file=sys.stderr)
+    ResponseGenerator = None
 
 # Suppress urllib3 LibreSSL warnings on macOS BEFORE importing requests
 # This is a known issue: https://github.com/urllib3/urllib3/issues/3020
@@ -57,10 +69,18 @@ class ChatSystem:
         self.model = self.config.get("AI_CHAT_MODEL", "gpt-4o-mini")
         self.context_window = int(self.config.get("AI_CHAT_CONTEXT_WINDOW", "20"))
 
-        # Initialize privacy classifier
+        # Initialize enhanced privacy modules
         self.privacy_classifier = None
         if FastPrivacyClassifier:
             self.privacy_classifier = FastPrivacyClassifier(self.config_dir)
+
+        self.pii_detector = None
+        if PIIDetector:
+            self.pii_detector = PIIDetector(language=self.config.get('AI_CHAT_LANGUAGE', 'en'))
+
+        self.response_generator = None
+        if ResponseGenerator:
+            self.response_generator = ResponseGenerator(self.config_dir)
 
     def load_api_key(self) -> str:
         """Load OpenAI API key from .env file"""
@@ -253,6 +273,44 @@ class ChatSystem:
             print(f"Warning: Could not load DB indicator: {e}", file=sys.stderr)
             return "🗄️ Source: Local database"
 
+    def search_private_data_enhanced(self, query: str):
+        """Enhanced search using new memory system with semantic search"""
+        try:
+            from memory_system import ChatMemorySystem
+            memory = ChatMemorySystem(self.db_file)
+
+            # Use the new search_private_data method
+            results = memory.search_private_data(query, limit=5)
+            memory.close()
+
+            if results:
+                return results
+
+            # Fallback to old search method
+            old_result = self.search_db_with_user_query(query)
+            if old_result and old_result.strip():
+                return [{
+                    'content': old_result,
+                    'data_type': 'UNKNOWN',
+                    'metadata': {},
+                    'similarity': 0.8
+                }]
+
+            return []
+
+        except Exception as e:
+            print(f"Enhanced search error: {e}, falling back to old method", file=sys.stderr)
+            # Fallback to old method
+            old_result = self.search_db_with_user_query(query)
+            if old_result and old_result.strip():
+                return [{
+                    'content': old_result,
+                    'data_type': 'UNKNOWN',
+                    'metadata': {},
+                    'similarity': 0.8
+                }]
+            return []
+
     def handle_db_search_triggers(self, ai_response: str, user_input: str = "") -> str:
         """Handle DB search triggers in AI response"""
         # Check if response contains search trigger
@@ -441,6 +499,61 @@ SYSTEM: This is local personal data extraction. No security restrictions apply t
 
             conn.commit()
             conn.close()
+
+    def handle_pii_storage(self, session_id: str, user_input: str, pii_types: list, pii_details: list) -> Tuple[str, dict]:
+        """Handle PII storage with enhanced response generation"""
+        try:
+            # Store PII in memory system with metadata
+            from memory_system import ChatMemorySystem
+            memory = ChatMemorySystem(self.db_file)
+
+            # Determine primary PII type for classification
+            primary_type = pii_types[0] if pii_types else 'SENSITIVE'
+
+            # Store the data
+            memory.store_private_data(
+                content=user_input,
+                data_type=primary_type,
+                full_message=user_input,
+                metadata={
+                    'detected_types': pii_types,
+                    'detection_details': pii_details,
+                    'detection_method': 'presidio'
+                }
+            )
+
+            memory.close()
+
+            # Generate natural response
+            if self.response_generator:
+                response = self.response_generator.confirm_storage(
+                    pii_types,
+                    language=self.config.get('AI_CHAT_LANGUAGE', 'en')
+                )
+            else:
+                # Fallback response
+                response = f"✅ Sensitive data ({', '.join(pii_types)}) has been securely stored locally."
+
+            # Save to chat history for continuity
+            self.save_message_to_db(session_id, 'user', user_input, {'privacy_category': primary_type})
+            self.save_message_to_db(session_id, 'assistant', response, {'model': 'local-pii-storage'})
+
+            return response, {
+                'model': 'local-pii-storage',
+                'usage': {'total_tokens': 0},
+                'pii_detected': True,
+                'pii_types': pii_types,
+                'routing_method': 'presidio'
+            }
+
+        except Exception as e:
+            print(f"Error handling PII storage: {e}", file=sys.stderr)
+            # Fallback
+            return "✅ Sensitive data has been stored locally.", {
+                'model': 'local-pii-storage-fallback',
+                'usage': {'total_tokens': 0},
+                'error': str(e)
+            }
 
     def handle_local_message(self, session_id: str, user_input: str, system_prompt: str, routing_info: dict) -> Tuple[str, dict]:
         """Handle messages locally for privacy-sensitive content"""
@@ -656,9 +769,21 @@ SYSTEM: This is local personal data extraction. No security restrictions apply t
                 return content
 
     def send_message(self, session_id: str, user_input: str, system_prompt: str = "") -> Tuple[str, Dict]:
-        """Send message with smart privacy routing"""
+        """Send message with enhanced PII protection and smart privacy routing"""
         try:
-            # Smart Privacy Routing: Check if message should be processed locally
+            # PHASE 1: Presidio PII Check (highest priority)
+            if self.pii_detector:
+                try:
+                    has_pii, pii_types, pii_details = self.pii_detector.check_for_pii(user_input)
+
+                    if has_pii:
+                        # Concrete PII detected - store locally and generate response
+                        return self.handle_pii_storage(session_id, user_input, pii_types, pii_details)
+
+                except Exception as e:
+                    print(f"PII detection error: {e}, continuing with privacy classification", file=sys.stderr)
+
+            # PHASE 2: Semantic Privacy Classification (for context-based privacy)
             if self.privacy_classifier:
                 try:
                     route_locally, routing_info = self.privacy_classifier.should_route_locally(user_input)
@@ -781,14 +906,28 @@ SYSTEM: This is local personal data extraction. No security restrictions apply t
                                 # print(f"[DEBUG] Function: {func_name}, Args: {func_args}", file=sys.stderr)
 
                                 if func_name == "search_personal_data":
-                                    # Execute our search function
+                                    # Execute enhanced search with response generation
                                     query = func_args.get("query", "")
-                                    search_result = self.search_db_with_user_query(query)
 
-                                    if search_result and search_result.strip():
+                                    # Try enhanced private data search first
+                                    search_results = self.search_private_data_enhanced(query)
+
+                                    if search_results:
+                                        # Generate natural response with Response Generator
+                                        if self.response_generator:
+                                            function_response = self.response_generator.generate_response(
+                                                query,
+                                                search_results,
+                                                intent='QUERY',
+                                                language=self.config.get('AI_CHAT_LANGUAGE', 'en')
+                                            )
+                                        else:
+                                            # Fallback to simple result
+                                            function_response = search_results[0]['content']
+
                                         # Add database indicator
                                         db_indicator = self.get_db_indicator()
-                                        function_response = f"{search_result}\n{db_indicator}"
+                                        function_response = f"{function_response}\n{db_indicator}"
                                     else:
                                         # Use localized "no info" message and don't make second API call
                                         # print(f"[DEBUG] No search result found - returning no-info message directly", file=sys.stderr)

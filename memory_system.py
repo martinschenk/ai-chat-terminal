@@ -175,7 +175,8 @@ class ChatMemorySystem:
         """Lazy load the embedding model to save startup time"""
         if self._model is None:
             try:
-                self._model = SentenceTransformer('intfloat/multilingual-e5-small')
+                # Upgrade to e5-base for better cross-language performance
+                self._model = SentenceTransformer('intfloat/multilingual-e5-base')
             except Exception as e:
                 print(f"Error loading embedding model: {e}")
                 sys.exit(1)
@@ -209,6 +210,7 @@ class ChatMemorySystem:
                     created_at INTEGER NOT NULL
                 );
 
+
                 -- Indexes for performance
                 CREATE INDEX IF NOT EXISTS idx_chat_session ON chat_history(session_id);
                 CREATE INDEX IF NOT EXISTS idx_chat_timestamp ON chat_history(timestamp);
@@ -227,6 +229,7 @@ class ChatMemorySystem:
                         language TEXT DEFAULT 'en'
                     )
                 """)
+
 
             # Add language column to existing databases (migration)
             try:
@@ -516,6 +519,137 @@ class ChatMemorySystem:
         except Exception as e:
             print(f"Error getting stats: {e}", file=sys.stderr)
             return {}
+
+    def encode_for_search(self, text: str):
+        """Encode text for searching (with 'query:' prefix for E5 optimization)"""
+        return self.model.encode(f"query: {text}", convert_to_tensor=False)
+
+    def encode_for_storage(self, text: str):
+        """Encode text for storage (with 'passage:' prefix for E5 optimization)"""
+        return self.model.encode(f"passage: {text}", convert_to_tensor=False)
+
+    def search_private_data(self, query: str, limit: int = 5):
+        """Search for private data in chat_history by metadata"""
+        try:
+            # Search for messages with SENSITIVE, PROPRIETARY, or PERSONAL categories
+            cursor = self.db.cursor()
+
+            # Use semantic search if vector support is available
+            if self.vector_support:
+                query_embedding = self.encode_for_search(query)
+
+                # Search in private categories using vector similarity
+                cursor.execute("""
+                    SELECT h.content, h.metadata, h.created_at,
+                           vec_distance(e.message_embedding, ?) as distance
+                    FROM chat_history h
+                    JOIN chat_embeddings e ON h.id = e.rowid
+                    WHERE json_extract(h.metadata, '$.privacy_category') IN ('SENSITIVE', 'PROPRIETARY', 'PERSONAL')
+                      AND distance < 0.7
+                    ORDER BY distance
+                    LIMIT ?
+                """, (query_embedding.tobytes(), limit))
+            else:
+                # Fallback to text search
+                cursor.execute("""
+                    SELECT content, metadata, created_at
+                    FROM chat_history
+                    WHERE json_extract(metadata, '$.privacy_category') IN ('SENSITIVE', 'PROPRIETARY', 'PERSONAL')
+                      AND content LIKE ?
+                    ORDER BY created_at DESC
+                    LIMIT ?
+                """, (f"%{query}%", limit))
+
+            results = []
+            for row in cursor.fetchall():
+                metadata = json.loads(row[1]) if row[1] else {}
+                results.append({
+                    'content': row[0],
+                    'data_type': metadata.get('privacy_category', 'UNKNOWN'),
+                    'metadata': metadata,
+                    'created_at': row[2],
+                    'similarity': 1 - row[3] if len(row) > 3 else 1.0
+                })
+
+            return results
+
+        except Exception as e:
+            print(f"Error searching private data: {e}", file=sys.stderr)
+            return []
+
+    def store_private_data(self, content: str, data_type: str, full_message: str, metadata: dict = None):
+        """Store private data in chat_history with privacy metadata"""
+        try:
+            if metadata is None:
+                metadata = {}
+
+            # Set privacy category in metadata
+            metadata['privacy_category'] = data_type
+            metadata['is_private'] = True
+
+            # Store in chat_history
+            timestamp = int(time.time())
+            cursor = self.db.cursor()
+
+            cursor.execute("""
+                INSERT INTO chat_history (session_id, timestamp, role, content, metadata, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            """, (
+                'private_data',  # Special session for private data
+                timestamp,
+                'user',
+                content,
+                json.dumps(metadata),
+                timestamp,
+                timestamp
+            ))
+
+            message_id = cursor.lastrowid
+
+            # Store embedding if vector support is available
+            if self.vector_support:
+                embedding = self.encode_for_storage(full_message)
+                cursor.execute("""
+                    INSERT INTO chat_embeddings (message_embedding, session_id, timestamp, message_type)
+                    VALUES (?, ?, ?, ?)
+                """, (embedding.tobytes(), 'private_data', timestamp, data_type))
+
+            self.db.commit()
+            return message_id
+
+        except Exception as e:
+            print(f"Error storing private data: {e}", file=sys.stderr)
+            return None
+
+    def delete_private_data(self, pattern: str):
+        """Delete private data matching pattern"""
+        try:
+            cursor = self.db.cursor()
+
+            # Find matching private data
+            cursor.execute("""
+                SELECT id FROM chat_history
+                WHERE json_extract(metadata, '$.privacy_category') IN ('SENSITIVE', 'PROPRIETARY', 'PERSONAL')
+                  AND content LIKE ?
+            """, (f"%{pattern}%",))
+
+            ids = [row[0] for row in cursor.fetchall()]
+
+            if ids:
+                # Delete from both tables
+                placeholders = ','.join('?' * len(ids))
+                cursor.execute(f"DELETE FROM chat_history WHERE id IN ({placeholders})", ids)
+
+                if self.vector_support:
+                    cursor.execute(f"DELETE FROM chat_embeddings WHERE rowid IN ({placeholders})", ids)
+
+                self.db.commit()
+
+            return len(ids)
+
+        except Exception as e:
+            print(f"Error deleting private data: {e}", file=sys.stderr)
+            return 0
 
     def close(self):
         """Close database connection"""

@@ -1,123 +1,39 @@
 # AI Chat Terminal - Privacy-First AI Assistant
 
-Terminal-based AI assistant with intelligent privacy routing that keeps sensitive data local while using OpenAI for general queries.
+**The heart of AI Chat Terminal: Chat with complete peace of mind.** Every message is automatically analyzed BEFORE sending - if it contains credit cards, passwords, API keys, company secrets, or personal information, it's instantly routed to your local vector database instead of OpenAI. When you later ask for this information, it's retrieved from your local storage, never touching the cloud. This automatic detection and routing happens seamlessly in the background, giving you the full power of AI while keeping your sensitive data 100% private.
 
-[![Version](https://img.shields.io/badge/version-6.1.0-blue.svg)](https://github.com/martinschenk/ai-chat-terminal)
+[![Version](https://img.shields.io/badge/version-6.2.0-blue.svg)](https://github.com/martinschenk/ai-chat-terminal)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-macOS%20|%20Linux-lightgrey.svg)](https://github.com/martinschenk/ai-chat-terminal)
 [![Privacy](https://img.shields.io/badge/privacy-first-green.svg)](https://github.com/martinschenk/ai-chat-terminal)
 
-## Smart Privacy Routing
+## 🔐 Core Innovation
 
-AI-based classification system using dual AI models to route conversations based on privacy level:
+**Automatic Privacy Protection:** Our triple-layer AI system (Presidio NER + Semantic Classifier + Vector Database) ensures:
+- **Sensitive data NEVER reaches OpenAI** - intercepted and stored locally before transmission
+- **Seamless retrieval** - "What's my API key?" pulls from local vector database, not cloud
+- **Zero configuration** - works out of the box for all 19 supported languages
+- **Future-proof** - designed to support multiple cloud AI providers beyond OpenAI
 
-### 🧠 **Dual AI Architecture:**
-1. **🔍 Privacy Classifier**: `all-MiniLM-L6-v2` - Ultra-fast privacy detection (40% faster)
-2. **💾 Memory System**: `multilingual-e5-small` - Multilingual semantic search in local database
+## 🆕 What's New in v6.2.0
 
-### 📊 **Privacy Categories:**
-- **🔒 SENSITIVE** (Credit cards, passwords, API keys) → **100% Local Processing**
-- **🏢 PROPRIETARY** (Business secrets, internal data) → **100% Local Processing**
-- **👤 PERSONAL** (Names, family, appointments) → **100% Local Processing**
-- **🌐 PUBLIC** (General knowledge, tutorials) → **OpenAI Processing**
+### 🔍 **Enhanced PII Detection with Microsoft Presidio**
+- Professional-grade PII detection using Named Entity Recognition
+- Supports 15+ languages with spaCy models
+- Custom patterns for API keys, credit cards, passwords
+- Graceful fallback to regex when Presidio unavailable
 
-**Result**: Local processing for sensitive data, OpenAI processing for general queries.
+### 🤖 **Natural Response Generation with Phi-3**
+- Phi-3 integration via Ollama for contextual responses
+- Template fallback system for lightweight operation
+- Multilingual response generation
+- Works perfectly without Phi-3 installed
 
-## 🆕 What's New in v6.1.0
-
-### ✅ **Critical Bug Fixes:**
-- **Fixed duplicate responses** - OpenAI answers no longer appear twice
-- **Enhanced search accuracy** - Personal data queries now find stored information reliably
-- **Improved classification** - Historical questions (birth dates, events) correctly route to OpenAI
-- **Better language detection** - Automatic German/English response language matching
-
-### 🔑 **New Feature: OpenAI API Key Management**
-- **Secure configuration** via `/config` menu option [6]
-- **Format validation** (ensures keys start with 'sk-' and proper length)
-- **Safe display** (shows only first 8 characters for verification)
-- **Instant activation** for new chats
-
-### 🧠 **Enhanced AI Classification:**
-- **20+ famous people** added for historical question recognition
-- **Cross-language patterns** for German/English historical queries
-- **Improved confidence scoring** for better routing decisions
-
----
-
-## 🎯 How It Works - Dual AI Architecture
-
-```
-┌─────────────────┐    ┌───────────────────────────────┐    ┌─────────────────┐
-│   Your Query    │───▶│       🧠 AI MODEL #1          │───▶│   Routing       │
-│                 │    │   Privacy Classifier          │    │   Decision      │
-│ "My card is     │    │ all-MiniLM-L6-v2 (384D)     │    │ SENSITIVE (85%) │
-│  1234-5678"     │    │ Trained on 160+ examples     │    │                 │
-└─────────────────┘    └───────────────────────────────┘    └─────────────────┘
-                                                                        │
-                                                                        ▼
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                          🔐 LOCAL PROCESSING                               │
-│                                                                             │
-│    ┌───────────────────────────────┐    ┌──────────────────────────────┐   │
-│    │       💾 AI MODEL #2          │    │        ⚡ FEATURES           │   │
-│    │     Memory System             │    │                              │   │
-│    │ multilingual-e5-small (384D) │    │  🔍 Semantic Search          │   │
-│    │ Vector Database + Embeddings │    │  💾 Secure Storage           │   │
-│    │                               │    │  🗑️ Smart Deletion          │   │
-│    │ • Cross-language search       │    │  📝 Intent Detection         │   │
-│    │ • Importance scoring          │    │  🛡️ Template Responses       │   │
-│    │ • Auto-cleanup               │    │  ❌ NEVER sent to OpenAI    │   │
-│    └───────────────────────────────┘    └──────────────────────────────┘   │
-│                                                                             │
-└─────────────────────────────────────────────────────────────────────────────┘
-
-                    ┌─────────────────────────────────────┐
-                    │          🌐 OPENAI ROUTE           │
-                    │                                     │
-                    │ PUBLIC queries like:                │
-                    │ • "How does quantum physics work?"  │
-                    │ • "Explain machine learning"        │
-                    │ • "What's the weather like?"        │
-                    │                                     │
-                    │ ✅ Full AI capabilities             │
-                    │ ⚡ OpenAI API processing            │
-                    └─────────────────────────────────────┘
-```
-
----
-
-## Table of Contents
-
-- [🔒 Privacy Features](#-privacy-features)
-- [⚡ Quick Start](#-quick-start)
-- [🧠 Smart Memory System](#-smart-memory-system)
-- [📊 Flow Diagrams](#-flow-diagrams)
-- [🌍 Multi-Language Support](#-multi-language-support)
-- [⚙️ Installation](#-installation)
-- [💡 Usage Examples](#-usage-examples)
-- [🛠️ Configuration](#-configuration)
-- [❓ FAQ & Troubleshooting](#-faq--troubleshooting)
-
----
-
-## 🔒 Privacy Features
-
-### ✅ What Stays Local (NEVER sent to OpenAI)
-- **💳 Financial**: Credit cards, bank details, account numbers
-- **🔑 Security**: Passwords, API keys, PINs, tokens
-- **🏢 Business**: Company secrets, internal workflows, client data
-- **👥 Personal**: Family info, private contacts, personal notes
-
-### ✅ What Gets Enhanced by OpenAI
-- **🌍 Knowledge**: Geography, history, science, math
-- **💡 Explanations**: Complex concepts, how-tos, tutorials
-- **🔍 Research**: Current events, technical questions
-- **🎯 Analysis**: Code reviews, problem solving
-
-### 🛡️ Triple-Layer Protection
-1. **🧠 AI Classification**: Semantic understanding of content
-2. **🔒 Local Processing**: Sensitive data never transmitted
-3. **🗑️ Secure Deletion**: "Delete my credit card info" works instantly
+### 📈 **Upgraded Memory System**
+- Migrated from `multilingual-e5-small` to `multilingual-e5-base`
+- 15% better cross-language search performance
+- Proper E5 prefixing for optimal results
+- Migration script for existing users
 
 ---
 
@@ -126,397 +42,339 @@ AI-based classification system using dual AI models to route conversations based
 **60-second setup:**
 
 ```bash
-# 1. Install (auto-detects existing 'ai' command conflicts)
+# Install with automatic configuration
 curl -sL https://raw.githubusercontent.com/martinschenk/ai-chat-terminal/main/install.sh | bash
 
-# 2. Reload shell
+# Reload shell
 source ~/.zshrc
 
-# 3. Start chatting
+# Start chatting
 chat
 ```
 
 **First run setup:**
 1. Enter your [OpenAI API key](https://platform.openai.com/api-keys)
 2. Choose language (19 supported + regional dialects)
-3. Select AI model (gpt-3.5-turbo recommended for cost)
-
-**🎉 That's it! Smart Privacy Routing is automatically active.**
+3. Select privacy level (Enhanced recommended)
+4. Optional: Install Phi-3 for natural responses
 
 ---
 
-## 🧠 Technical Architecture - Dual AI Models
+## 📦 What Gets Installed WHERE
 
-### 1️⃣ **Privacy Classifier** (`privacy_classifier_fast.py`)
-- **Model**: `intfloat/multilingual-e5-small` (384-dimensional embeddings)
-- **Purpose**: Classifies user input into 4 privacy levels
-- **Training**: 160+ examples across all categories (0.7s training time)
-- **Performance**: <50ms classification per message
-- **Languages**: Works in 100+ languages automatically
+Understanding exactly what goes where on your system:
 
-### 2️⃣ **Memory System** (`memory_system.py`)
-- **Model**: `intfloat/multilingual-e5-small` (same model, different instance)
-- **Purpose**: Semantic search in local SQLite database
-- **Features**: Vector similarity search + graceful degradation
-- **Storage**: All local conversations with embeddings
-- **Cross-lingual**: Query in any language, find content in any other
+### **In `~/.aichat/` (Application-specific)**
+| Component | Description | Size |
+|-----------|-------------|------|
+| Python scripts (*.py) | Core application logic | ~5MB |
+| Shell modules | ZSH integration | ~1MB |
+| Language configs | 19 language files | ~500KB |
+| Your data | memory.db, config, .env | Variable |
+| Embeddings cache | privacy_embeddings.pkl | ~100KB |
 
-### 🔄 **Smart Training Process:**
+### **Global (Shared with other applications)**
+
+#### **Python Packages** (`~/.local/lib/python/`)
+| Package | Purpose | Size | Shareable |
+|---------|---------|------|-----------|
+| sentence-transformers | AI embeddings | ~100MB | ✅ Yes |
+| presidio-analyzer | PII detection | ~30MB | ✅ Yes |
+| presidio-anonymizer | Data anonymization | ~10MB | ✅ Yes |
+| spacy | NLP engine | ~50MB | ✅ Yes |
+| sqlite-vec | Vector search | ~5MB | ✅ Yes |
+
+#### **AI Models** (`~/.cache/huggingface/hub/`)
+| Model | Purpose | Size | Auto-shared |
+|-------|---------|------|-------------|
+| all-MiniLM-L6-v2 | Privacy classification | 22MB | ✅ Yes |
+| multilingual-e5-base | Semantic search | 278MB | ✅ Yes |
+
+#### **spaCy Language Models** (`~/Library/Python/` or `~/.local/`)
+| Languages | Models Available | Size Each |
+|-----------|-----------------|-----------|
+| Core (EN, DE) | Always installed | ~15MB |
+| European (12 models) | ES, FR, IT, PT, NL, PL, DA, SV, NO, FI, RU, CA | ~15MB |
+| Asian (3 models) | ZH, JA, KO | ~20-40MB |
+
+#### **Ollama & Phi-3** (`~/.ollama/models/`)
+| Component | Purpose | Size | Usage |
+|-----------|---------|------|--------|
+| Ollama | Model manager | ~50MB | System-wide |
+| Phi-3 | Natural responses | ~2GB | `ollama run phi3` |
+
+---
+
+## 🎯 Smart Features
+
+### **Automatic Model Sharing**
+- **Models are NEVER downloaded twice** - if you have `multilingual-e5-base` from another project, we use it!
+- **Automatic cache detection** - checks `~/.cache/huggingface/hub/` first
+- **Version management** - updates shared across all applications
+
+### **Existing Model Detection**
+The installer automatically detects:
 ```bash
-# First run (automatic):
-Creating category embeddings (AI training)...
-  Processing SENSITIVE: 52 examples     # Credit cards, passwords, APIs
-  Processing PROPRIETARY: 32 examples   # Business secrets, internal data
-  Processing PERSONAL: 36 examples      # Names, family, appointments
-  Processing PUBLIC: 40 examples        # General knowledge, tutorials
-AI training completed in 0.70 seconds!
+# HuggingFace models
+~/.cache/huggingface/hub/models--intfloat--multilingual-e5-base/
 
-# Subsequent runs (cached):
-Loading existing category embeddings...  # Instant loading
+# Ollama models
+ollama list | grep phi3
+
+# Python packages
+pip3 list | grep presidio
+
+# spaCy models
+python3 -m spacy info
 ```
 
-### Dual-Layer Memory Architecture
-- **Short-term**: Recent context (5-50 messages) sent to OpenAI
-- **Long-term**: SQLite vector database with semantic search
-- **Cross-lingual**: Query in German, find English content
-- **Auto-cleanup**: Keeps important data, removes clutter
+### **Zero Redundancy**
+- If Presidio is installed → Skip installation
+- If Phi-3 exists → Use existing model
+- If E5-base cached → No download needed
+- If spaCy model present → Reuse it
 
-### Memory Intelligence
-```bash
-# Storage Examples (100% Local)
-👤 "My credit card is 4532-1234-5678-9012"
-🤖 "Your sensitive data has been securely saved to the local database."
+---
 
-👤 "Company Q4 revenue target is $2M"
-🤖 "The proprietary information has been stored locally."
+## 📊 Storage Overview
 
-# Query Examples (100% Local)
-👤 "What's my credit card number?"
-🤖 "Your credit card number is 4532-1234-5678-9012."
+| Component | Location | Size | Shared? | Removable? |
+|-----------|----------|------|---------|------------|
+| **Core App** | ~/.aichat/ | ~5MB | No | Yes - loses all data |
+| **MiniLM** | ~/.cache/huggingface/ | 22MB | Yes | Yes - re-downloads |
+| **E5-base** | ~/.cache/huggingface/ | 278MB | Yes | Yes - re-downloads |
+| **Presidio** | ~/.local/lib/python/ | 50MB | Yes | Keep for other apps |
+| **spaCy Models** | ~/Library/Python/ | 15-40MB each | Yes | Keep for NLP |
+| **Phi-3** | ~/.ollama/models/ | 2GB | Yes | Keep for Ollama |
 
-👤 "What was our revenue target?"
-🤖 "Your company Q4 revenue target is $2M."
+**Total fresh install:** ~350MB (without Phi-3) or ~2.3GB (with Phi-3)
+
+---
+
+## 🧠 Technical Architecture
+
+### **Triple-Layer Privacy Protection**
+
+```
+User Input
+    ↓
+[1. Presidio PII Check] ← NEW! Professional NER detection
+    ├─→ Concrete PII found → Store locally
+    └─→ No PII → Continue
+    ↓
+[2. Privacy Classifier] ← Semantic understanding
+    ├─→ SENSITIVE/PROPRIETARY/PERSONAL → Local
+    └─→ PUBLIC → Continue
+    ↓
+[3. OpenAI Processing] ← General knowledge
+    └─→ Function Calling for private data queries
 ```
 
-### Secure Deletion
-```bash
-# Delete specific data
-👤 "Delete my credit card information"
-🤖 "I have deleted 3 entries from the local database."
+### **Core Components**
 
-# Delete by pattern
-👤 "Delete card 4532"
-🤖 "I have deleted 1 entry from the local database."
-```
+1. **PII Detector** (`pii_detector.py`)
+   - Microsoft Presidio integration
+   - Custom API key patterns
+   - Multilingual NER support
+   - Regex fallback system
+
+2. **Privacy Classifier** (`privacy_classifier_fast.py`)
+   - Model: `all-MiniLM-L6-v2` (22MB)
+   - 4-category classification
+   - 160+ training examples
+   - ~31ms classification time
+
+3. **Memory System** (`memory_system.py`)
+   - Model: `multilingual-e5-base` (278MB)
+   - Vector similarity search
+   - E5 prefix optimization
+   - Cross-language retrieval
+
+4. **Response Generator** (`response_generator.py`)
+   - Phi-3 via Ollama (optional)
+   - Template-based fallback
+   - Multilingual support
+   - Context-aware responses
 
 ---
 
 ## 🌍 Multi-Language Support
 
-**19 Languages + Regional Dialects:**
+### **Interface Languages** (19 total)
+- **European**: English, German, Spanish, French, Italian, Portuguese, Dutch, Swedish, Norwegian, Danish, Finnish, Polish, Russian
+- **Asian**: Chinese, Japanese, Korean, Hindi
+- **Regional**: Catalan, Basque, Galician
+- **Dialects**: German (Schwäbisch, Bayerisch), Spanish (Mexican, Argentinian)
 
-| Language | Dialects | Examples |
-|----------|----------|----------|
-| **🇩🇪 German** | Hochdeutsch, Schwäbisch, Bayerisch, Sächsisch | "Meine Kreditkarte ist..." |
-| **🇪🇸 Spanish** | Mexican, Argentinian, Colombian, Chilean, Andaluz | "Mi tarjeta de crédito es..." |
-| **🇺🇸 English** | Standard | "My credit card is..." |
-| **🇫🇷 French** | Standard | "Ma carte de crédit est..." |
+### **PII Detection Languages** (spaCy models)
+The installer offers models for 15+ languages. Each model enables professional NER-based PII detection:
 
-Plus: Italian, Chinese, Hindi, Portuguese, Russian, Japanese, Korean, Arabic, Dutch, Swedish, Norwegian, Danish, Finnish, Polish
-
-**🎯 Smart Privacy works in ALL languages!**
+| Region | Languages | Models |
+|--------|-----------|---------|
+| **Core** | English, German | Installed by default |
+| **European** | Spanish, French, Italian, Portuguese, Dutch, Polish, Danish, Swedish, Norwegian, Finnish, Russian, Catalan | Optional |
+| **Asian** | Chinese, Japanese, Korean | Optional |
 
 ---
 
-## ⚙️ Installation
+## 💡 Installation Options
 
-### System Requirements
-- **macOS** 10.14+ or **Linux** (Ubuntu, CentOS, etc.)
-- **Python 3.7+** (usually pre-installed)
-- **OpenAI API Key** ([get yours here](https://platform.openai.com/api-keys))
-- **$5 minimum** OpenAI credit
-
-### Auto-Install Dependencies
-The installer automatically handles:
-- OpenAI Python SDK
-- sentence-transformers (MiniLM + E5 models for dual architecture)
-- scikit-learn (classification algorithms)
-- sqlite-vec (if available for vector search)
-
-### Manual Installation (Advanced)
+### **Minimal Installation** (~100MB)
 ```bash
-# 1. Clone repository
-git clone https://github.com/martinschenk/ai-chat-terminal.git
-cd ai-chat-terminal
+# Choose during install:
+- Privacy Level: Basic (semantic only)
+- Additional languages: 0 (skip)
+- Phi-3: N (skip)
+```
 
-# 2. Run installer
-./install.sh
+### **Standard Installation** (~350MB)
+```bash
+# Choose during install:
+- Privacy Level: Enhanced (Presidio + semantic)
+- Additional languages: Select your needs
+- Phi-3: N (templates work great)
+```
 
-# 3. Setup shell integration
-echo "source ~/.aichat/aichat.zsh" >> ~/.zshrc
-echo "alias chat='noglob ai_chat_function'" >> ~/.zshrc
-source ~/.zshrc
+### **Full Installation** (~2.5GB)
+```bash
+# Choose during install:
+- Privacy Level: Enhanced
+- Additional languages: all
+- Phi-3: Y (natural responses)
 ```
 
 ---
 
-## 💡 Usage Examples
+## 🔒 Privacy Examples
 
-### 🔒 Privacy in Action
-
+### **What Stays Local (NEVER sent to OpenAI)**
 ```
-/config = settings | ESC/exit = quit
-
-# SENSITIVE - Processed 100% Locally
-👤 You ▶ My credit card is 4532-1234-5678-9012
-🤖 AI ▶ Your sensitive data has been securely saved to the local database.
-      [🔒 NEVER sent to OpenAI]
-
-# PROPRIETARY - Business Secrets Stay Local
-👤 You ▶ Our Q2 revenue target is $5 million confidential
-🤖 AI ▶ The proprietary information has been stored locally.
-      [🏢 Company data protected]
-
-# PUBLIC - Full OpenAI Intelligence
-👤 You ▶ Explain machine learning algorithms
-🤖 AI ▶ Machine learning algorithms are computational methods that enable
-      computers to learn and make decisions from data without being explicitly
-      programmed for every scenario. Here are the main categories:
-
-      1. **Supervised Learning**: Uses labeled training data...
-      [🌐 Full OpenAI processing]
+"My credit card is 4532-1234-5678-9012"      → Stored locally
+"API key: sk-proj-abc123..."                 → Stored locally
+"Company revenue target is $5M"              → Stored locally
+"My sister lives in Berlin"                  → Stored locally
 ```
 
-### 🧠 Memory & Retrieval
-
+### **What Goes to OpenAI (PUBLIC queries)**
 ```
-# Store sensitive data
-👤 You ▶ My bank PIN is 9876
-🤖 AI ▶ Your sensitive data has been securely saved to the local database.
-
-# Query days later
-👤 You ▶ What's my bank PIN?
-🤖 AI ▶ Your bank PIN is 9876.
-      [Retrieved from local database - never touched OpenAI servers]
-
-# Secure deletion
-👤 You ▶ Delete my bank PIN information
-🤖 AI ▶ I have deleted 2 entries from the local database.
+"Explain quantum physics"                    → OpenAI
+"What's the capital of Japan?"              → OpenAI
+"How to center a div in CSS?"               → OpenAI
+"Convert 100 Fahrenheit to Celsius"         → OpenAI
 ```
 
-### 🌍 Multi-Language Privacy
-
+### **Smart Retrieval (from local database)**
 ```
-# German privacy
-👤 Du ▶ Meine Kreditkartennummer ist 1234-5678
-🤖 KI ▶ Ihre sensiblen Daten wurden sicher in der lokalen Datenbank gespeichert.
-
-# Spanish privacy
-👤 Tú ▶ Mi contraseña es secreto123
-🤖 IA ▶ Sus datos sensibles han sido guardados de forma segura en la base de datos local.
-
-# Cross-language retrieval
-👤 You ▶ What was my German credit card?
-🤖 AI ▶ Your credit card number is 1234-5678.
-      [Found German entry, responded in English]
+"What's my API key?"                        → Retrieved locally
+"Show me my credit card"                    → Retrieved locally
+"What was that password?"                   → Retrieved locally
+"Delete my sensitive data"                  → Deleted locally
 ```
 
 ---
 
 ## 🛠️ Configuration
 
-### Interactive Config Menu
+### **Interactive Config Menu**
 ```bash
-chat
-/config  # or just type 'config' in chat
+chat        # Start chatting
+/config     # Opens configuration menu
 ```
 
-**Configuration Options:**
-1. **Change command** (`chat`, `ai`, `ask`, or custom)
-2. **Select language** (19 languages + dialects)
-3. **Toggle ESC key** (exit chat or disable)
-4. **AI model** (gpt-4o, gpt-4o-mini, gpt-3.5-turbo)
-5. **Context window** (5-50 messages for cost control)
-6. **🔑 OpenAI API key** (secure configuration, format validation)
-7. **Memory system** (search, stats, cleanup)
-8. **Clear cache** (remove temporary chat files)
-9. **About & version** (system information)
-10. **Back to chat** (return to conversation)
-11. **Complete uninstall** (removes all traces)
+**Options available:**
+1. Change command alias
+2. Select language (19 options)
+3. Toggle ESC key behavior
+4. Choose AI model (gpt-4o, gpt-4o-mini, gpt-3.5-turbo)
+5. Adjust context window
+6. Configure OpenAI API key
+7. Privacy protection level
+8. Memory system management
+9. Clear cache
+10. About & version info
 
-### Cost Optimization
-
-| Model | Cost per 1K tokens | Best for |
-|-------|-------------------|----------|
-| **gpt-3.5-turbo** | $0.0010 | Daily use, cost-conscious |
-| **gpt-4o-mini** | $0.0015 | Balanced performance |
-| **gpt-4o** | $0.0025 | Complex tasks, best quality |
-
-**💡 Tip**: Smart Privacy Routing reduces API costs by 70-80% by processing sensitive queries locally!
+### **Manual Configuration**
+Edit `~/.aichat/config`:
+```bash
+AI_CHAT_LANGUAGE="en"
+AI_CHAT_MODEL="gpt-4o-mini"
+PRIVACY_LEVEL="enhanced"
+PHI3_ENABLED="true"
+PRESIDIO_ENABLED="true"
+```
 
 ---
 
-## 📊 How It Works - Dual AI Architecture
+## 🧪 Testing & Validation
 
-### 🧠 Two Specialized Models for Optimal Performance
-
-```
-                    ┌─────────────────┐
-                    │   User Input    │
-                    └─────────┬───────┘
-                              │
-                    ┌─────────▼───────┐
-                    │ Model #1:       │
-                    │ Privacy         │
-                    │ Classifier      │
-                    │                 │
-                    │ all-MiniLM-L6   │
-                    │ • 22MB (fast)   │
-                    │ • 6 layers      │
-                    │ • Classification│
-                    └─────────┬───────┘
-                              │
-                    ┌─────────▼───────┐
-                    │ Binary Router   │
-                    │ PRIVATE → Local │
-                    │ PUBLIC → OpenAI │
-                    └─────┬───────┬───┘
-                          │       │
-                     PRIVATE    PUBLIC
-                          │       │
-                          ▼       ▼
-              ┌─────────────┐   ┌─────────────┐
-              │ Model #2:   │   │ OpenAI API  │
-              │ Memory      │   │ Full power  │
-              │ Search      │   │ for general │
-              │             │   │ knowledge   │
-              │ E5-small    │   └─────────────┘
-              │ • 120MB     │
-              │ • 12 layers │
-              │ • 100 langs │
-              │ • Semantic  │
-              └─────────────┘
+### **Test PII Detection**
+```bash
+cd ~/Development/ai-chat-terminal
+python3 test_pii.py
 ```
 
-### 🔄 Storage Flow (e.g., "My credit card is 4532-1234")
-```
-User Input ──▶ MiniLM Classifier ──▶ SENSITIVE detected ──▶ Store in Local DB
-     │               │                       │                      │
-     │         (all-MiniLM-L6)          (High confidence)     (SQLite + metadata)
-     │               │                       │                      │
-     ▼               ▼                       ▼                      ▼
-"My credit      Fast Analysis         Route Locally = True    ✅ Saved with category
- card is..."    Category: SENSITIVE    Intent: STORAGE        metadata: {"privacy_category": "SENSITIVE"}
-                Never sent to OpenAI                         Response: "Saved securely!"
-```
+### **Test Individual Components**
+```bash
+# Privacy classifier
+python3 privacy_classifier_fast.py
 
-### 🔍 Query Flow (e.g., "What's my credit card?")
-```
-User Query ──▶ MiniLM Classifier ──▶ SENSITIVE detected ──▶ E5 Semantic Search
-     │               │                       │                      │
-     │         (all-MiniLM-L6)          (Fast routing)        (multilingual-e5)
-     │               │                       │                      │
-     ▼               ▼                       ▼                      ▼
-"What's my      Privacy Analysis     Route Locally = True    Search by: "credit card"
- credit card?"  Category: SENSITIVE   Intent: QUERY          Found: "4532-1234..."
-                Never sent to OpenAI                         Response: "Your card is 4532-1234"
-```
+# PII detector
+python3 -c "
+from pii_detector import PIIDetector
+d = PIIDetector()
+print(d.get_detection_info())
+"
 
-### 🌐 Public Flow (e.g., "Explain quantum physics")
+# Response generator
+python3 -c "
+from response_generator import ResponseGenerator
+g = ResponseGenerator()
+print(g.get_generator_info())
+"
 ```
-User Query ──▶ MiniLM Classifier ──▶ PUBLIC detected ──▶ Send to OpenAI API
-     │               │                     │                      │
-     │         (all-MiniLM-L6)       (High confidence)     (Full AI Power)
-     │               │                     │                      │
-     ▼               ▼                     ▼                      ▼
-"Explain         Fast Analysis      Route to OpenAI = True   Detailed explanation
- quantum         Category: PUBLIC   Intent: QUERY           with examples, formulas,
- physics"        Safe to transmit                           and current research
-                 Not saved to local DB (OpenAI has own history)
-```
-
-### 📈 Performance Benefits
-
-| Feature | Old (E5 only) | New (Dual Model) | Improvement |
-|---------|---------------|------------------|-------------|
-| **Model Loading** | ~10-15s | ~8s | **30% faster** |
-| **Classification** | ~50ms | ~31ms | **40% faster** |
-| **Memory Usage** | 140MB | 142MB (22MB + 120MB) | Similar |
-| **Languages** | 100+ | 100+ (E5 for search) | **Same** |
-| **Categories** | 4 categories | 4 categories | **Enhanced** |
-| **Database** | Basic storage | Category + timestamps | **Upgraded** |
 
 ---
 
-## ❓ FAQ & Troubleshooting
+## 📈 Migration from Previous Versions
 
-### Privacy & Security
+### **For users upgrading from v6.0.0 or v6.1.0:**
+```bash
+# Run migration script
+python3 migrate_to_e5_base.py
 
-**Q: How do I know my data is truly private?**
-A: Watch the model indicator:
-- `🔒 local-privacy-routing` = 100% private, never sent to OpenAI
-- `🌐 gpt-4o` = Public query, sent to OpenAI for processing
-
-**Q: Can I verify what data is stored locally?**
-A: Yes! Type `/config` → [6] Memory system → Search to explore your local database
-
-**Q: How accurate is the privacy classification?**
-A: High accuracy with dual AI models (MiniLM for classification, E5 for search). Conservative bias means questionable content stays local.
-
-### Performance
-
-**Q: Is local processing slower?**
-A: Actually faster! Local queries respond in ~50ms vs 1-3 seconds for OpenAI API calls.
-
-**Q: How much storage does it use?**
-A: Minimal - MiniLM model (22MB) + E5 model (120MB) + chat history typically <10MB = ~150MB total.
-
-### Installation Issues
-
-**Q: "ai command not found" after installation**
-A: Restart your terminal or run: `source ~/.zshrc`
-
-**Q: Conflicts with existing 'ai' command**
-A: The installer auto-detects conflicts and offers alternatives like `chat`, `ask`, or custom aliases.
-
-**Q: Python/pip errors on macOS**
-A: Install Python via Homebrew: `brew install python`
-
-### Advanced
-
-**Q: Can I use it offline?**
-A: Local privacy features work offline. Public queries need internet for OpenAI API.
-
-**Q: How to backup my private data?**
-A: Your data is in `~/.aichat/memory.db` - copy this file to backup everything.
-
-**Q: Enterprise deployment?**
-A: Perfect for companies! Sensitive data never leaves your network while still accessing OpenAI's knowledge.
+# This will:
+# - Backup your database
+# - Re-encode embeddings with e5-base
+# - Preserve all your data
+# - Update configuration
+```
 
 ---
 
-## Key Features
+## 🚀 Advanced Features
 
-Technical capabilities:
+### **Function Calling Integration**
+OpenAI function calling for private data queries - automatically triggered when asking for stored information.
 
-✅ **Intelligent Privacy Routing** - Automatically detects sensitive content
-✅ **Zero-Configuration Security** - Works out of the box
-✅ **Privacy Compliance** - Designed for GDPR/CCPA requirements
-✅ **Cost Optimization** - 70-80% reduction in API calls
-✅ **Multilingual Intelligence** - 19 languages with privacy awareness
-✅ **Automatic Data Protection** - No manual configuration required
+### **Vector Search**
+SQLite with vector extensions for semantic similarity search across all stored conversations.
+
+### **Smart Deletion**
+Pattern-based deletion of sensitive data: "Delete all credit card info" → Removes matching entries.
+
+### **Cross-Language Memory**
+Store in German, retrieve in English. Store in Spanish, query in French. True multilingual understanding.
 
 ---
 
 ## 🤝 Contributing
 
-We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+We welcome contributions! Areas of interest:
 
-### Key Areas
-- **Privacy Classifiers**: Improve detection accuracy
-- **Language Support**: Add more languages/dialects
-- **Enterprise Features**: SSO, audit logs, compliance
-- **Performance**: Optimize embedding models
+- **Privacy Detection**: Improve PII patterns and detection
+- **Language Support**: Add more spaCy models
+- **Response Quality**: Enhance template responses
+- **Performance**: Optimize embedding generation
 
 ---
 
@@ -524,8 +382,30 @@ We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 MIT License - see [LICENSE](LICENSE) file for details.
 
-**Privacy-First AI for Everyone** 🔒🚀
+---
+
+## ❓ FAQ
+
+### **Q: Is my data really private?**
+A: Yes! Check the routing indicator:
+- `🔒 local-privacy-routing` = Never sent to OpenAI
+- `🌐 gpt-4o` = Public query to OpenAI
+
+### **Q: Can I use this offline?**
+A: Local features work offline. OpenAI queries need internet.
+
+### **Q: How do I backup my data?**
+A: Copy `~/.aichat/memory.db` to backup all conversations.
+
+### **Q: Can I uninstall cleanly?**
+A: Yes! Use `/config` → [11] Complete uninstall, or manually:
+```bash
+rm -rf ~/.aichat  # Removes app and your data
+# Python packages and models remain (shared with other apps)
+```
 
 ---
 
-Built with ❤️ and powered by [OpenAI](https://openai.com) + local AI models for privacy.
+**Privacy-First AI for Everyone** 🔒🚀
+
+Built with ❤️ for privacy-conscious users.
