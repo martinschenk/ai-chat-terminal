@@ -658,6 +658,7 @@ class ChatMemorySystem:
                 query_bytes = query_embedding.astype('float32').tobytes()
 
                 # Use subquery to filter by distance (can't use alias in WHERE)
+                # Sort by created_at DESC first (newest first), then by distance (most similar)
                 cursor.execute(f"""
                     SELECT content, metadata, created_at, distance
                     FROM (
@@ -668,7 +669,7 @@ class ChatMemorySystem:
                         WHERE json_extract(h.metadata, '$.privacy_category') IN ({placeholders})
                     )
                     WHERE distance < 0.7
-                    ORDER BY distance
+                    ORDER BY created_at DESC, distance ASC
                     LIMIT ?
                 """, (query_bytes, *TRULY_SENSITIVE, limit))
             else:
