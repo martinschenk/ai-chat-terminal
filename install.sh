@@ -342,8 +342,11 @@ echo -e "  ${GREEN}✓${RESET} ${SYSTEM_RAM} GB RAM"
 echo -e "  ${GREEN}✓${RESET} ${FREE_SPACE} free space"
 echo -e "  ${GREEN}✓${RESET} ZSH available"
 
-# Check for existing models
-mapfile -t EXISTING_MODELS < <(check_installed_models)
+# Check for existing models (ZSH compatible)
+EXISTING_MODELS=()
+while IFS= read -r line; do
+    EXISTING_MODELS+=("$line")
+done < <(check_installed_models)
 
 if [ ${#EXISTING_MODELS[@]} -gt 0 ]; then
     echo -e "\n${GREEN}${LANG_STRINGS[MODELS_FOUND]}:${RESET}"
