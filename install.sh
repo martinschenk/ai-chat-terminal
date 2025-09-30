@@ -637,8 +637,14 @@ else
     echo -e "\n${GREEN}✓${RESET} Privacy: Basic (AI Classifier only)"
 fi
 
-# Save language preference
-echo "LANGUAGE=$SELECTED_LANG" >> "$INSTALL_DIR/config"
+# Save language preference and other AI_CHAT_* settings
+cat >> "$INSTALL_DIR/config" << EOF
+AI_CHAT_LANGUAGE="$SELECTED_LANG"
+AI_CHAT_COMMAND="chat"
+AI_CHAT_MODEL="gpt-4o-mini"
+AI_CHAT_ESC_EXIT="true"
+AI_CHAT_CONTEXT_WINDOW="20"
+EOF
 
 # Step 8: Configure OpenAI API Key
 echo -e "\n${CYAN}${BOLD}Konfiguriere OpenAI API Key...${RESET}"
