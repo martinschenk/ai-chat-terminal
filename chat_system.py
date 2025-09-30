@@ -18,12 +18,7 @@ from datetime import datetime
 from typing import Dict, List, Optional, Tuple
 
 # Import our enhanced privacy modules
-try:
-    from privacy_classifier_fast import FastPrivacyClassifier
-except ImportError:
-    print("Warning: Privacy classifier not available", file=sys.stderr)
-    FastPrivacyClassifier = None
-
+# Note: FastPrivacyClassifier deprecated - replaced by Presidio PIIDetector
 try:
     from pii_detector import PIIDetector
 except ImportError:

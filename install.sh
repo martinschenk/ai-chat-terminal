@@ -397,7 +397,6 @@ curl -sL "$BASE_URL/modules/config-menu.zsh" -o "$INSTALL_DIR/modules/config-men
 curl -sL "$BASE_URL/modules/language-utils.zsh" -o "$INSTALL_DIR/modules/language-utils.zsh" && \
 curl -sL "$BASE_URL/memory_system.py" -o "$INSTALL_DIR/memory_system.py" && \
 curl -sL "$BASE_URL/chat_system.py" -o "$INSTALL_DIR/chat_system.py" && \
-curl -sL "$BASE_URL/privacy_classifier_fast.py" -o "$INSTALL_DIR/privacy_classifier_fast.py" && \
 curl -sL "$BASE_URL/pii_detector.py" -o "$INSTALL_DIR/pii_detector.py" && \
 curl -sL "$BASE_URL/response_generator.py" -o "$INSTALL_DIR/response_generator.py" && \
 chmod +x "$INSTALL_DIR"/*.py && \
