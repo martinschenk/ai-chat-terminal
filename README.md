@@ -2,7 +2,7 @@
 
 Local terminal chat with automatic privacy protection for sensitive data.
 
-[![Version](https://img.shields.io/badge/version-6.3.0-blue.svg)](https://github.com/martinschenk/ai-chat-terminal)
+[![Version](https://img.shields.io/badge/version-7.0.0-blue.svg)](https://github.com/martinschenk/ai-chat-terminal)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](https://github.com/martinschenk/ai-chat-terminal)
 
@@ -23,7 +23,7 @@ A terminal-based chat system that automatically decides: Sensitive inputs stay l
 └────────────────────┬──────────────────────────┘
                      ↓
           ┌──────────────────────┐
-          │ Privacy Classifier   │ ← AI decides automatically
+          │ Privacy Classifier   │ ← Local AI decides automatically
           │   (local on Mac)     │
           └──────────┬───────────┘
                      ↓
@@ -118,6 +118,23 @@ security add-generic-password -a "openai" -s "OpenAI API" -w "sk-your-key-here"
 | **Storage** | 5 GB free | 10 GB free |
 | **Processor** | Intel 2015+ | Apple Silicon M1+ |
 
+### Python Dependencies
+
+Automatically installed by the installer:
+
+```bash
+# Core (required)
+sentence-transformers>=2.2.0    # E5 embeddings (768-dim)
+sqlite-vec>=0.1.0               # Vector search extension
+apsw>=3.45.0                    # SQLite wrapper with extension support
+
+# Optional (graceful fallback)
+presidio-analyzer>=2.2.0        # PII detection
+presidio-anonymizer>=2.2.0      # Data anonymization
+```
+
+**Why APSW?** System Python's `sqlite3` module doesn't support extensions. APSW provides full SQLite extension support, enabling vector search with `sqlite-vec`.
+
 ### Compatibility
 
 - ✅ **M1/M2/M3 Mac with 16+ GB RAM** → All models recommended
@@ -203,9 +220,10 @@ The installer analyzes your Mac and recommends:
 
 | Component | Model | Size | Purpose |
 |-----------|-------|------|---------|
-| Memory System | multilingual-e5-base | 278 MB | Semantic search |
-| PII Detection | Microsoft Presidio | 350 MB | Sensitive data detection |
-| Response Generator | Phi-3 via Ollama | 2.3 GB | Natural responses |
+| **Vector Search** | APSW + sqlite-vec | 2 MB | Extension support |
+| **Memory System** | multilingual-e5-base | 278 MB | 768-dim embeddings |
+| **PII Detection** | Microsoft Presidio | 350 MB | Sensitive data detection |
+| **Response Generator** | Phi-3 via Ollama | 2.3 GB | Natural responses |
 
 ### Privacy System
 
@@ -214,11 +232,13 @@ The installer analyzes your Mac and recommends:
 - Credit cards, passwords, API keys, phone numbers, emails, etc.
 - Detected data → Stored locally, never sent to OpenAI
 
-**2. Semantic Vector Search**
-- Your stored data is searchable with natural language
-- "What's my access code?" automatically finds relevant stored information
-- No hardcoded keywords - works for any stored data
-- Lightning fast: 0.1 seconds
+**2. Semantic Vector Search (ENABLED)**
+- ✅ **APSW + sqlite-vec** - Full vector extension support
+- **E5 embeddings** - 768-dimensional multilingual vectors
+- **Natural language queries** - "What's my access code?" finds stored info
+- **No keywords needed** - Semantic understanding, not text matching
+- **Lightning fast** - 0.1 seconds search time
+- **Keyword fallback** - Intelligent mapping when vector unavailable
 
 **3. OpenAI Streaming for General Questions**
 - Public questions go directly to OpenAI with streaming
