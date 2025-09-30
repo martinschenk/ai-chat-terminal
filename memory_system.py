@@ -538,23 +538,23 @@ class ChatMemorySystem:
             if self.vector_support:
                 query_embedding = self.encode_for_search(query)
 
-                # Search in private categories using vector similarity
+                # Search in ALL messages with privacy metadata (any PII type)
                 cursor.execute("""
                     SELECT h.content, h.metadata, h.created_at,
                            vec_distance(e.message_embedding, ?) as distance
                     FROM chat_history h
                     JOIN chat_embeddings e ON h.id = e.rowid
-                    WHERE json_extract(h.metadata, '$.privacy_category') IN ('SENSITIVE', 'PROPRIETARY', 'PERSONAL')
+                    WHERE json_extract(h.metadata, '$.privacy_category') IS NOT NULL
                       AND distance < 0.7
                     ORDER BY distance
                     LIMIT ?
                 """, (query_embedding.tobytes(), limit))
             else:
-                # Fallback to text search
+                # Fallback to text search for ALL private data
                 cursor.execute("""
                     SELECT content, metadata, created_at
                     FROM chat_history
-                    WHERE json_extract(metadata, '$.privacy_category') IN ('SENSITIVE', 'PROPRIETARY', 'PERSONAL')
+                    WHERE json_extract(metadata, '$.privacy_category') IS NOT NULL
                       AND content LIKE ?
                     ORDER BY created_at DESC
                     LIMIT ?
