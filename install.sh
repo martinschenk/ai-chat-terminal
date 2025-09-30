@@ -568,20 +568,47 @@ if [[ "$install_phi3" =~ ^[Yy]$ ]]; then
         fi
     fi
 
-    echo "  • Downloading Phi-3 (2.3GB)..."
-    ollama pull phi3 2>&1 | while IFS= read -r line; do
-        if [[ $line =~ pulling.*([0-9]+)% ]]; then
-            local pct=${BASH_REMATCH[1]}
-            show_progress "$pct" 100
-        fi
+    # Start Ollama service
+    echo "  • Starting Ollama service..."
+    if command -v brew &> /dev/null; then
+        brew services start ollama &>/dev/null || true
+    fi
+
+    # Wait for Ollama to be ready (max 10 seconds)
+    local wait_count=0
+    while ! ollama list &>/dev/null && [ $wait_count -lt 10 ]; do
+        sleep 1
+        ((wait_count++))
     done
 
-    if ollama list | grep -q "phi3"; then
-        echo -e "\n  ${GREEN}✓ Phi-3 ready${RESET}"
-        echo "PHI3_ENABLED=true" >> "$INSTALL_DIR/config"
-        echo "RESPONSE_MODE=natural" >> "$INSTALL_DIR/config"
+    # Try to download Phi-3
+    if ollama list &>/dev/null; then
+        echo "  • Downloading Phi-3 (2.3GB)..."
+        if ollama pull phi3 2>&1 | while IFS= read -r line; do
+            if [[ $line =~ pulling.*([0-9]+)% ]]; then
+                local pct=${BASH_REMATCH[1]}
+                show_progress "$pct" 100
+            fi
+        done; then
+            if ollama list | grep -q "phi3"; then
+                echo -e "\n  ${GREEN}✓ Phi-3 ready${RESET}"
+                echo "PHI3_ENABLED=true" >> "$INSTALL_DIR/config"
+                echo "RESPONSE_MODE=natural" >> "$INSTALL_DIR/config"
+            else
+                echo -e "\n  ${YELLOW}⚠️  Phi-3 installation failed${RESET}"
+                echo -e "     Using templates. Install later with: /config"
+                echo "PHI3_ENABLED=false" >> "$INSTALL_DIR/config"
+                echo "RESPONSE_MODE=template" >> "$INSTALL_DIR/config"
+            fi
+        else
+            echo -e "\n  ${YELLOW}⚠️  Ollama download failed${RESET}"
+            echo -e "     Using templates. Install later with: /config"
+            echo "PHI3_ENABLED=false" >> "$INSTALL_DIR/config"
+            echo "RESPONSE_MODE=template" >> "$INSTALL_DIR/config"
+        fi
     else
-        echo -e "\n  ${YELLOW}⚠ Using templates${RESET}"
+        echo -e "\n  ${YELLOW}⚠️  Ollama service not responding${RESET}"
+        echo -e "     Using templates. Install later with: /config"
         echo "PHI3_ENABLED=false" >> "$INSTALL_DIR/config"
         echo "RESPONSE_MODE=template" >> "$INSTALL_DIR/config"
     fi
@@ -590,30 +617,15 @@ else
     echo "RESPONSE_MODE=template" >> "$INSTALL_DIR/config"
 fi
 
-# Step 7: Privacy Level Configuration
-echo -e "\n${CYAN}${BOLD}${LANG_STRINGS[PRIVACY_TITLE]}${RESET}"
-echo -e "${DIM}${LANG_STRINGS[PRIVACY_DESC]}${RESET}\n"
-
-echo "  [1] ${LANG_STRINGS[PRIVACY_ENHANCED]}"
-echo "  [2] ${LANG_STRINGS[PRIVACY_BASIC]}"
-echo "  [3] ${LANG_STRINGS[PRIVACY_OFF]}"
-echo ""
-echo -e "${DIM}${LANG_STRINGS[PRIVACY_WHY]}${RESET}"
-echo ""
-echo -n "Select [1-3, default=1]: "
-read -r privacy_level < /dev/tty
-
-case "$privacy_level" in
-    2)
-        echo "PRIVACY_LEVEL=basic" >> "$INSTALL_DIR/config"
-        ;;
-    3)
-        echo "PRIVACY_LEVEL=off" >> "$INSTALL_DIR/config"
-        ;;
-    *)
-        echo "PRIVACY_LEVEL=enhanced" >> "$INSTALL_DIR/config"
-        ;;
-esac
+# Step 7: Privacy Level Configuration (automatic based on installed components)
+# Check if Presidio was installed and set privacy level accordingly
+if grep -q "PRESIDIO_ENABLED=true" "$INSTALL_DIR/config" 2>/dev/null; then
+    echo "PRIVACY_LEVEL=enhanced" >> "$INSTALL_DIR/config"
+    echo -e "\n${GREEN}✓${RESET} Privacy: Enhanced (Presidio + AI Classifier)"
+else
+    echo "PRIVACY_LEVEL=basic" >> "$INSTALL_DIR/config"
+    echo -e "\n${GREEN}✓${RESET} Privacy: Basic (AI Classifier only)"
+fi
 
 # Save language preference
 echo "LANGUAGE=$SELECTED_LANG" >> "$INSTALL_DIR/config"
