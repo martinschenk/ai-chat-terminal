@@ -38,8 +38,24 @@ class ChatMemorySystem:
             # Load sqlite-vec extension
             sqlite_vec.load(self.db)
             self.vector_support = True
+            print("✅ Vector search enabled (sqlite-vec loaded)", file=sys.stderr)
+        except AttributeError as e:
+            # Python's SQLite was compiled without extension support
+            print("\n" + "="*70, file=sys.stderr)
+            print("⚠️  WARNUNG: Vector-Suche NICHT verfügbar!", file=sys.stderr)
+            print("="*70, file=sys.stderr)
+            print(f"Grund: Python's SQLite wurde OHNE Extension-Support kompiliert", file=sys.stderr)
+            print(f"Fallback: Keyword-basierte Suche (funktioniert, aber weniger präzise)", file=sys.stderr)
+            print("="*70 + "\n", file=sys.stderr)
+            self.vector_support = False
         except Exception as e:
-            # Continue without vector search - basic memory still works
+            # sqlite-vec not available or other error
+            print("\n" + "="*70, file=sys.stderr)
+            print("⚠️  WARNUNG: Vector-Suche NICHT verfügbar!", file=sys.stderr)
+            print("="*70, file=sys.stderr)
+            print(f"Grund: {e}", file=sys.stderr)
+            print(f"Fallback: Keyword-basierte Suche (funktioniert, aber weniger präzise)", file=sys.stderr)
+            print("="*70 + "\n", file=sys.stderr)
             self.vector_support = False
 
         # Initialize embedding model (lazy loading)
