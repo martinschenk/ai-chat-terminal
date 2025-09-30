@@ -585,18 +585,59 @@ class ChatMemorySystem:
                     'GENERIC_API_KEY',
                 ]
 
-                # Build SQL IN clause for truly sensitive categories
-                placeholders = ','.join('?' * len(TRULY_SENSITIVE))
+                # Keyword-based search: map query keywords to PII types
+                keyword_to_pii = {
+                    # Email
+                    'email': 'EMAIL_ADDRESS', 'e-mail': 'EMAIL_ADDRESS', 'mail': 'EMAIL_ADDRESS',
+                    # Phone
+                    'phone': 'PHONE_NUMBER', 'telefon': 'PHONE_NUMBER', 'handy': 'PHONE_NUMBER',
+                    'mobile': 'PHONE_NUMBER', 'number': 'PHONE_NUMBER',
+                    # Password
+                    'password': 'PASSWORD', 'passwort': 'PASSWORD', 'pass': 'PASSWORD',
+                    'kennwort': 'PASSWORD', 'contraseña': 'PASSWORD',
+                    # API Keys
+                    'api': 'API_KEY', 'key': 'API_KEY', 'token': 'JWT_TOKEN',
+                    'schlüssel': 'API_KEY', 'openai': 'OPENAI_API_KEY',
+                    # Credit Card
+                    'credit': 'CREDIT_CARD', 'card': 'CREDIT_CARD', 'karte': 'CREDIT_CARD',
+                    'kreditkarte': 'CREDIT_CARD', 'tarjeta': 'CREDIT_CARD',
+                    # Identity
+                    'ssn': 'US_SSN', 'dni': 'DNI', 'nif': 'NIF', 'passport': 'US_PASSPORT',
+                    'ausweis': 'US_PASSPORT', 'pasaporte': 'US_PASSPORT',
+                    # Other
+                    'ip': 'IP_ADDRESS', 'address': 'IP_ADDRESS', 'adresse': 'IP_ADDRESS',
+                    'koffer': 'PASSWORD',  # "koffercode" -> treat as password
+                    'code': 'PASSWORD',
+                }
 
-                # Fallback to text search for ONLY truly sensitive data
-                cursor.execute(f"""
-                    SELECT content, metadata, created_at
-                    FROM chat_history
-                    WHERE json_extract(metadata, '$.privacy_category') IN ({placeholders})
-                      AND content LIKE ?
-                    ORDER BY created_at DESC
-                    LIMIT ?
-                """, (*TRULY_SENSITIVE, f"%{query}%", limit))
+                # Extract keywords from query (lowercase)
+                query_lower = query.lower()
+                detected_types = set()
+                for keyword, pii_type in keyword_to_pii.items():
+                    if keyword in query_lower and pii_type in TRULY_SENSITIVE:
+                        detected_types.add(pii_type)
+
+                # If we detected types, search by category
+                if detected_types:
+                    category_placeholders = ','.join('?' * len(detected_types))
+                    cursor.execute(f"""
+                        SELECT content, metadata, created_at
+                        FROM chat_history
+                        WHERE json_extract(metadata, '$.privacy_category') IN ({category_placeholders})
+                        ORDER BY created_at DESC
+                        LIMIT ?
+                    """, (*detected_types, limit))
+                else:
+                    # No keywords detected - search all sensitive data with content match
+                    placeholders = ','.join('?' * len(TRULY_SENSITIVE))
+                    cursor.execute(f"""
+                        SELECT content, metadata, created_at
+                        FROM chat_history
+                        WHERE json_extract(metadata, '$.privacy_category') IN ({placeholders})
+                          AND content LIKE ?
+                        ORDER BY created_at DESC
+                        LIMIT ?
+                    """, (*TRULY_SENSITIVE, f"%{query}%", limit))
 
             results = []
             for row in cursor.fetchall():
