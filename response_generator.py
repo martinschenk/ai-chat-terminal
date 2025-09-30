@@ -278,7 +278,7 @@ Response:"""
                 input=prompt,
                 capture_output=True,
                 text=True,
-                timeout=10  # 10 second timeout
+                timeout=60  # 60 second timeout (first run needs model loading)
             )
 
             if result.returncode == 0 and result.stdout.strip():

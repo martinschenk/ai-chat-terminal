@@ -30,8 +30,16 @@ class PIIDetector:
 
         if HAS_PRESIDIO:
             try:
-                # Initialize Presidio analyzer
-                self.analyzer = AnalyzerEngine()
+                # Initialize Presidio analyzer with small spacy models (prevent auto-download of large models)
+                nlp_config = {
+                    "nlp_engine_name": "spacy",
+                    "models": [
+                        {"lang_code": "en", "model_name": "en_core_web_sm"},
+                        {"lang_code": "de", "model_name": "de_core_news_sm"}
+                    ]
+                }
+                nlp_engine = NlpEngineProvider(nlp_configuration=nlp_config).create_engine()
+                self.analyzer = AnalyzerEngine(nlp_engine=nlp_engine)
                 self._add_custom_recognizers()
             except Exception as e:
                 print(f"Warning: Could not initialize Presidio: {e}", file=sys.stderr)

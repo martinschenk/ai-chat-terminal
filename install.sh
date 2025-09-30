@@ -394,6 +394,7 @@ echo -n "  • Core files... "
 curl -sL "$BASE_URL/aichat.zsh" -o "$INSTALL_DIR/aichat.zsh" && \
 curl -sL "$BASE_URL/modules/functions.zsh" -o "$INSTALL_DIR/modules/functions.zsh" && \
 curl -sL "$BASE_URL/modules/config-menu.zsh" -o "$INSTALL_DIR/modules/config-menu.zsh" && \
+curl -sL "$BASE_URL/modules/language-utils.zsh" -o "$INSTALL_DIR/modules/language-utils.zsh" && \
 curl -sL "$BASE_URL/memory_system.py" -o "$INSTALL_DIR/memory_system.py" && \
 curl -sL "$BASE_URL/chat_system.py" -o "$INSTALL_DIR/chat_system.py" && \
 curl -sL "$BASE_URL/privacy_classifier_fast.py" -o "$INSTALL_DIR/privacy_classifier_fast.py" && \
@@ -649,6 +650,10 @@ if [[ -n "$OPENAI_KEY" ]]; then
     echo "OPENAI_API_KEY=$OPENAI_KEY" > "$INSTALL_DIR/.env"
     chmod 600 "$INSTALL_DIR/.env"
     echo -e "  ${GREEN}✓${RESET} API Key aus Keychain geladen"
+    echo -e "     ${DIM}Gespeichert in: ~/.aichat/.env${RESET}"
+    # Show first/last 4 chars for verification
+    local key_preview="${OPENAI_KEY:0:7}...${OPENAI_KEY: -4}"
+    echo -e "     ${DIM}Key: $key_preview${RESET}"
 else
     echo -e "  ${YELLOW}⚠${RESET} Kein API Key im Keychain gefunden"
     echo -e "     ${DIM}Beim ersten Start von 'chat' wirst du danach gefragt${RESET}"
