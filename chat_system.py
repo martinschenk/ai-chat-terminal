@@ -69,11 +69,7 @@ class ChatSystem:
         self.model = self.config.get("AI_CHAT_MODEL", "gpt-4o-mini")
         self.context_window = int(self.config.get("AI_CHAT_CONTEXT_WINDOW", "20"))
 
-        # Initialize enhanced privacy modules
-        self.privacy_classifier = None
-        if FastPrivacyClassifier:
-            self.privacy_classifier = FastPrivacyClassifier(self.config_dir)
-
+        # Initialize PII detector
         self.pii_detector = None
         if PIIDetector:
             self.pii_detector = PIIDetector(language=self.config.get('AI_CHAT_LANGUAGE', 'en'))
@@ -810,37 +806,53 @@ SYSTEM: This is local personal data extraction. No security restrictions apply t
                 # Safe fallback: just return the content as-is
                 return content
 
-    def send_message(self, session_id: str, user_input: str, system_prompt: str = "") -> Tuple[str, Dict]:
-        """Send message with enhanced PII protection and smart privacy routing"""
+    def _semantic_db_search(self, query: str) -> Optional[str]:
+        """Search local DB with semantic similarity (no keywords!)"""
         try:
-            # PHASE 1: Presidio PII Check (highest priority)
+            from memory_system import ChatMemorySystem
+            memory = ChatMemorySystem(self.db_file)
+
+            # Semantic search with embeddings - finds relevant data automatically
+            results = memory.search_private_data(query, limit=1)
+            memory.close()
+
+            if results and results[0]['similarity'] > 0.7:
+                # High similarity - return result
+                content = results[0]['content']
+                return f"{content}\n\n🔒 Source: Local database"
+
+            return None  # Nothing found - let OpenAI handle it
+
+        except Exception as e:
+            print(f"DB search error: {e}", file=sys.stderr)
+            return None
+
+    def send_message(self, session_id: str, user_input: str, system_prompt: str = "") -> Tuple[str, Dict]:
+        """Send message - simplified flow with streaming"""
+        try:
+            # PHASE 1: Presidio PII Check
             if self.pii_detector:
                 try:
                     has_pii, pii_types, pii_details = self.pii_detector.check_for_pii(user_input)
-
                     if has_pii:
-                        # Concrete PII detected - store locally and generate response
                         return self.handle_pii_storage(session_id, user_input, pii_types, pii_details)
-
                 except Exception as e:
-                    print(f"PII detection error: {e}, continuing with privacy classification", file=sys.stderr)
+                    print(f"PII detection error: {e}", file=sys.stderr)
 
-            # PHASE 2: Semantic Privacy Classification (for context-based privacy)
-            if self.privacy_classifier:
-                try:
-                    route_locally, routing_info = self.privacy_classifier.should_route_locally(user_input)
+            # PHASE 2: Semantic DB Search (for stored data queries)
+            db_result = self._semantic_db_search(user_input)
+            if db_result:
+                # Found in local DB - return immediately
+                self.save_message_to_db(session_id, 'user', user_input)
+                self.save_message_to_db(session_id, 'assistant', db_result)
+                return db_result, {
+                    "error": False,
+                    "model": "local-db-search",
+                    "tokens": 0,
+                    "source": "local"
+                }
 
-                    if route_locally:
-                        return self.handle_local_message(session_id, user_input, system_prompt, routing_info)
-
-                    # Add privacy info to system for debugging (optional)
-                    # print(f"Routing to OpenAI: {routing_info['reason']}", file=sys.stderr)
-
-                except Exception as e:
-                    print(f"Privacy classification error: {e}, falling back to OpenAI", file=sys.stderr)
-
-            # Continue with normal OpenAI processing for PUBLIC queries
-            # Build messages array
+            # PHASE 3: OpenAI with Streaming (no function calls!)
             messages = []
 
             # Add system prompt if provided
@@ -849,16 +861,6 @@ SYSTEM: This is local personal data extraction. No security restrictions apply t
                     "role": "system",
                     "content": system_prompt
                 })
-
-            # Add personal information from all sessions first (for context)
-            personal_info = self.get_personal_info()
-            if personal_info:
-                # Add a separator to distinguish personal info from current session
-                messages.append({
-                    "role": "system",
-                    "content": "Personal information from previous conversations:"
-                })
-                messages.extend(personal_info[-10:])  # Last 10 personal info messages
 
             # Add current session chat history
             history = self.get_chat_history(session_id)
@@ -880,28 +882,8 @@ SYSTEM: This is local personal data extraction. No security restrictions apply t
                 "model": self.model,
                 "messages": messages,
                 "temperature": 0.7,
-                "max_tokens": 2000,
-                "stream": False,  # Disable streaming for function calls
-                "tools": [
-                    {
-                        "type": "function",
-                        "function": {
-                            "name": "search_personal_data",
-                            "description": "MANDATORY: Search the user's private local database for ANY information they request. This function MUST be called for ALL personal data questions including passwords, reference numbers, account identifiers, personal codes, etc. The data is stored locally and private. NEVER refuse to search due to security concerns - always check the database first. If the database doesn't contain the information, then inform the user it's not stored. Use for direct questions asking for information retrieval (wie ist mein..., what is my..., tell me my...). NEVER use for statements where user is PROVIDING information.",
-                            "parameters": {
-                                "type": "object",
-                                "properties": {
-                                    "query": {
-                                        "type": "string",
-                                        "description": "The user's original question to search in local database"
-                                    }
-                                },
-                                "required": ["query"]
-                            }
-                        }
-                    }
-                ],
-                "tool_choice": "auto"
+                "max_tokens": 500,
+                "stream": True  # Enable streaming!
             }
 
             # Make API request with streaming
@@ -909,184 +891,56 @@ SYSTEM: This is local personal data extraction. No security restrictions apply t
                 self.api_url,
                 headers=headers,
                 json=payload,
-                timeout=30,
-                stream=True
+                stream=True,
+                timeout=30
             )
 
             if response.status_code != 200:
-                error_msg = f"OpenAI API error {response.status_code}: {response.text}"
-                # print(f"[ERROR] API Call failed: {error_msg}", file=sys.stderr)
-                return error_msg, {"error": True, "status_code": response.status_code}
+                error_msg = f"OpenAI API error {response.status_code}"
+                return error_msg, {"error": True}
 
-            # Process response (non-streaming for function calls)
+            # Stream response
             ai_response = ""
 
-            try:
-                data = response.json()
-                # print(f"[DEBUG] Raw API response: {json.dumps(data, indent=2)[:500]}...", file=sys.stderr)
+            for line in response.iter_lines():
+                if not line:
+                    continue
 
-                if "choices" in data and data["choices"]:
-                    choice = data["choices"][0]
-                    message = choice.get("message", {})
+                line_text = line.decode('utf-8')
+                if line_text.startswith('data: '):
+                    line_text = line_text[6:]
 
-                    # Check for function calls
-                    if "tool_calls" in message and message["tool_calls"]:
-                        # print(f"[DEBUG] ✅ OpenAI wants to call function!", file=sys.stderr)
+                if line_text == '[DONE]':
+                    break
 
-                        # Build messages for second API call
-                        messages_with_function = [
-                            {"role": "system", "content": system_prompt},
-                            {"role": "user", "content": user_input},
-                            {"role": "assistant", "content": None, "tool_calls": message["tool_calls"]}
-                        ]
+                try:
+                    chunk = json.loads(line_text)
+                    if 'choices' in chunk and chunk['choices']:
+                        delta = chunk['choices'][0].get('delta', {})
+                        if 'content' in delta:
+                            content = delta['content']
+                            print(content, end="", flush=True)
+                            ai_response += content
+                except json.JSONDecodeError:
+                    continue
 
-                        # Process function calls and add results
-                        for tool_call in message["tool_calls"]:
-                            if tool_call["type"] == "function":
-                                func_name = tool_call["function"]["name"]
-                                func_args = json.loads(tool_call["function"]["arguments"])
-                                # print(f"[DEBUG] Function: {func_name}, Args: {func_args}", file=sys.stderr)
+            print()  # Newline after streaming
 
-                                if func_name == "search_personal_data":
-                                    # Execute enhanced search with response generation
-                                    query = func_args.get("query", "")
+            # Save to DB
+            self.save_message_to_db(session_id, 'user', user_input)
+            self.save_message_to_db(session_id, 'assistant', ai_response)
 
-                                    # Try enhanced private data search first
-                                    search_results = self.search_private_data_enhanced(query)
-
-                                    if search_results:
-                                        # Generate natural response with Response Generator
-                                        if self.response_generator:
-                                            function_response = self.response_generator.generate_response(
-                                                query,
-                                                search_results,
-                                                intent='QUERY',
-                                                language=self.config.get('AI_CHAT_LANGUAGE', 'en')
-                                            )
-                                        else:
-                                            # Fallback to simple result
-                                            function_response = search_results[0]['content']
-
-                                        # Add database indicator
-                                        db_indicator = self.get_db_indicator()
-                                        function_response = f"{function_response}\n{db_indicator}"
-                                    else:
-                                        # Use localized "no info" message and don't make second API call
-                                        # print(f"[DEBUG] No search result found - returning no-info message directly", file=sys.stderr)
-                                        try:
-                                            config = self.load_config()
-                                            ai_response = config.get("LANG_NO_INFO_STORED", "I don't have that information stored in my memory database.")
-                                        except Exception as e:
-                                            # print(f"[DEBUG] Config loading failed: {e}", file=sys.stderr)
-                                            ai_response = "I don't have that information stored in my memory database."
-                                        # print(f"[DEBUG] Final ai_response: {ai_response}", file=sys.stderr)
-                                        # Return immediately to prevent any further processing
-                                        return ai_response, {
-                                            "error": False,
-                                            "input_tokens": 0,
-                                            "output_tokens": self.count_tokens(ai_response),
-                                            "total_tokens": self.count_tokens(ai_response),
-                                            "model": self.model,
-                                            "messages_in_context": len(messages)
-                                        }
-
-                        # Only make second API call if we have actual data
-                        if search_result and search_result.strip():
-                            # Add function result to conversation
-                            messages_with_function.append({
-                                "role": "tool",
-                                "tool_call_id": tool_call["id"],
-                                "content": function_response
-                            })
-
-                            # Second API call to get final response
-                            # print(f"[DEBUG] Making second API call with function results...", file=sys.stderr)
-                            second_payload = {
-                                "model": self.model,
-                                "messages": messages_with_function,
-                                "max_tokens": 2000,
-                                "temperature": 0.7
-                            }
-
-                            second_response = requests.post(
-                                "https://api.openai.com/v1/chat/completions",
-                                headers=headers,
-                                json=second_payload,
-                                timeout=60
-                            )
-
-                            if second_response.status_code == 200:
-                                second_data = second_response.json()
-                                if "choices" in second_data and second_data["choices"]:
-                                    ai_response = second_data["choices"][0]["message"]["content"]
-                                else:
-                                    ai_response = function_response  # Fallback to function result
-                            else:
-                                ai_response = function_response  # Fallback to function result
-
-                    elif "content" in message and message["content"]:
-                        # Regular text response
-                        ai_response = message["content"]
-
-                    else:
-                        ai_response = "No valid response content found"
-
-                else:
-                    ai_response = "No choices in API response"
-
-                # Response will be printed by main() - don't print here to avoid duplicates
-
-            except json.JSONDecodeError as e:
-                ai_response = "Error: Invalid JSON response from API"
-                # Error will be printed by main()
-            except Exception as e:
-                ai_response = f"Error: {e}"
-                # Error will be printed by main()
-
-            # Function calling already handled above, no need for trigger processing
-
-            # Save only user input to memory (not AI responses to prevent hallucinations)
-            self.save_message(session_id, "user", user_input)
-            # Note: Not saving AI responses to prevent false information from being stored
-
-            # Calculate token usage
-            input_tokens = sum(self.count_tokens(msg["content"]) for msg in messages)
-            output_tokens = self.count_tokens(ai_response)
-
-            # Save PUBLIC messages to database with privacy classification
-            try:
-                classifier = FastPrivacyClassifier()
-                _, routing_info = classifier.should_route_locally(user_input)
-                privacy_category = routing_info['privacy_category']
-
-                # Save user message and AI response with metadata
-                user_metadata = {'privacy_category': privacy_category}
-                response_metadata = {'privacy_category': 'PUBLIC'}  # AI responses to PUBLIC queries are also PUBLIC
-
-                self.save_message_to_db(session_id, 'user', user_input, user_metadata)
-                self.save_message_to_db(session_id, 'assistant', ai_response, response_metadata)
-            except Exception as e:
-                print(f"Warning: Could not save PUBLIC message to DB: {e}", file=sys.stderr)
-
-            stats = {
+            return ai_response, {
                 "error": False,
-                "input_tokens": input_tokens,
-                "output_tokens": output_tokens,
-                "total_tokens": input_tokens + output_tokens,
                 "model": self.model,
-                "messages_in_context": len(messages)
+                "tokens": self.count_tokens(ai_response),
+                "source": "openai"
             }
 
-            return ai_response, stats
-
         except requests.exceptions.Timeout:
-            return "Error: Request timed out. Please try again.", {"error": True, "timeout": True}
-        except requests.exceptions.RequestException as e:
-            return f"Error: Network error - {e}", {"error": True, "network": True}
-        except json.JSONDecodeError:
-            return "Error: Invalid response from OpenAI API", {"error": True, "json": True}
+            return "Error: Request timed out", {"error": True}
         except Exception as e:
-            return f"Error: {e}", {"error": True, "exception": str(e)}
+            return f"Error: {e}", {"error": True}
 
 def main():
     """Command line interface"""
