@@ -310,7 +310,7 @@ echo "  [2] Deutsch"
 echo "  [3] Español"
 echo ""
 echo -n "Select language [1-3, default=1]: "
-read -r lang_choice
+read -r lang_choice < /dev/tty
 
 case "$lang_choice" in
     2) SELECTED_LANG="de" ;;
@@ -366,7 +366,7 @@ if [[ -d "$INSTALL_DIR" ]] && [[ -f "$CONFIG_DIR/config" ]]; then
     echo "  [3] ${LANG_STRINGS[CANCEL]}"
     echo ""
     echo -n "Select [1-3, default=2]: "
-    read -r install_choice
+    read -r install_choice < /dev/tty
 
     case "$install_choice" in
         1)
@@ -492,7 +492,7 @@ else
 fi
 if [[ "$default_presidio" != "skip" ]]; then
     echo -n "Installieren? [Y/n, default=$default_presidio]: "
-    read -r install_presidio
+    read -r install_presidio < /dev/tty
     install_presidio=${install_presidio:-$default_presidio}
 else
     install_presidio="N"
@@ -548,7 +548,7 @@ fi
 
 if [[ "$default_phi3" != "skip" ]]; then
     echo -n "Installieren? [Y/n, default=$default_phi3]: "
-    read -r install_phi3
+    read -r install_phi3 < /dev/tty
     install_phi3=${install_phi3:-$default_phi3}
 else
     install_phi3="N"
@@ -558,7 +558,14 @@ if [[ "$install_phi3" =~ ^[Yy]$ ]]; then
     # Check/Install Ollama
     if ! command -v ollama &> /dev/null; then
         echo "  • Installing Ollama..."
-        curl -fsSL https://ollama.ai/install.sh | sh
+        # macOS: Use Homebrew or direct download
+        if command -v brew &> /dev/null; then
+            brew install ollama 2>&1 | grep -v "^=" || true
+        else
+            echo "    Homebrew not found. Download Ollama from: https://ollama.ai/download"
+            echo "    Press Enter after installing Ollama..."
+            read -r < /dev/tty
+        fi
     fi
 
     echo "  • Downloading Phi-3 (2.3GB)..."
@@ -594,7 +601,7 @@ echo ""
 echo -e "${DIM}${LANG_STRINGS[PRIVACY_WHY]}${RESET}"
 echo ""
 echo -n "Select [1-3, default=1]: "
-read -r privacy_level
+read -r privacy_level < /dev/tty
 
 case "$privacy_level" in
     2)
