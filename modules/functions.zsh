@@ -114,7 +114,7 @@ chat_loop() {
         echo -n -e "${AI_COLOR}🤖 ${LANG_LABEL_AI} ▶ ${RESET}"
 
         # Show thinking indicator
-        echo -n "Thinking..."
+        echo -n "${LANG_THINKING}"
 
         # Get dialect prompt
         local DIALECT_PROMPT=""
