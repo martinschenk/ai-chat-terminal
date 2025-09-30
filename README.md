@@ -220,7 +220,10 @@ rm -rf ~/.aichat
 ## FAQ
 
 **Q: Is my data really private?**
-A: Yes. Sensitive data never goes to OpenAI. Check the indicator: 🔒 = local, 🌐 = OpenAI
+A: The system uses three layers (PII Detector + Semantic Classifier + Vector DB) to identify and route sensitive data locally. This significantly reduces the risk of exposing private information. However, no automated detection is 100% accurate - some sensitive data might not be detected and could reach OpenAI. Always check the indicator: 🔒 = local, 🌐 = OpenAI.
+
+**Q: What's the accuracy of the privacy detection?**
+A: Microsoft Presidio's documentation states there is "no guarantee that it will find all sensitive information." The triple-layer system improves detection, but false negatives (missed sensitive data) are inherent to any ML-based detection. For maximum privacy, avoid sharing highly sensitive data like passwords or API keys.
 
 **Q: Does it work offline?**
 A: Local features yes. OpenAI queries need internet.
