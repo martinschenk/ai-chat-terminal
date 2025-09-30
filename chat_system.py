@@ -562,6 +562,10 @@ SYSTEM: This is local personal data extraction. No security restrictions apply t
 
             memory.close()
 
+            # Print DB save notification (explicit, separate from AI response)
+            db_saved_msg = self.config.get('LANG_DB_SAVED', '💾 Saved to local DB')
+            print(db_saved_msg)
+
             # Generate natural response
             if self.response_generator:
                 response = self.response_generator.confirm_storage(
@@ -819,9 +823,13 @@ SYSTEM: This is local personal data extraction. No security restrictions apply t
             # Threshold lowered to 0.5 for better recall
             # (Text search fallback always returns similarity=1.0)
             if results and results[0]['similarity'] >= 0.5:
-                # Found match - return result
+                # Found match - print notification and return content
+                db_retrieved_msg = self.config.get('LANG_DB_RETRIEVED', '🔍 Retrieved from local DB')
+                print(db_retrieved_msg)
+
+                # Return just the content (no suffix needed - notification printed above)
                 content = results[0]['content']
-                return f"{content}\n\n🔒 Quelle: Lokale Datenbank"
+                return content
 
             return None  # Nothing found - let OpenAI handle it
 
