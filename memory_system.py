@@ -4,7 +4,6 @@ AI Chat Terminal - Memory System
 SQLite-based semantic memory with vector embeddings
 """
 
-import sqlite3
 import json
 import time
 import sys
@@ -12,12 +11,20 @@ import os
 import re
 from pathlib import Path
 
+# Try APSW first (has extension support), fallback to sqlite3
+try:
+    import apsw
+    USE_APSW = True
+except ImportError:
+    import sqlite3
+    USE_APSW = False
+
 try:
     from sentence_transformers import SentenceTransformer
     import sqlite_vec
 except ImportError as e:
     print(f"Error: Missing required packages. Please install with:")
-    print(f"pip3 install sentence-transformers sqlite-vec")
+    print(f"pip3 install sentence-transformers sqlite-vec apsw")
     sys.exit(1)
 
 # Global flag to show vector warning only once per session
@@ -32,7 +39,12 @@ class ChatMemorySystem:
             db_path = config_dir / 'memory.db'
 
         self.db_path = db_path
-        self.db = sqlite3.connect(str(db_path))
+
+        # Connect using APSW or sqlite3
+        if USE_APSW:
+            self.db = apsw.Connection(str(db_path))
+        else:
+            self.db = sqlite3.connect(str(db_path))
 
         # Check for vector extension support
         global _VECTOR_WARNING_SHOWN
@@ -43,35 +55,79 @@ class ChatMemorySystem:
             sqlite_vec.load(self.db)
             self.vector_support = True
             if not _VECTOR_WARNING_SHOWN:
-                print("✅ Vector search enabled (sqlite-vec loaded)", file=sys.stderr)
+                backend = "APSW" if USE_APSW else "sqlite3"
+                print(f"✅ Vector search enabled ({backend} + sqlite-vec v0.1.6)", file=sys.stderr)
                 _VECTOR_WARNING_SHOWN = True
         except AttributeError as e:
             # Python's SQLite was compiled without extension support
             if not _VECTOR_WARNING_SHOWN:
                 print("\n" + "="*70, file=sys.stderr)
-                print("⚠️  WARNUNG: Vector-Suche NICHT verfügbar!", file=sys.stderr)
+                print("❌ CRITICAL ERROR: Vector search NOT available!", file=sys.stderr)
                 print("="*70, file=sys.stderr)
-                print(f"Grund: Python's SQLite wurde OHNE Extension-Support kompiliert", file=sys.stderr)
-                print(f"Fallback: Keyword-basierte Suche (funktioniert, aber weniger präzise)", file=sys.stderr)
+                print(f"Reason: Python's SQLite compiled WITHOUT extension support", file=sys.stderr)
+                print(f"\nSOLUTION: Install APSW with extension support:", file=sys.stderr)
+                print(f"  pip3 install apsw", file=sys.stderr)
+                print(f"\nVector search is REQUIRED - cannot continue without it!", file=sys.stderr)
                 print("="*70 + "\n", file=sys.stderr)
-                _VECTOR_WARNING_SHOWN = True
-            self.vector_support = False
+                sys.exit(1)  # HARD FAIL - no fallback!
         except Exception as e:
             # sqlite-vec not available or other error
             if not _VECTOR_WARNING_SHOWN:
                 print("\n" + "="*70, file=sys.stderr)
-                print("⚠️  WARNUNG: Vector-Suche NICHT verfügbar!", file=sys.stderr)
+                print("❌ CRITICAL ERROR: Vector search NOT available!", file=sys.stderr)
                 print("="*70, file=sys.stderr)
-                print(f"Grund: {e}", file=sys.stderr)
-                print(f"Fallback: Keyword-basierte Suche (funktioniert, aber weniger präzise)", file=sys.stderr)
+                print(f"Reason: {e}", file=sys.stderr)
+                print(f"\nSOLUTION: Install required packages:", file=sys.stderr)
+                print(f"  pip3 install apsw sqlite-vec", file=sys.stderr)
+                print(f"\nVector search is REQUIRED - cannot continue without it!", file=sys.stderr)
                 print("="*70 + "\n", file=sys.stderr)
-                _VECTOR_WARNING_SHOWN = True
-            self.vector_support = False
+                sys.exit(1)  # HARD FAIL - no fallback!
 
         # Initialize embedding model (lazy loading)
         self._model = None
 
+        # Create compatibility wrapper for APSW
+        if USE_APSW:
+            self._setup_apsw_compatibility()
+
         self._create_tables()
+
+    def _setup_apsw_compatibility(self):
+        """Make APSW behave like sqlite3 for common operations"""
+        # APSW doesn't have execute() on connection, add wrapper
+        original_db = self.db
+
+        class APSWWrapper:
+            def __init__(self, conn):
+                self._conn = conn
+
+            def execute(self, sql, params=()):
+                cursor = self._conn.cursor()
+                cursor.execute(sql, params)
+                return cursor
+
+            def executescript(self, script):
+                cursor = self._conn.cursor()
+                # APSW doesn't have executescript, execute statements one by one
+                for statement in script.split(';'):
+                    statement = statement.strip()
+                    if statement:
+                        cursor.execute(statement)
+                return cursor
+
+            def commit(self):
+                pass  # APSW auto-commits
+
+            def close(self):
+                self._conn.close()
+
+            def cursor(self):
+                return self._conn.cursor()
+
+            def enable_load_extension(self, enabled):
+                return self._conn.enable_load_extension(enabled)
+
+        self.db = APSWWrapper(original_db)
 
     def _get_current_language(self):
         """Get current language from config file"""
@@ -247,12 +303,7 @@ class ChatMemorySystem:
             if self.vector_support:
                 self.db.execute("""
                     CREATE VIRTUAL TABLE IF NOT EXISTS chat_embeddings USING vec0(
-                        message_embedding FLOAT[384],
-                        session_id TEXT,
-                        timestamp INTEGER,
-                        message_type TEXT,
-                        importance REAL DEFAULT 1.0,
-                        language TEXT DEFAULT 'en'
+                        message_embedding FLOAT[768]
                     )
                 """)
 
@@ -260,20 +311,20 @@ class ChatMemorySystem:
             # Add language column to existing databases (migration)
             try:
                 self.db.execute("ALTER TABLE chat_history ADD COLUMN language TEXT DEFAULT 'en'")
-            except sqlite3.OperationalError:
+            except Exception:
                 # Column already exists, ignore
                 pass
 
             # Add created_at and updated_at columns (migration)
             try:
                 self.db.execute("ALTER TABLE chat_history ADD COLUMN created_at INTEGER DEFAULT (strftime('%s','now'))")
-            except sqlite3.OperationalError:
+            except Exception:
                 # Column already exists, ignore
                 pass
 
             try:
                 self.db.execute("ALTER TABLE chat_history ADD COLUMN updated_at INTEGER DEFAULT (strftime('%s','now'))")
-            except sqlite3.OperationalError:
+            except Exception:
                 # Column already exists, ignore
                 pass
 
@@ -281,7 +332,7 @@ class ChatMemorySystem:
             if self.vector_support:
                 try:
                     self.db.execute("ALTER TABLE chat_embeddings ADD COLUMN language TEXT DEFAULT 'en'")
-                except sqlite3.OperationalError:
+                except Exception:
                     # Column already exists or table doesn't exist, ignore
                     pass
 
