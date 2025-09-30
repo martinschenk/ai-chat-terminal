@@ -1,7 +1,6 @@
 #!/bin/bash
-# AI Chat Terminal - Smart Installer v5.4.0
+# AI Chat Terminal - Smart Interactive Installer v6.2.0
 # Licensed under MIT License - https://opensource.org/licenses/MIT
-# Native OpenAI API integration without shell-gpt dependency
 
 set -e
 
@@ -13,100 +12,324 @@ BLUE='\033[0;34m'
 CYAN='\033[0;36m'
 RESET='\033[0m'
 BOLD='\033[1m'
+DIM='\033[2m'
 
-# Installation directory (following Unix standards like .vim, .zsh)
+# Installation directory
 INSTALL_DIR="$HOME/.aichat"
 CONFIG_DIR="$HOME/.aichat"
 
-# Clear screen for clean start
+# ═══════════════════════════════════════════════════════════════════
+# System Analysis Functions
+# ═══════════════════════════════════════════════════════════════════
+
+get_system_ram() {
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        # macOS
+        echo $(($(sysctl -n hw.memsize) / 1024 / 1024 / 1024))
+    elif [[ -f /proc/meminfo ]]; then
+        # Linux
+        echo $(($(grep MemTotal /proc/meminfo | awk '{print $2}') / 1024 / 1024))
+    else
+        echo "8"  # Default fallback
+    fi
+}
+
+get_cpu_cores() {
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        sysctl -n hw.ncpu
+    else
+        nproc 2>/dev/null || echo "4"
+    fi
+}
+
+check_installed_models() {
+    local models_found=()
+
+    # Check Ollama models
+    if command -v ollama &> /dev/null; then
+        local ollama_models=$(ollama list 2>/dev/null | tail -n +2 | awk '{print $1}' || true)
+        if [[ -n "$ollama_models" ]]; then
+            while IFS= read -r model; do
+                models_found+=("ollama:$model")
+            done <<< "$ollama_models"
+        fi
+    fi
+
+    # Check Python packages
+    local python_packages=(
+        "sentence-transformers:multilingual-e5-base"
+        "presidio-analyzer:Microsoft Presidio"
+        "spacy:spaCy NLP"
+    )
+
+    for pkg_check in "${python_packages[@]}"; do
+        IFS=':' read -r pkg_name pkg_desc <<< "$pkg_check"
+        if python3 -c "import ${pkg_name//-/_}" 2>/dev/null; then
+            models_found+=("python:$pkg_desc")
+        fi
+    done
+
+    # Check spaCy models
+    if python3 -c "import spacy" 2>/dev/null; then
+        local spacy_models=$(python3 -c "import spacy; print(' '.join(spacy.util.get_installed_models()))" 2>/dev/null || true)
+        if [[ -n "$spacy_models" ]]; then
+            for model in $spacy_models; do
+                models_found+=("spacy:$model")
+            done
+        fi
+    fi
+
+    printf '%s\n' "${models_found[@]}"
+}
+
+# ═══════════════════════════════════════════════════════════════════
+# Progress Bar Function
+# ═══════════════════════════════════════════════════════════════════
+
+show_progress() {
+    local current=$1
+    local total=$2
+    local width=50
+    local percentage=$((current * 100 / total))
+    local completed=$((width * current / total))
+    local remaining=$((width - completed))
+
+    printf "\r  ["
+    printf "%${completed}s" | tr ' ' '█'
+    printf "%${remaining}s" | tr ' ' '░'
+    printf "] %3d%%" "$percentage"
+}
+
+download_with_progress() {
+    local url=$1
+    local output=$2
+    local desc=$3
+
+    echo -n "  • $desc... "
+
+    if command -v curl &> /dev/null; then
+        curl -# -L "$url" -o "$output" 2>&1 | while IFS= read -r line; do
+            if [[ $line =~ ([0-9]+\.[0-9]+)% ]]; then
+                local pct=${BASH_REMATCH[1]%.*}
+                show_progress "$pct" 100
+            fi
+        done
+        echo -e " ${GREEN}✓${RESET}"
+    else
+        curl -sL "$url" -o "$output"
+        echo -e "${GREEN}✓${RESET}"
+    fi
+}
+
+# ═══════════════════════════════════════════════════════════════════
+# Multilingual Support
+# ═══════════════════════════════════════════════════════════════════
+
+declare -A LANG_STRINGS
+
+load_language() {
+    local lang=$1
+
+    case $lang in
+        de)
+            LANG_STRINGS[TITLE]="🤖 AI Chat Terminal Installation"
+            LANG_STRINGS[SYSTEM_ANALYSIS]="Systemanalyse..."
+            LANG_STRINGS[RAM_DETECTED]="Arbeitsspeicher erkannt"
+            LANG_STRINGS[CPU_DETECTED]="CPU-Kerne erkannt"
+            LANG_STRINGS[MODELS_FOUND]="Bereits installierte Modelle gefunden"
+            LANG_STRINGS[NO_MODELS]="Keine Modelle gefunden - Neuinstallation"
+            LANG_STRINGS[CHOOSE_INSTALL]="Wähle Installationsart"
+            LANG_STRINGS[FRESH_INSTALL]="Neuinstallation (empfohlen für ersten Start)"
+            LANG_STRINGS[UPDATE]="Update (behält Einstellungen)"
+            LANG_STRINGS[CANCEL]="Abbrechen"
+            LANG_STRINGS[DOWNLOADING]="Lade Dateien herunter..."
+            LANG_STRINGS[MODEL_RECOMMENDATION]="Modell-Empfehlungen basierend auf deinem System"
+            LANG_STRINGS[SMALL_MODELS]="Kleine Modelle (<100MB) werden automatisch installiert"
+            LANG_STRINGS[LARGE_MODELS]="Große Modelle - Installation optional"
+            LANG_STRINGS[RECOMMENDED]="Empfohlen"
+            LANG_STRINGS[OPTIONAL]="Optional"
+            LANG_STRINGS[SIZE]="Größe"
+            LANG_STRINGS[INSTALL_QUESTION]="Installieren?"
+            LANG_STRINGS[PRIVACY_TITLE]="Datenschutz-Konfiguration"
+            LANG_STRINGS[PRIVACY_DESC]="Wie sollen sensible Daten behandelt werden?"
+            LANG_STRINGS[PRIVACY_ENHANCED]="Erweitert - KI-basiert + Microsoft Presidio (empfohlen)"
+            LANG_STRINGS[PRIVACY_BASIC]="Basis - Nur KI-basierte Erkennung"
+            LANG_STRINGS[PRIVACY_OFF]="Aus - Kein Datenschutz (nicht empfohlen)"
+            LANG_STRINGS[PRIVACY_WHY]="Warum erweitert? Presidio erkennt über 50 PII-Typen (Namen, E-Mails, Kreditkarten, etc.)"
+            LANG_STRINGS[COMPLETE]="Installation abgeschlossen!"
+            LANG_STRINGS[CONFIG_LATER]="Du kannst alle Einstellungen später mit '/config' ändern"
+            ;;
+        en)
+            LANG_STRINGS[TITLE]="🤖 AI Chat Terminal Installation"
+            LANG_STRINGS[SYSTEM_ANALYSIS]="System Analysis..."
+            LANG_STRINGS[RAM_DETECTED]="RAM detected"
+            LANG_STRINGS[CPU_DETECTED]="CPU cores detected"
+            LANG_STRINGS[MODELS_FOUND]="Already installed models found"
+            LANG_STRINGS[NO_MODELS]="No models found - fresh installation"
+            LANG_STRINGS[CHOOSE_INSTALL]="Choose installation type"
+            LANG_STRINGS[FRESH_INSTALL]="Fresh install (recommended for first use)"
+            LANG_STRINGS[UPDATE]="Update (keeps settings)"
+            LANG_STRINGS[CANCEL]="Cancel"
+            LANG_STRINGS[DOWNLOADING]="Downloading files..."
+            LANG_STRINGS[MODEL_RECOMMENDATION]="Model recommendations based on your system"
+            LANG_STRINGS[SMALL_MODELS]="Small models (<100MB) will be installed automatically"
+            LANG_STRINGS[LARGE_MODELS]="Large models - installation optional"
+            LANG_STRINGS[RECOMMENDED]="Recommended"
+            LANG_STRINGS[OPTIONAL]="Optional"
+            LANG_STRINGS[SIZE]="Size"
+            LANG_STRINGS[INSTALL_QUESTION]="Install?"
+            LANG_STRINGS[PRIVACY_TITLE]="Privacy Configuration"
+            LANG_STRINGS[PRIVACY_DESC]="How should sensitive data be handled?"
+            LANG_STRINGS[PRIVACY_ENHANCED]="Enhanced - AI + Microsoft Presidio (recommended)"
+            LANG_STRINGS[PRIVACY_BASIC]="Basic - AI-based detection only"
+            LANG_STRINGS[PRIVACY_OFF]="Off - No privacy protection (not recommended)"
+            LANG_STRINGS[PRIVACY_WHY]="Why enhanced? Presidio detects 50+ PII types (names, emails, credit cards, etc.)"
+            LANG_STRINGS[COMPLETE]="Installation complete!"
+            LANG_STRINGS[CONFIG_LATER]="You can change all settings later with '/config'"
+            ;;
+        es)
+            LANG_STRINGS[TITLE]="🤖 Instalación AI Chat Terminal"
+            LANG_STRINGS[SYSTEM_ANALYSIS]="Análisis del sistema..."
+            LANG_STRINGS[RAM_DETECTED]="RAM detectada"
+            LANG_STRINGS[CPU_DETECTED]="Núcleos CPU detectados"
+            LANG_STRINGS[MODELS_FOUND]="Modelos ya instalados encontrados"
+            LANG_STRINGS[NO_MODELS]="No se encontraron modelos - instalación nueva"
+            LANG_STRINGS[CHOOSE_INSTALL]="Elige tipo de instalación"
+            LANG_STRINGS[FRESH_INSTALL]="Instalación nueva (recomendado para primer uso)"
+            LANG_STRINGS[UPDATE]="Actualizar (mantiene configuración)"
+            LANG_STRINGS[CANCEL]="Cancelar"
+            LANG_STRINGS[DOWNLOADING]="Descargando archivos..."
+            LANG_STRINGS[MODEL_RECOMMENDATION]="Recomendaciones de modelos según tu sistema"
+            LANG_STRINGS[SMALL_MODELS]="Modelos pequeños (<100MB) se instalarán automáticamente"
+            LANG_STRINGS[LARGE_MODELS]="Modelos grandes - instalación opcional"
+            LANG_STRINGS[RECOMMENDED]="Recomendado"
+            LANG_STRINGS[OPTIONAL]="Opcional"
+            LANG_STRINGS[SIZE]="Tamaño"
+            LANG_STRINGS[INSTALL_QUESTION]="¿Instalar?"
+            LANG_STRINGS[PRIVACY_TITLE]="Configuración de Privacidad"
+            LANG_STRINGS[PRIVACY_DESC]="¿Cómo manejar datos sensibles?"
+            LANG_STRINGS[PRIVACY_ENHANCED]="Mejorado - IA + Microsoft Presidio (recomendado)"
+            LANG_STRINGS[PRIVACY_BASIC]="Básico - Solo detección con IA"
+            LANG_STRINGS[PRIVACY_OFF]="Desactivado - Sin protección (no recomendado)"
+            LANG_STRINGS[PRIVACY_WHY]="¿Por qué mejorado? Presidio detecta +50 tipos PII (nombres, emails, tarjetas, etc.)"
+            LANG_STRINGS[COMPLETE]="¡Instalación completa!"
+            LANG_STRINGS[CONFIG_LATER]="Puedes cambiar todo con '/config' más tarde"
+            ;;
+    esac
+}
+
+# ═══════════════════════════════════════════════════════════════════
+# Main Installation Flow
+# ═══════════════════════════════════════════════════════════════════
+
 clear
 
+# Step 1: Language Selection
 echo -e "${CYAN}${BOLD}"
 echo "╔═══════════════════════════════════════╗"
-echo "║                                       ║"
-echo "║    🤖 AI Chat Terminal Installer     ║"
-echo "║          Version 5.4.0                ║"
-echo "║                                       ║"
+echo "║   🌍 Language / Sprache / Idioma     ║"
+echo "╚═══════════════════════════════════════╝"
+echo -e "${RESET}\n"
+echo "  [1] English"
+echo "  [2] Deutsch"
+echo "  [3] Español"
+echo ""
+echo -n "Select language [1-3, default=1]: "
+read -r lang_choice
+
+case "$lang_choice" in
+    2) SELECTED_LANG="de" ;;
+    3) SELECTED_LANG="es" ;;
+    *) SELECTED_LANG="en" ;;
+esac
+
+load_language "$SELECTED_LANG"
+
+clear
+
+# Step 2: System Analysis
+echo -e "${CYAN}${BOLD}"
+echo "╔═══════════════════════════════════════╗"
+echo "║   ${LANG_STRINGS[TITLE]}"
 echo "╚═══════════════════════════════════════╝"
 echo -e "${RESET}\n"
 
-# Check if already installed
+echo -e "${BLUE}${LANG_STRINGS[SYSTEM_ANALYSIS]}${RESET}"
+
+SYSTEM_RAM=$(get_system_ram)
+SYSTEM_CORES=$(get_cpu_cores)
+
+echo -e "  ${GREEN}✓${RESET} ${LANG_STRINGS[RAM_DETECTED]}: ${BOLD}${SYSTEM_RAM} GB${RESET}"
+echo -e "  ${GREEN}✓${RESET} ${LANG_STRINGS[CPU_DETECTED]}: ${BOLD}${SYSTEM_CORES}${RESET}"
+
+# Check for existing models
+mapfile -t EXISTING_MODELS < <(check_installed_models)
+
+if [ ${#EXISTING_MODELS[@]} -gt 0 ]; then
+    echo -e "\n${GREEN}${LANG_STRINGS[MODELS_FOUND]}:${RESET}"
+    for model in "${EXISTING_MODELS[@]}"; do
+        IFS=':' read -r type name <<< "$model"
+        echo -e "  ${DIM}•${RESET} ${name}"
+    done
+else
+    echo -e "\n${YELLOW}${LANG_STRINGS[NO_MODELS]}${RESET}"
+fi
+
+# Step 3: Installation Type
 if [[ -d "$INSTALL_DIR" ]] && [[ -f "$CONFIG_DIR/config" ]]; then
-    echo -e "${YELLOW}AI Chat Terminal is already installed.${RESET}"
+    echo -e "\n${YELLOW}${LANG_STRINGS[CHOOSE_INSTALL]}:${RESET}"
+    echo "  [1] ${LANG_STRINGS[FRESH_INSTALL]}"
+    echo "  [2] ${LANG_STRINGS[UPDATE]}"
+    echo "  [3] ${LANG_STRINGS[CANCEL]}"
     echo ""
-    echo "Options:"
-    echo "  [1] Reinstall (keeps your settings)"
-    echo "  [2] Fresh install (removes everything)"
-    echo "  [3] Cancel"
-    echo ""
-    echo -n "Select [1-3]: "
+    echo -n "Select [1-3, default=2]: "
     read -r install_choice
 
     case "$install_choice" in
-        2)
-            echo "Removing old installation..."
+        1)
             rm -rf "$INSTALL_DIR"
             rm -rf "$CONFIG_DIR"
             ;;
         3)
-            echo "Installation cancelled."
             exit 0
             ;;
     esac
 fi
 
-# Create directories with proper structure
-echo -e "${BLUE}Setting up directories...${RESET}"
+# Create directories
 mkdir -p "$INSTALL_DIR/modules"
 mkdir -p "$INSTALL_DIR/lang"
 mkdir -p "$CONFIG_DIR"
 
-# Download files from GitHub
-echo -e "${BLUE}Downloading files...${RESET}"
+# Step 4: Download Core Files
+echo -e "\n${BLUE}${LANG_STRINGS[DOWNLOADING]}${RESET}"
 
-# Base URL
 BASE_URL="https://raw.githubusercontent.com/martinschenk/ai-chat-terminal/main"
 
-# Download main files
-echo -n "  • Main script... "
-curl -sL "$BASE_URL/aichat.zsh" -o "$INSTALL_DIR/aichat.zsh"
-echo -e "${GREEN}✓${RESET}"
-
-echo -n "  • Functions module... "
-curl -sL "$BASE_URL/modules/functions.zsh" -o "$INSTALL_DIR/modules/functions.zsh"
-echo -e "${GREEN}✓${RESET}"
-
-echo -n "  • Config menu module... "
-curl -sL "$BASE_URL/modules/config-menu.zsh" -o "$INSTALL_DIR/modules/config-menu.zsh"
-echo -e "${GREEN}✓${RESET}"
-
-echo -n "  • Chat & Memory system... "
-curl -sL "$BASE_URL/memory_system.py" -o "$INSTALL_DIR/memory_system.py"
-chmod +x "$INSTALL_DIR/memory_system.py"
-curl -sL "$BASE_URL/chat_system.py" -o "$INSTALL_DIR/chat_system.py"
-chmod +x "$INSTALL_DIR/chat_system.py"
-echo -e "${GREEN}✓${RESET}"
+# Download with simple progress
+echo -n "  • Core files... "
+curl -sL "$BASE_URL/aichat.zsh" -o "$INSTALL_DIR/aichat.zsh" && \
+curl -sL "$BASE_URL/modules/functions.zsh" -o "$INSTALL_DIR/modules/functions.zsh" && \
+curl -sL "$BASE_URL/modules/config-menu.zsh" -o "$INSTALL_DIR/modules/config-menu.zsh" && \
+curl -sL "$BASE_URL/memory_system.py" -o "$INSTALL_DIR/memory_system.py" && \
+curl -sL "$BASE_URL/chat_system.py" -o "$INSTALL_DIR/chat_system.py" && \
+curl -sL "$BASE_URL/privacy_classifier_fast.py" -o "$INSTALL_DIR/privacy_classifier_fast.py" && \
+curl -sL "$BASE_URL/pii_detector.py" -o "$INSTALL_DIR/pii_detector.py" && \
+curl -sL "$BASE_URL/response_generator.py" -o "$INSTALL_DIR/response_generator.py" && \
+chmod +x "$INSTALL_DIR"/*.py && \
+echo -e "${GREEN}✓${RESET}" || echo -e "${RED}✗${RESET}"
 
 # Download language files
-LANGUAGES=(
-    "en" "de" "de-schwaebisch" "de-bayerisch" "de-saechsisch"
-    "fr" "it" "es" "es-mexicano" "es-argentino" "es-colombiano"
-    "es-venezolano" "es-chileno" "es-andaluz" "ca" "eu" "gl"
-    "zh" "hi"
-)
-
+LANGUAGES=(en de de-schwaebisch de-bayerisch de-saechsisch fr it es ca zh hi)
 echo -n "  • Language packs... "
 for lang in "${LANGUAGES[@]}"; do
     curl -sL "$BASE_URL/lang/${lang}.conf" -o "$INSTALL_DIR/lang/${lang}.conf" 2>/dev/null || true
 done
 echo -e "${GREEN}✓${RESET}"
 
-# Check for dependencies
-echo -e "\n${BLUE}Checking dependencies...${RESET}"
-
-# Check Python
+# Check Python and dependencies
 if ! command -v python3 &> /dev/null; then
-    echo -e "${YELLOW}  ⚠ Python3 not found. Installing...${RESET}"
+    echo -e "\n${YELLOW}Installing Python3...${RESET}"
     if [[ "$OSTYPE" == "darwin"* ]]; then
         brew install python3
     elif command -v apt-get &> /dev/null; then
@@ -114,321 +337,192 @@ if ! command -v python3 &> /dev/null; then
     fi
 fi
 
-# Install OpenAI Python SDK and requests
-pip3 install --user openai requests &>/dev/null || {
-    echo -e "${YELLOW}  Installing OpenAI SDK...${RESET}"
-    pip3 install --user openai requests
-}
-echo -e "${GREEN}  ✓ OpenAI SDK ready${RESET}"
+# Install OpenAI SDK
+pip3 install --user --quiet openai requests 2>/dev/null || pip3 install --user openai requests
 
-# Install jq if not installed (for JSON parsing)
-if ! command -v jq &> /dev/null; then
-    echo -e "${YELLOW}  Installing jq...${RESET}"
-    if [[ "$OSTYPE" == "darwin"* ]]; then
-        brew install jq
-    elif command -v apt-get &> /dev/null; then
-        sudo apt-get install -y jq
-    fi
+# Step 5: AI Models - Small Models (Auto-Install)
+echo -e "\n${BLUE}${LANG_STRINGS[SMALL_MODELS]}${RESET}"
+
+echo -n "  • sentence-transformers (60MB)... "
+pip3 install --user --quiet sentence-transformers 2>/dev/null && echo -e "${GREEN}✓${RESET}" || echo -e "${YELLOW}⚠${RESET}"
+
+echo -n "  • sqlite-vec (5MB)... "
+pip3 install --user --quiet sqlite-vec 2>/dev/null && echo -e "${GREEN}✓${RESET}" || echo -e "${YELLOW}⚠${RESET}"
+
+# Step 6: Large Models - Interactive Choice
+echo -e "\n${CYAN}${BOLD}${LANG_STRINGS[MODEL_RECOMMENDATION]}${RESET}"
+echo -e "${DIM}${LANG_STRINGS[LARGE_MODELS]}${RESET}\n"
+
+# Model recommendations based on RAM
+declare -A MODEL_RECOMMENDATIONS
+
+if [ $SYSTEM_RAM -ge 16 ]; then
+    MODEL_RECOMMENDATIONS[presidio]="recommended"
+    MODEL_RECOMMENDATIONS[phi3]="recommended"
+    MODEL_RECOMMENDATIONS[spacy_multi]="recommended"
+elif [ $SYSTEM_RAM -ge 8 ]; then
+    MODEL_RECOMMENDATIONS[presidio]="recommended"
+    MODEL_RECOMMENDATIONS[phi3]="optional"
+    MODEL_RECOMMENDATIONS[spacy_multi]="optional"
+else
+    MODEL_RECOMMENDATIONS[presidio]="optional"
+    MODEL_RECOMMENDATIONS[phi3]="skip"
+    MODEL_RECOMMENDATIONS[spacy_multi]="skip"
 fi
 
-# Install enhanced memory system with PII protection
-echo -e "\n${BLUE}Installing Enhanced Privacy Protection...${RESET}"
-
-# Core memory system
-echo -n "  • Enhanced Memory System (e5-base)... "
-pip3 install --user sentence-transformers sqlite-vec &>/dev/null && echo -e "${GREEN}✓${RESET}" || echo -e "${YELLOW}⚠ Install manually with: pip3 install sentence-transformers sqlite-vec${RESET}"
-
-# PII Detection with Presidio
-echo -n "  • PII Detection (Presidio)... "
-pip3 install --user presidio-analyzer presidio-anonymizer &>/dev/null && echo -e "${GREEN}✓${RESET}" || {
-    echo -e "${YELLOW}⚠${RESET}"
-    echo "    Manual install required: pip3 install presidio-analyzer presidio-anonymizer"
-}
-
-# spaCy language models for PII detection
-echo -n "  • Language models (EN/DE)... "
-python3 -m spacy download en_core_web_sm &>/dev/null 2>&1 && \
-python3 -m spacy download de_core_news_sm &>/dev/null 2>&1 && \
-echo -e "${GREEN}✓${RESET}" || echo -e "${YELLOW}⚠ Run manually: python3 -m spacy download en_core_web_sm${RESET}"
-
-# Optional additional languages
-echo -e "\n${CYAN}Additional Language Support for PII Detection:${RESET}"
-echo "${BOLD}European Languages:${RESET}"
-echo "  [1] Spanish (es_core_news_sm)"
-echo "  [2] French (fr_core_news_sm)"
-echo "  [3] Italian (it_core_news_sm)"
-echo "  [4] Portuguese (pt_core_news_sm)"
-echo "  [5] Dutch (nl_core_news_sm)"
-echo "  [6] Polish (pl_core_news_sm)"
-echo "  [7] Danish (da_core_news_sm)"
-echo "  [8] Swedish (sv_core_news_sm)"
-echo "  [9] Norwegian (nb_core_news_sm)"
-echo "  [10] Finnish (fi_core_news_sm)"
-echo "  [11] Russian (ru_core_news_sm)"
-echo "  [12] Catalan (ca_core_news_sm)"
-
-echo "${BOLD}Asian Languages:${RESET}"
-echo "  [13] Chinese (zh_core_web_sm)"
-echo "  [14] Japanese (ja_core_news_sm)"
-echo "  [15] Korean (ko_core_news_sm)"
-
-echo ""
-echo "  [0] Skip additional languages"
-echo ""
-echo -n "Install languages (comma-separated, e.g., 1,3,13 or 'all' for all): "
-read -r extra_langs
-
-# Function to install a language model
-install_lang_model() {
-    local lang_name=$1
-    local model_name=$2
-    echo -n "  • Installing ${lang_name}... "
-    python3 -m spacy download ${model_name} &>/dev/null && echo -e "${GREEN}✓${RESET}" || echo -e "${YELLOW}⚠${RESET}"
-}
-
-if [[ "$extra_langs" == "all" ]]; then
-    # Install all available models
-    install_lang_model "Spanish" "es_core_news_sm"
-    install_lang_model "French" "fr_core_news_sm"
-    install_lang_model "Italian" "it_core_news_sm"
-    install_lang_model "Portuguese" "pt_core_news_sm"
-    install_lang_model "Dutch" "nl_core_news_sm"
-    install_lang_model "Polish" "pl_core_news_sm"
-    install_lang_model "Danish" "da_core_news_sm"
-    install_lang_model "Swedish" "sv_core_news_sm"
-    install_lang_model "Norwegian" "nb_core_news_sm"
-    install_lang_model "Finnish" "fi_core_news_sm"
-    install_lang_model "Russian" "ru_core_news_sm"
-    install_lang_model "Catalan" "ca_core_news_sm"
-    install_lang_model "Chinese" "zh_core_web_sm"
-    install_lang_model "Japanese" "ja_core_news_sm"
-    install_lang_model "Korean" "ko_core_news_sm"
-elif [[ -n "$extra_langs" && "$extra_langs" != "0" ]]; then
-    IFS=',' read -ra LANG_ARRAY <<< "$extra_langs"
-    for lang_num in "${LANG_ARRAY[@]}"; do
-        case ${lang_num// /} in
-            1) install_lang_model "Spanish" "es_core_news_sm" ;;
-            2) install_lang_model "French" "fr_core_news_sm" ;;
-            3) install_lang_model "Italian" "it_core_news_sm" ;;
-            4) install_lang_model "Portuguese" "pt_core_news_sm" ;;
-            5) install_lang_model "Dutch" "nl_core_news_sm" ;;
-            6) install_lang_model "Polish" "pl_core_news_sm" ;;
-            7) install_lang_model "Danish" "da_core_news_sm" ;;
-            8) install_lang_model "Swedish" "sv_core_news_sm" ;;
-            9) install_lang_model "Norwegian" "nb_core_news_sm" ;;
-            10) install_lang_model "Finnish" "fi_core_news_sm" ;;
-            11) install_lang_model "Russian" "ru_core_news_sm" ;;
-            12) install_lang_model "Catalan" "ca_core_news_sm" ;;
-            13) install_lang_model "Chinese" "zh_core_web_sm" ;;
-            14) install_lang_model "Japanese" "ja_core_news_sm" ;;
-            15) install_lang_model "Korean" "ko_core_news_sm" ;;
-        esac
-    done
+# Presidio PII Detection
+if [[ "${MODEL_RECOMMENDATIONS[presidio]}" == "recommended" ]]; then
+    echo -e "${GREEN}[${LANG_STRINGS[RECOMMENDED]}]${RESET} ${BOLD}Microsoft Presidio${RESET} - PII Detection (350MB)"
+    echo -e "${DIM}  Erkennt 50+ sensible Datentypen (Namen, E-Mails, Kreditkarten)${RESET}"
+    default_presidio="Y"
+else
+    echo -e "${YELLOW}[${LANG_STRINGS[OPTIONAL]}]${RESET} ${BOLD}Microsoft Presidio${RESET} - PII Detection (350MB)"
+    echo -e "${DIM}  ${LANG_STRINGS[SIZE]}: 350MB | ${LANG_STRINGS[RAM_DETECTED]}: ${SYSTEM_RAM}GB < 8GB${RESET}"
+    default_presidio="N"
 fi
+echo -n "${LANG_STRINGS[INSTALL_QUESTION]} [Y/n, default=$default_presidio]: "
+read -r install_presidio
+install_presidio=${install_presidio:-$default_presidio}
 
-# Optional Phi-3 for natural responses
-echo -e "\n${YELLOW}═══════════════════════════════════════${RESET}"
-echo -e "${BOLD}Enhanced Response Generation (Optional)${RESET}"
-echo -e "${YELLOW}═══════════════════════════════════════${RESET}"
-echo ""
-echo "Phi-3 enables natural language responses for your private data."
-echo "Without it, the system uses templates (works great, less natural)."
-echo -e "${DIM}• Download size: ~2GB${RESET}"
-echo -e "${DIM}• Installs globally via Ollama (can be used for other projects)${RESET}"
-echo -e "${DIM}• Optional - system works perfectly without it${RESET}"
-echo ""
-echo -n "Install Phi-3 for enhanced responses? [y/N]: "
-read -r install_phi3
+if [[ "$install_presidio" =~ ^[Yy]$ ]]; then
+    echo -n "  • Installing Presidio... "
+    pip3 install --user --quiet presidio-analyzer presidio-anonymizer 2>/dev/null && {
+        echo -e "${GREEN}✓${RESET}"
+        echo "PRESIDIO_ENABLED=true" >> "$INSTALL_DIR/config"
 
-if [[ "$install_phi3" =~ ^[Yy]$ ]]; then
-    # Check if Ollama is installed
-    if ! command -v ollama &> /dev/null; then
-        echo "Installing Ollama (AI model manager)..."
-        curl -fsSL https://ollama.ai/install.sh | sh
-        echo -e "${GREEN}✓ Ollama installed${RESET}"
-    else
-        echo -e "${GREEN}✓ Ollama already installed${RESET}"
-    fi
-
-    echo "Downloading Phi-3 model (this may take a few minutes)..."
-    ollama pull phi3 && {
-        echo -e "${GREEN}✓ Phi-3 ready for natural response generation${RESET}"
-        echo "PHI3_ENABLED=true" >> "$INSTALL_DIR/config"
-        echo "RESPONSE_MODE=natural" >> "$INSTALL_DIR/config"
+        # Install spaCy models for PII
+        echo -n "  • spaCy EN/DE models (120MB)... "
+        python3 -m spacy download en_core_web_sm --quiet 2>/dev/null && \
+        python3 -m spacy download de_core_news_sm --quiet 2>/dev/null && \
+        echo -e "${GREEN}✓${RESET}" || echo -e "${YELLOW}⚠${RESET}"
     } || {
-        echo -e "${YELLOW}⚠ Phi-3 installation failed - templates will be used${RESET}"
-        echo "PHI3_ENABLED=false" >> "$INSTALL_DIR/config"
-        echo "RESPONSE_MODE=template" >> "$INSTALL_DIR/config"
+        echo -e "${YELLOW}⚠${RESET}"
+        echo "PRESIDIO_ENABLED=false" >> "$INSTALL_DIR/config"
     }
 else
-    echo "PHI3_ENABLED=false" >> "$INSTALL_DIR/config"
-    echo "RESPONSE_MODE=template" >> "$INSTALL_DIR/config"
-    echo -e "${BLUE}Using template-based responses (lightweight, works excellent!)${RESET}"
+    echo "PRESIDIO_ENABLED=false" >> "$INSTALL_DIR/config"
 fi
 
-# Privacy protection level configuration
-echo -e "\n${CYAN}Privacy Protection Configuration:${RESET}"
-echo "  [1] Enhanced (recommended) - Presidio + Semantic classification"
-echo "  [2] Basic - Semantic classification only"
-echo "  [3] Disabled - No privacy protection (not recommended)"
+# Phi-3 for Natural Responses
 echo ""
-echo -n "Select privacy level [1-3, default=1]: "
+if [[ "${MODEL_RECOMMENDATIONS[phi3]}" == "recommended" ]]; then
+    echo -e "${GREEN}[${LANG_STRINGS[RECOMMENDED]}]${RESET} ${BOLD}Phi-3${RESET} - Natural Language Responses (2.3GB)"
+    echo -e "${DIM}  Generiert natürliche Antworten für private Daten (statt Templates)${RESET}"
+    default_phi3="Y"
+elif [[ "${MODEL_RECOMMENDATIONS[phi3]}" == "skip" ]]; then
+    echo -e "${DIM}[SKIP] Phi-3 - Übersprungen (${SYSTEM_RAM}GB RAM < 8GB)${RESET}"
+    echo "PHI3_ENABLED=false" >> "$INSTALL_DIR/config"
+    echo "RESPONSE_MODE=template" >> "$INSTALL_DIR/config"
+    default_phi3="skip"
+else
+    echo -e "${YELLOW}[${LANG_STRINGS[OPTIONAL]}]${RESET} ${BOLD}Phi-3${RESET} - Natural Responses (2.3GB)"
+    echo -e "${DIM}  ${LANG_STRINGS[SIZE]}: 2.3GB | System arbeitet auch ohne Phi-3 perfekt${RESET}"
+    default_phi3="N"
+fi
+
+if [[ "$default_phi3" != "skip" ]]; then
+    echo -n "${LANG_STRINGS[INSTALL_QUESTION]} [Y/n, default=$default_phi3]: "
+    read -r install_phi3
+    install_phi3=${install_phi3:-$default_phi3}
+
+    if [[ "$install_phi3" =~ ^[Yy]$ ]]; then
+        # Check/Install Ollama
+        if ! command -v ollama &> /dev/null; then
+            echo "  • Installing Ollama..."
+            curl -fsSL https://ollama.ai/install.sh | sh
+        fi
+
+        echo "  • Downloading Phi-3 (2.3GB)..."
+        ollama pull phi3 2>&1 | while IFS= read -r line; do
+            if [[ $line =~ pulling.*([0-9]+)% ]]; then
+                local pct=${BASH_REMATCH[1]}
+                show_progress "$pct" 100
+            fi
+        done
+
+        if ollama list | grep -q "phi3"; then
+            echo -e "\n  ${GREEN}✓ Phi-3 ready${RESET}"
+            echo "PHI3_ENABLED=true" >> "$INSTALL_DIR/config"
+            echo "RESPONSE_MODE=natural" >> "$INSTALL_DIR/config"
+        else
+            echo -e "\n  ${YELLOW}⚠ Using templates${RESET}"
+            echo "PHI3_ENABLED=false" >> "$INSTALL_DIR/config"
+            echo "RESPONSE_MODE=template" >> "$INSTALL_DIR/config"
+        fi
+    else
+        echo "PHI3_ENABLED=false" >> "$INSTALL_DIR/config"
+        echo "RESPONSE_MODE=template" >> "$INSTALL_DIR/config"
+    fi
+fi
+
+# Step 7: Privacy Level Configuration
+echo -e "\n${CYAN}${BOLD}${LANG_STRINGS[PRIVACY_TITLE]}${RESET}"
+echo -e "${DIM}${LANG_STRINGS[PRIVACY_DESC]}${RESET}\n"
+
+echo "  [1] ${LANG_STRINGS[PRIVACY_ENHANCED]}"
+echo "  [2] ${LANG_STRINGS[PRIVACY_BASIC]}"
+echo "  [3] ${LANG_STRINGS[PRIVACY_OFF]}"
+echo ""
+echo -e "${DIM}${LANG_STRINGS[PRIVACY_WHY]}${RESET}"
+echo ""
+echo -n "Select [1-3, default=1]: "
 read -r privacy_level
 
 case "$privacy_level" in
     2)
         echo "PRIVACY_LEVEL=basic" >> "$INSTALL_DIR/config"
-        echo "PRESIDIO_ENABLED=false" >> "$INSTALL_DIR/config"
-        echo -e "${YELLOW}Basic privacy protection enabled (semantic only)${RESET}"
         ;;
     3)
         echo "PRIVACY_LEVEL=off" >> "$INSTALL_DIR/config"
-        echo "PRESIDIO_ENABLED=false" >> "$INSTALL_DIR/config"
-        echo -e "${YELLOW}⚠ Privacy protection disabled${RESET}"
         ;;
     *)
         echo "PRIVACY_LEVEL=enhanced" >> "$INSTALL_DIR/config"
-        echo "PRESIDIO_ENABLED=true" >> "$INSTALL_DIR/config"
-        echo -e "${GREEN}✓ Enhanced privacy protection enabled${RESET}"
         ;;
 esac
 
-# Initialize AI models (download and training)
-echo -e "\n${BLUE}Initializing AI Models...${RESET}"
+# Save language preference
+echo "LANGUAGE=$SELECTED_LANG" >> "$INSTALL_DIR/config"
 
-# Download multilingual-e5-base model
-echo -n "  • Downloading e5-base model (278MB)... "
+# Step 8: Initialize Models
+echo -e "\n${BLUE}Initializing AI models...${RESET}"
+
+echo -n "  • Downloading e5-base (278MB)... "
 python3 -c "
-import warnings
-import os
+import warnings, os
 warnings.filterwarnings('ignore')
 os.environ['PYTHONWARNINGS'] = 'ignore'
-try:
-    from sentence_transformers import SentenceTransformer
-    print('Downloading multilingual-e5-base...', flush=True)
-    model = SentenceTransformer('intfloat/multilingual-e5-base')
-    print('OK')
-except Exception as e:
-    print('SKIP')
-" 2>/dev/null | tail -1 | grep -q "OK" && echo -e "${GREEN}✓${RESET}" || echo -e "${YELLOW}⚠ Will download on first use${RESET}"
+from sentence_transformers import SentenceTransformer
+model = SentenceTransformer('intfloat/multilingual-e5-base')
+print('OK')
+" 2>/dev/null | tail -1 | grep -q "OK" && echo -e "${GREEN}✓${RESET}" || echo -e "${YELLOW}⚠ First-use download${RESET}"
 
-# Train privacy classifier
-echo -n "  • Training privacy classifier... "
-python3 -c "
-import sys
-import warnings
-import os
-# Suppress all warnings and output
-warnings.filterwarnings('ignore')
-os.environ['PYTHONWARNINGS'] = 'ignore'
-sys.path.insert(0, '$INSTALL_DIR')
-try:
-    from privacy_classifier_fast import FastPrivacyClassifier
-    classifier = FastPrivacyClassifier()
-    classifier.train_fast()
-    print('OK')
-except Exception as e:
-    print('SKIP')
-" 2>/dev/null | grep -q "OK" && echo -e "${GREEN}✓${RESET}" || echo -e "${YELLOW}⚠ Will train on first start${RESET}"
+# Step 9: Shell Integration
+echo -e "\n${BLUE}Setting up shell integration...${RESET}"
 
-# Test PII detection if available
-echo -n "  • Testing PII detection... "
-python3 -c "
-import sys
-import warnings
-import os
-warnings.filterwarnings('ignore')
-os.environ['PYTHONWARNINGS'] = 'ignore'
-sys.path.insert(0, '$INSTALL_DIR')
-try:
-    from pii_detector import PIIDetector
-    detector = PIIDetector()
-    has_pii, types, details = detector.check_for_pii('test@example.com')
-    if has_pii:
-        print('OK')
-    else:
-        print('PARTIAL')
-except Exception as e:
-    print('SKIP')
-" 2>/dev/null | grep -q "OK" && echo -e "${GREEN}✓${RESET}" || echo -e "${YELLOW}⚠ Will initialize on first use${RESET}"
+# Detect shell and update config
+current_shell=$(basename "$SHELL" 2>/dev/null)
+case "$current_shell" in
+    zsh) primary_config="$HOME/.zshrc" ;;
+    bash) primary_config="$HOME/.bashrc" ;;
+    *) primary_config="$HOME/.zshrc" ;;
+esac
 
-# Skip interactive setup - will be handled by first run of 'ai' command
-echo -e "${BLUE}Setting up shell integration...${RESET}"
+# Clean old installations
+grep -v "# AI Chat Terminal" "$primary_config" > "$primary_config.tmp" 2>/dev/null && mv "$primary_config.tmp" "$primary_config" || true
+grep -v "source.*aichat.zsh" "$primary_config" > "$primary_config.tmp" 2>/dev/null && mv "$primary_config.tmp" "$primary_config" || true
 
-# Professional shell configuration (writes only to primary shell config)
-update_shell_config() {
-    local command_name="${1:-ai}"
+# Add new configuration
+echo "" >> "$primary_config"
+echo "# AI Chat Terminal" >> "$primary_config"
+echo "source $INSTALL_DIR/aichat.zsh" >> "$primary_config"
+echo "alias chat='noglob ai_chat_function'" >> "$primary_config"
 
-    # Detect current shell
-    local current_shell=$(basename "$SHELL" 2>/dev/null)
-    local primary_config=""
-    local cleanup_configs=()
+echo -e "  ${GREEN}✓${RESET} Updated $(basename "$primary_config")"
 
-    # Determine primary config file
-    case "$current_shell" in
-        zsh)
-            primary_config="$HOME/.zshrc"
-            cleanup_configs=("$HOME/.bashrc" "$HOME/.profile")
-            ;;
-        bash)
-            primary_config="$HOME/.bashrc"
-            cleanup_configs=("$HOME/.zshrc" "$HOME/.profile")
-            ;;
-        fish)
-            primary_config="$HOME/.config/fish/config.fish"
-            cleanup_configs=("$HOME/.zshrc" "$HOME/.bashrc" "$HOME/.profile")
-            ;;
-        *)
-            # Fallback: prefer .zshrc if exists, otherwise .bashrc
-            if [[ -f "$HOME/.zshrc" ]]; then
-                primary_config="$HOME/.zshrc"
-            elif [[ -f "$HOME/.bashrc" ]]; then
-                primary_config="$HOME/.bashrc"
-            else
-                primary_config="$HOME/.profile"
-            fi
-            cleanup_configs=("$HOME/.zshrc" "$HOME/.bashrc" "$HOME/.profile")
-            ;;
-    esac
-
-    # Clean up from all config files (remove old installations)
-    for config_file in "${cleanup_configs[@]}" "$primary_config"; do
-        if [[ -f "$config_file" ]]; then
-            grep -v "# AI Chat Terminal" "$config_file" > "$config_file.tmp" && mv "$config_file.tmp" "$config_file"
-            grep -v "source.*aichat.zsh" "$config_file" > "$config_file.tmp" && mv "$config_file.tmp" "$config_file"
-            grep -v "alias.*ai_chat_function" "$config_file" > "$config_file.tmp" && mv "$config_file.tmp" "$config_file"
-        fi
-    done
-
-    # Install only to primary config
-    if [[ ! -z "$primary_config" ]]; then
-        # Create config file if it doesn't exist
-        touch "$primary_config"
-
-        # Add new configuration to primary config only
-        echo "" >> "$primary_config"
-        echo "# AI Chat Terminal" >> "$primary_config"
-        echo "source $INSTALL_DIR/aichat.zsh" >> "$primary_config"
-        echo "alias $command_name='noglob ai_chat_function'" >> "$primary_config"
-
-        echo -e "  ${GREEN}✓${RESET} Updated $(basename "$primary_config")"
-        PRIMARY_SHELL_CONFIG="$primary_config"
-    fi
-}
-
-# Setup shell integration with default 'chat' command
-update_shell_config "chat"
-
-# Installation complete message with professional output
-echo -e "\n${GREEN}✅ Installation Complete!${RESET}\n"
-echo "Next steps:"
-
-# Show only the primary shell config that was updated
-if [[ ! -z "$PRIMARY_SHELL_CONFIG" ]]; then
-    config_name=$(basename "$PRIMARY_SHELL_CONFIG")
-    echo -e "  ${CYAN}source ~/$config_name${RESET}  ${DIM}# or restart terminal${RESET}"
-else
-    echo -e "  ${CYAN}Restart your terminal${RESET}"
-fi
-
-echo -e "  ${CYAN}chat${RESET}"
+# Installation Complete
+echo -e "\n${GREEN}${BOLD}${LANG_STRINGS[COMPLETE]}${RESET}\n"
+echo -e "${CYAN}Next steps:${RESET}"
+echo -e "  ${BOLD}source ~/$(basename "$primary_config")${RESET}  ${DIM}# or restart terminal${RESET}"
+echo -e "  ${BOLD}chat${RESET}"
+echo ""
+echo -e "${DIM}${LANG_STRINGS[CONFIG_LATER]}${RESET}"

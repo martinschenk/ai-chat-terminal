@@ -17,6 +17,23 @@
 
 ## 🆕 What's New in v6.2.0
 
+### 🎯 **Smart Interactive Installation**
+- **System Analysis on Start**: Detects RAM, CPU cores, and already-installed models
+- **Intelligent Recommendations**: Suggests models based on your system specs
+  - 16+ GB RAM → All models recommended
+  - 8-16 GB RAM → Presidio recommended, Phi-3 optional
+  - <8 GB RAM → Only core models
+- **Multilingual Setup**: Choose language at start (EN/DE/ES), all messages shown in selected language
+- **Guided Installation**: Clear explanations for each component with sensible defaults
+- **Progress Indicators**: Visual progress bars for large downloads (Phi-3, models)
+
+### ⚙️ **Full Post-Install Configuration**
+- **New Config Menu**: `/config` → [8] Privacy & AI Models
+- **Install/Remove Models**: Presidio, Phi-3, spaCy languages after installation
+- **Privacy Levels**: Switch between Enhanced/Basic/Off anytime
+- **Response Modes**: Toggle between natural (Phi-3) and template-based responses
+- **Language Management**: Add/remove spaCy models for 15+ languages on demand
+
 ### 🔍 **Enhanced PII Detection with Microsoft Presidio**
 - Professional-grade PII detection using Named Entity Recognition
 - Supports 15+ languages with spaCy models
@@ -52,11 +69,14 @@ source ~/.zshrc
 chat
 ```
 
-**First run setup:**
-1. Enter your [OpenAI API key](https://platform.openai.com/api-keys)
-2. Choose language (19 supported + regional dialects)
-3. Select privacy level (Enhanced recommended)
-4. Optional: Install Phi-3 for natural responses
+**Installation Experience:**
+1. **Language Selection**: Choose English, German, or Spanish (more coming)
+2. **System Analysis**: See your RAM, CPU, and already-installed models
+3. **Smart Recommendations**: Get model suggestions based on your specs
+4. **Guided Choices**: Install Presidio (350MB) and/or Phi-3 (2.3GB) with clear explanations
+5. **First Run**: Enter your [OpenAI API key](https://platform.openai.com/api-keys)
+
+The installer analyzes your system and only asks about large models (>500MB). Small models are installed automatically for the best experience.
 
 ---
 
@@ -288,8 +308,13 @@ chat        # Start chatting
 4. Choose AI model (gpt-4o, gpt-4o-mini, gpt-3.5-turbo)
 5. Adjust context window
 6. Configure OpenAI API key
-7. Privacy protection level
-8. Memory system management
+7. Memory system management
+8. **Privacy & AI Models** ← NEW!
+   - Change privacy level (Enhanced/Basic/Off)
+   - Install/Remove Presidio (350MB)
+   - Install/Remove Phi-3 (2.3GB)
+   - Manage spaCy language models
+   - Toggle response mode (natural/template)
 9. Clear cache
 10. About & version info
 

@@ -58,15 +58,16 @@ show_config_menu() {
         echo -e "${PURPLE}│${RESET}  ${GREEN}[5]${RESET} 💬 ${LANG_CONTEXT_SET:-Set context window}"
         echo -e "${PURPLE}│${RESET}  ${GREEN}[6]${RESET} 🔑 Set OpenAI API key"
         echo -e "${PURPLE}│${RESET}  ${GREEN}[7]${RESET} 🧠 ${LANG_CONFIG_MEMORY_SYSTEM:-Memory system}"
-        echo -e "${PURPLE}│${RESET}  ${GREEN}[8]${RESET} 🧹 ${LANG_CONFIG_OPT7}"
-        echo -e "${PURPLE}│${RESET}  ${GREEN}[9]${RESET} ℹ️  ${LANG_CONFIG_ABOUT:-About & Version}"
-        echo -e "${PURPLE}│${RESET}  ${GREEN}[10]${RESET} ${LANG_CONFIG_OPT6}"
+        echo -e "${PURPLE}│${RESET}  ${GREEN}[8]${RESET} 🔒 Privacy & AI Models"
+        echo -e "${PURPLE}│${RESET}  ${GREEN}[9]${RESET} 🧹 ${LANG_CONFIG_OPT7}"
+        echo -e "${PURPLE}│${RESET}  ${GREEN}[10]${RESET} ℹ️  ${LANG_CONFIG_ABOUT:-About & Version}"
+        echo -e "${PURPLE}│${RESET}  ${GREEN}[11]${RESET} ${LANG_CONFIG_OPT6}"
         echo -e "${PURPLE}│${RESET}"
-        echo -e "${PURPLE}│${RESET}  ${RED}[11]${RESET} 🗑️  ${LANG_CONFIG_OPT9}"
+        echo -e "${PURPLE}│${RESET}  ${RED}[12]${RESET} 🗑️  ${LANG_CONFIG_OPT9}"
         echo -e "${PURPLE}└─────────────────────────────────────${RESET}"
         echo ""
 
-        echo -ne "${CYAN}${LANG_CONFIG_SELECT_OPTION:-Select [1-11]:} ${RESET}"
+        echo -ne "${CYAN}${LANG_CONFIG_SELECT_OPTION:-Select [1-12]:} ${RESET}"
 
         # Handle ESC key detection in config menu
         local choice=""
@@ -127,16 +128,19 @@ show_config_menu() {
             7)  # Memory system
                 memory_system_menu
                 ;;
-            8)  # Clear cache
+            8)  # Privacy & AI Models
+                privacy_models_menu
+                ;;
+            9)  # Clear cache
                 clear_chat_cache
                 ;;
-            9)  # About & Version
+            10)  # About & Version
                 show_about_info
                 ;;
-            10)  # Back to chat
+            11)  # Back to chat
                 return
                 ;;
-            11)  # Uninstall
+            12)  # Uninstall
                 uninstall_terminal
                 # If uninstall was cancelled, we continue the loop
                 # If uninstall succeeded, the script will have exited
@@ -513,6 +517,209 @@ show_about_info() {
     echo ""
     echo -e "${CYAN}Press any key to return...${RESET}"
     read -r
+}
+
+# Privacy & AI Models Configuration Menu
+privacy_models_menu() {
+    local CYAN='\033[0;36m'
+    local GREEN='\033[0;32m'
+    local YELLOW='\033[1;33m'
+    local PURPLE='\033[0;35m'
+    local RED='\033[0;31m'
+    local BLUE='\033[0;34m'
+    local RESET='\033[0m'
+    local BOLD='\033[1m'
+    local DIM='\033[2m'
+
+    while true; do
+        clear
+        echo -e "${BOLD}${CYAN}🔒 ${LANG_PRIVACY_TITLE}${RESET}\n"
+
+        # Load current settings
+        local PRIVACY_LEVEL="${PRIVACY_LEVEL:-enhanced}"
+        local PRESIDIO_ENABLED="${PRESIDIO_ENABLED:-true}"
+        local PHI3_ENABLED="${PHI3_ENABLED:-false}"
+        local RESPONSE_MODE="${RESPONSE_MODE:-template}"
+
+        # Check installed models
+        local presidio_status="${RED}${LANG_PRIVACY_NOT_INSTALLED}${RESET}"
+        if python3 -c "import presidio_analyzer" 2>/dev/null; then
+            presidio_status="${GREEN}${LANG_PRIVACY_INSTALLED}${RESET}"
+        fi
+
+        local phi3_status="${RED}${LANG_PRIVACY_NOT_INSTALLED}${RESET}"
+        if command -v ollama &> /dev/null && ollama list | grep -q "phi3"; then
+            phi3_status="${GREEN}${LANG_PRIVACY_INSTALLED}${RESET}"
+        fi
+
+        local spacy_models=$(python3 -c "import spacy; print(len(spacy.util.get_installed_models()))" 2>/dev/null || echo "0")
+
+        echo -e "${PURPLE}┌─────────────────────────────────────${RESET}"
+        echo -e "${PURPLE}│${RESET}  ${BOLD}${LANG_PRIVACY_CURRENT_CONFIG}${RESET}"
+        echo -e "${PURPLE}│${RESET}  ├─ ${LANG_PRIVACY_LEVEL} ${YELLOW}$PRIVACY_LEVEL${RESET}"
+        echo -e "${PURPLE}│${RESET}  ├─ ${LANG_PRIVACY_PRESIDIO} ${YELLOW}$PRESIDIO_ENABLED${RESET} ($presidio_status)"
+        echo -e "${PURPLE}│${RESET}  ├─ ${LANG_PRIVACY_PHI3} ${YELLOW}$PHI3_ENABLED${RESET} ($phi3_status)"
+        echo -e "${PURPLE}│${RESET}  ├─ ${LANG_PRIVACY_RESPONSE_MODE} ${YELLOW}$RESPONSE_MODE${RESET}"
+        echo -e "${PURPLE}│${RESET}  └─ ${LANG_PRIVACY_SPACY_MODELS} ${YELLOW}$spacy_models ${LANG_PRIVACY_INSTALLED}${RESET}"
+        echo -e "${PURPLE}├─────────────────────────────────────${RESET}"
+        echo -e "${PURPLE}│${RESET}  ${GREEN}[1]${RESET} ${LANG_PRIVACY_OPT1}"
+        echo -e "${PURPLE}│${RESET}  ${GREEN}[2]${RESET} ${LANG_PRIVACY_OPT2}"
+        echo -e "${PURPLE}│${RESET}  ${GREEN}[3]${RESET} ${LANG_PRIVACY_OPT3}"
+        echo -e "${PURPLE}│${RESET}  ${GREEN}[4]${RESET} ${LANG_PRIVACY_OPT4}"
+        echo -e "${PURPLE}│${RESET}  ${GREEN}[5]${RESET} ${LANG_PRIVACY_OPT5}"
+        echo -e "${PURPLE}│${RESET}  ${GREEN}[6]${RESET} ${LANG_PRIVACY_OPT6}"
+        echo -e "${PURPLE}└─────────────────────────────────────${RESET}"
+        echo ""
+
+        echo -ne "${CYAN}${LANG_PRIVACY_SELECT} ${RESET}"
+        read -r choice
+
+        case $choice in
+            1)  # Change Privacy Level
+                echo -e "\n${CYAN}Select Privacy Level:${RESET}"
+                echo "  [1] Enhanced - AI + Presidio (best protection)"
+                echo "  [2] Basic - AI-based only"
+                echo "  [3] Off - No privacy protection"
+                echo -n "Select [1-3]: "
+                read -r privacy_choice
+
+                case "$privacy_choice" in
+                    1)
+                        sed -i '' "s/PRIVACY_LEVEL=.*/PRIVACY_LEVEL=\"enhanced\"/" "$CONFIG_FILE"
+                        echo -e "${GREEN}✅ Privacy level set to: enhanced${RESET}"
+                        ;;
+                    2)
+                        sed -i '' "s/PRIVACY_LEVEL=.*/PRIVACY_LEVEL=\"basic\"/" "$CONFIG_FILE"
+                        echo -e "${GREEN}✅ Privacy level set to: basic${RESET}"
+                        ;;
+                    3)
+                        sed -i '' "s/PRIVACY_LEVEL=.*/PRIVACY_LEVEL=\"off\"/" "$CONFIG_FILE"
+                        echo -e "${YELLOW}⚠️  Privacy protection disabled${RESET}"
+                        ;;
+                esac
+                sleep 2
+                ;;
+
+            2)  # Install/Remove Presidio
+                if python3 -c "import presidio_analyzer" 2>/dev/null; then
+                    echo -e "\n${YELLOW}Presidio is installed. Remove it?${RESET}"
+                    echo -n "Remove? (y/N): "
+                    read -r confirm
+                    if [[ "$confirm" =~ ^[Yy]$ ]]; then
+                        pip3 uninstall -y presidio-analyzer presidio-anonymizer
+                        sed -i '' "s/PRESIDIO_ENABLED=.*/PRESIDIO_ENABLED=\"false\"/" "$CONFIG_FILE"
+                        echo -e "${GREEN}✅ Presidio removed${RESET}"
+                    fi
+                else
+                    echo -e "\n${CYAN}Install Microsoft Presidio (350MB)?${RESET}"
+                    echo -e "${DIM}Detects 50+ PII types (credit cards, emails, names, etc.)${RESET}"
+                    echo -n "Install? (Y/n): "
+                    read -r confirm
+                    if [[ "$confirm" =~ ^[Yy]?$ ]]; then
+                        echo "Installing Presidio..."
+                        pip3 install --user presidio-analyzer presidio-anonymizer && {
+                            python3 -m spacy download en_core_web_sm
+                            python3 -m spacy download de_core_news_sm
+                            sed -i '' "s/PRESIDIO_ENABLED=.*/PRESIDIO_ENABLED=\"true\"/" "$CONFIG_FILE"
+                            echo -e "${GREEN}✅ Presidio installed successfully${RESET}"
+                        } || {
+                            echo -e "${RED}❌ Installation failed${RESET}"
+                        }
+                    fi
+                fi
+                sleep 2
+                ;;
+
+            3)  # Install/Remove Phi-3
+                if command -v ollama &> /dev/null && ollama list | grep -q "phi3"; then
+                    echo -e "\n${YELLOW}Phi-3 is installed. Remove it?${RESET}"
+                    echo -n "Remove? (y/N): "
+                    read -r confirm
+                    if [[ "$confirm" =~ ^[Yy]$ ]]; then
+                        ollama rm phi3
+                        sed -i '' "s/PHI3_ENABLED=.*/PHI3_ENABLED=\"false\"/" "$CONFIG_FILE"
+                        sed -i '' "s/RESPONSE_MODE=.*/RESPONSE_MODE=\"template\"/" "$CONFIG_FILE"
+                        echo -e "${GREEN}✅ Phi-3 removed${RESET}"
+                    fi
+                else
+                    echo -e "\n${CYAN}Install Phi-3 for natural responses (2.3GB)?${RESET}"
+                    echo -e "${DIM}Generates natural language responses for private data${RESET}"
+                    echo -n "Install? (Y/n): "
+                    read -r confirm
+                    if [[ "$confirm" =~ ^[Yy]?$ ]]; then
+                        # Install Ollama if needed
+                        if ! command -v ollama &> /dev/null; then
+                            echo "Installing Ollama..."
+                            curl -fsSL https://ollama.ai/install.sh | sh
+                        fi
+
+                        echo "Downloading Phi-3 (2.3GB)..."
+                        ollama pull phi3 && {
+                            sed -i '' "s/PHI3_ENABLED=.*/PHI3_ENABLED=\"true\"/" "$CONFIG_FILE"
+                            sed -i '' "s/RESPONSE_MODE=.*/RESPONSE_MODE=\"natural\"/" "$CONFIG_FILE"
+                            echo -e "${GREEN}✅ Phi-3 installed successfully${RESET}"
+                        } || {
+                            echo -e "${RED}❌ Installation failed${RESET}"
+                        }
+                    fi
+                fi
+                sleep 2
+                ;;
+
+            4)  # Manage spaCy models
+                echo -e "\n${CYAN}spaCy Language Models:${RESET}"
+                echo ""
+                echo "Installed models:"
+                python3 -c "import spacy; [print(f'  • {m}') for m in spacy.util.get_installed_models()]" 2>/dev/null || echo "  None"
+                echo ""
+                echo "Available for installation:"
+                echo "  [1] Spanish (es_core_news_sm)"
+                echo "  [2] French (fr_core_news_sm)"
+                echo "  [3] Italian (it_core_news_sm)"
+                echo "  [4] Portuguese (pt_core_news_sm)"
+                echo "  [5] Chinese (zh_core_web_sm)"
+                echo "  [6] Japanese (ja_core_news_sm)"
+                echo "  [0] Back"
+                echo ""
+                echo -n "Install model [0-6]: "
+                read -r model_choice
+
+                case "$model_choice" in
+                    1) python3 -m spacy download es_core_news_sm && echo -e "${GREEN}✅ Spanish installed${RESET}" ;;
+                    2) python3 -m spacy download fr_core_news_sm && echo -e "${GREEN}✅ French installed${RESET}" ;;
+                    3) python3 -m spacy download it_core_news_sm && echo -e "${GREEN}✅ Italian installed${RESET}" ;;
+                    4) python3 -m spacy download pt_core_news_sm && echo -e "${GREEN}✅ Portuguese installed${RESET}" ;;
+                    5) python3 -m spacy download zh_core_web_sm && echo -e "${GREEN}✅ Chinese installed${RESET}" ;;
+                    6) python3 -m spacy download ja_core_news_sm && echo -e "${GREEN}✅ Japanese installed${RESET}" ;;
+                esac
+                sleep 2
+                ;;
+
+            5)  # Toggle Response Mode
+                if [[ "$RESPONSE_MODE" == "natural" ]]; then
+                    sed -i '' "s/RESPONSE_MODE=.*/RESPONSE_MODE=\"template\"/" "$CONFIG_FILE"
+                    echo -e "${GREEN}✅ Switched to template-based responses${RESET}"
+                else
+                    if [[ "$PHI3_ENABLED" == "true" ]]; then
+                        sed -i '' "s/RESPONSE_MODE=.*/RESPONSE_MODE=\"natural\"/" "$CONFIG_FILE"
+                        echo -e "${GREEN}✅ Switched to natural language responses${RESET}"
+                    else
+                        echo -e "${RED}❌ Phi-3 must be installed for natural responses${RESET}"
+                    fi
+                fi
+                sleep 2
+                ;;
+
+            6)  # Back
+                return
+                ;;
+
+            *)
+                echo -e "${RED}Invalid option${RESET}"
+                sleep 1
+                ;;
+        esac
+    done
 }
 
 # Memory system menu
