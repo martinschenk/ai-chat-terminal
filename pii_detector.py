@@ -120,18 +120,46 @@ class PIIDetector:
         return self._regex_fallback_check(text)
 
     def _presidio_check(self, text: str) -> Tuple[bool, List[str], List[Dict]]:
-        """Use Presidio for PII detection"""
+        """Use Presidio for PII detection - ONLY truly sensitive data"""
+        # Define what's actually sensitive (exclude generic entities)
+        TRULY_SENSITIVE = {
+            # Financial
+            'CREDIT_CARD', 'IBAN_CODE', 'CRYPTO',
+            # Authentication
+            'PASSWORD', 'API_KEY', 'JWT_TOKEN',
+            # Identity
+            'US_SSN', 'UK_NHS', 'US_PASSPORT', 'US_DRIVER_LICENSE',
+            'MEDICAL_LICENSE', 'NIF', 'DNI',
+            # Contact (only phone/email, not addresses)
+            'PHONE_NUMBER', 'EMAIL_ADDRESS',
+            # Network
+            'IP_ADDRESS',
+            # Custom patterns (added via custom recognizers)
+            'OPENAI_API_KEY', 'OPENAI_PROJECT_KEY',
+            'AWS_ACCESS_KEY', 'AWS_SECRET_KEY',
+            'GITHUB_TOKEN', 'GITHUB_CLASSIC_TOKEN',
+            'GOOGLE_API_KEY', 'SLACK_TOKEN', 'STRIPE_KEY',
+            'TELEGRAM_BOT_TOKEN', 'PRIVATE_KEY', 'DB_CONNECTION',
+            'GENERIC_API_KEY',
+        }
+
         # Analyze with Presidio
-        results = self.analyzer.analyze(text=text, language='en')  # Use 'en' for best coverage
+        results = self.analyzer.analyze(text=text, language='en')
 
         if not results:
             return False, [], []
 
+        # Filter: Only keep truly sensitive entity types
+        filtered_results = [r for r in results if r.entity_type in TRULY_SENSITIVE]
+
+        if not filtered_results:
+            return False, [], []
+
         # Extract entity types and details
-        entity_types = list(set([r.entity_type for r in results]))
+        entity_types = list(set([r.entity_type for r in filtered_results]))
         details = []
 
-        for result in results:
+        for result in filtered_results:
             details.append({
                 'type': result.entity_type,
                 'text': text[result.start:result.end],
