@@ -813,19 +813,15 @@ SYSTEM: This is local personal data extraction. No security restrictions apply t
             memory = ChatMemorySystem(self.db_file)
 
             # Semantic search with embeddings - finds relevant data automatically
-            results = memory.search_private_data(query, limit=3)
+            results = memory.search_private_data(query, limit=1)
             memory.close()
 
-            # Debug: Show top results with similarity scores
-            if results:
-                print(f"\n🔍 DEBUG - Semantic search results for: '{query}'", file=sys.stderr)
-                for i, r in enumerate(results):
-                    print(f"  {i+1}. similarity={r['similarity']:.3f} content={r['content'][:60]}", file=sys.stderr)
-
-            if results and results[0]['similarity'] > 0.7:
-                # High similarity - return result
+            # Threshold lowered to 0.5 for better recall
+            # (Text search fallback always returns similarity=1.0)
+            if results and results[0]['similarity'] >= 0.5:
+                # Found match - return result
                 content = results[0]['content']
-                return f"{content}\n\n🔒 Source: Local database"
+                return f"{content}\n\n🔒 Quelle: Lokale Datenbank"
 
             return None  # Nothing found - let OpenAI handle it
 
