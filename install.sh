@@ -340,7 +340,19 @@ fi
 # Install OpenAI SDK
 pip3 install --user --quiet openai requests 2>/dev/null || pip3 install --user openai requests
 
-# Step 5: AI Models - Small Models (Auto-Install)
+# Step 5: Installation Locations Info
+echo -e "\n${CYAN}${BOLD}${LANG_STRINGS[INSTALL_LOCATION_TITLE]:-📦 Installation Locations}${RESET}"
+echo -e "${DIM}${LANG_STRINGS[INSTALL_LOCATION_LOCAL]:-Local (only this app):}${RESET}"
+echo -e "  ${LANG_STRINGS[INSTALL_LOCATION_LOCAL_PATH]:-~/.aichat/ - Scripts, config, your data}"
+echo -e "${DIM}${LANG_STRINGS[INSTALL_LOCATION_GLOBAL]:-Global (shared with other apps):}${RESET}"
+echo -e "  ${LANG_STRINGS[INSTALL_LOCATION_GLOBAL_MODELS]:-AI models, Python packages}"
+echo -e ""
+echo -e "${GREEN}${LANG_STRINGS[INSTALL_LOCATION_BENEFIT]:-✨ Benefit: Global models can be used by other applications!}${RESET}"
+echo -e "${YELLOW}${LANG_STRINGS[INSTALL_LOCATION_WARNING]:-⚠️  If you uninstall, global models remain for other apps}${RESET}"
+echo ""
+sleep 3
+
+# Step 6: AI Models - Small Models (Auto-Install)
 echo -e "\n${BLUE}${LANG_STRINGS[SMALL_MODELS]}${RESET}"
 
 echo -n "  • sentence-transformers (60MB)... "
@@ -374,10 +386,12 @@ fi
 if [[ "${MODEL_RECOMMENDATIONS[presidio]}" == "recommended" ]]; then
     echo -e "${GREEN}[${LANG_STRINGS[RECOMMENDED]}]${RESET} ${BOLD}Microsoft Presidio${RESET} - PII Detection (350MB)"
     echo -e "${DIM}  Erkennt 50+ sensible Datentypen (Namen, E-Mails, Kreditkarten)${RESET}"
+    echo -e "${DIM}  ${LANG_STRINGS[INSTALL_SHARED_INFO]:-Global install - reusable by other apps}${RESET}"
     default_presidio="Y"
 else
     echo -e "${YELLOW}[${LANG_STRINGS[OPTIONAL]}]${RESET} ${BOLD}Microsoft Presidio${RESET} - PII Detection (350MB)"
     echo -e "${DIM}  ${LANG_STRINGS[SIZE]}: 350MB | ${LANG_STRINGS[RAM_DETECTED]}: ${SYSTEM_RAM}GB < 8GB${RESET}"
+    echo -e "${DIM}  ${LANG_STRINGS[INSTALL_SHARED_INFO]:-Global install - reusable by other apps}${RESET}"
     default_presidio="N"
 fi
 echo -n "${LANG_STRINGS[INSTALL_QUESTION]} [Y/n, default=$default_presidio]: "
@@ -408,6 +422,7 @@ echo ""
 if [[ "${MODEL_RECOMMENDATIONS[phi3]}" == "recommended" ]]; then
     echo -e "${GREEN}[${LANG_STRINGS[RECOMMENDED]}]${RESET} ${BOLD}Phi-3${RESET} - Natural Language Responses (2.3GB)"
     echo -e "${DIM}  Generiert natürliche Antworten für private Daten (statt Templates)${RESET}"
+    echo -e "${DIM}  ${LANG_STRINGS[INSTALL_SHARED_INFO]:-Global install via Ollama - reusable!}${RESET}"
     default_phi3="Y"
 elif [[ "${MODEL_RECOMMENDATIONS[phi3]}" == "skip" ]]; then
     echo -e "${DIM}[SKIP] Phi-3 - Übersprungen (${SYSTEM_RAM}GB RAM < 8GB)${RESET}"
@@ -417,6 +432,7 @@ elif [[ "${MODEL_RECOMMENDATIONS[phi3]}" == "skip" ]]; then
 else
     echo -e "${YELLOW}[${LANG_STRINGS[OPTIONAL]}]${RESET} ${BOLD}Phi-3${RESET} - Natural Responses (2.3GB)"
     echo -e "${DIM}  ${LANG_STRINGS[SIZE]}: 2.3GB | System arbeitet auch ohne Phi-3 perfekt${RESET}"
+    echo -e "${DIM}  ${LANG_STRINGS[INSTALL_SHARED_INFO]:-Global install via Ollama - reusable!}${RESET}"
     default_phi3="N"
 fi
 

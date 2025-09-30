@@ -602,13 +602,17 @@ privacy_models_menu() {
 
             2)  # Install/Remove Presidio
                 if python3 -c "import presidio_analyzer" 2>/dev/null; then
-                    echo -e "\n${YELLOW}Presidio is installed. Remove it?${RESET}"
-                    echo -n "Remove? (y/N): "
+                    echo -e "\n${RED}${BOLD}${LANG_DELETE_WARNING_TITLE}${RESET}"
+                    echo -e "${YELLOW}${LANG_DELETE_WARNING_SHARED}${RESET}"
+                    echo -e "${DIM}${LANG_DELETE_WARNING_CHECK}${RESET}"
+                    echo -e "${DIM}${LANG_DELETE_WARNING_PRESIDIO}${RESET}"
+                    echo ""
+                    echo -n "${LANG_PRIVACY_PRESIDIO_REMOVE} "
                     read -r confirm
                     if [[ "$confirm" =~ ^[Yy]$ ]]; then
                         pip3 uninstall -y presidio-analyzer presidio-anonymizer
                         sed -i '' "s/PRESIDIO_ENABLED=.*/PRESIDIO_ENABLED=\"false\"/" "$CONFIG_FILE"
-                        echo -e "${GREEN}✅ Presidio removed${RESET}"
+                        echo -e "${GREEN}✅ ${LANG_PRIVACY_PRESIDIO_REMOVED}${RESET}"
                     fi
                 else
                     echo -e "\n${CYAN}Install Microsoft Presidio (350MB)?${RESET}"
@@ -632,14 +636,18 @@ privacy_models_menu() {
 
             3)  # Install/Remove Phi-3
                 if command -v ollama &> /dev/null && ollama list | grep -q "phi3"; then
-                    echo -e "\n${YELLOW}Phi-3 is installed. Remove it?${RESET}"
-                    echo -n "Remove? (y/N): "
+                    echo -e "\n${RED}${BOLD}${LANG_DELETE_WARNING_TITLE}${RESET}"
+                    echo -e "${YELLOW}${LANG_DELETE_WARNING_SHARED}${RESET}"
+                    echo -e "${DIM}${LANG_DELETE_WARNING_CHECK}${RESET}"
+                    echo -e "${DIM}${LANG_DELETE_WARNING_PHI3}${RESET}"
+                    echo ""
+                    echo -n "${LANG_PRIVACY_PRESIDIO_REMOVE} "
                     read -r confirm
                     if [[ "$confirm" =~ ^[Yy]$ ]]; then
                         ollama rm phi3
                         sed -i '' "s/PHI3_ENABLED=.*/PHI3_ENABLED=\"false\"/" "$CONFIG_FILE"
                         sed -i '' "s/RESPONSE_MODE=.*/RESPONSE_MODE=\"template\"/" "$CONFIG_FILE"
-                        echo -e "${GREEN}✅ Phi-3 removed${RESET}"
+                        echo -e "${GREEN}✅ ${LANG_PRIVACY_PHI3_REMOVED}${RESET}"
                     fi
                 else
                     echo -e "\n${CYAN}Install Phi-3 for natural responses (2.3GB)?${RESET}"
