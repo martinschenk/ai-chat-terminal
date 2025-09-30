@@ -555,33 +555,32 @@ else
 fi
 
 if [[ "$install_phi3" =~ ^[Yy]$ ]]; then
-        # Check/Install Ollama
-        if ! command -v ollama &> /dev/null; then
-            echo "  • Installing Ollama..."
-            curl -fsSL https://ollama.ai/install.sh | sh
-        fi
+    # Check/Install Ollama
+    if ! command -v ollama &> /dev/null; then
+        echo "  • Installing Ollama..."
+        curl -fsSL https://ollama.ai/install.sh | sh
+    fi
 
-        echo "  • Downloading Phi-3 (2.3GB)..."
-        ollama pull phi3 2>&1 | while IFS= read -r line; do
-            if [[ $line =~ pulling.*([0-9]+)% ]]; then
-                local pct=${BASH_REMATCH[1]}
-                show_progress "$pct" 100
-            fi
-        done
-
-        if ollama list | grep -q "phi3"; then
-            echo -e "\n  ${GREEN}✓ Phi-3 ready${RESET}"
-            echo "PHI3_ENABLED=true" >> "$INSTALL_DIR/config"
-            echo "RESPONSE_MODE=natural" >> "$INSTALL_DIR/config"
-        else
-            echo -e "\n  ${YELLOW}⚠ Using templates${RESET}"
-            echo "PHI3_ENABLED=false" >> "$INSTALL_DIR/config"
-            echo "RESPONSE_MODE=template" >> "$INSTALL_DIR/config"
+    echo "  • Downloading Phi-3 (2.3GB)..."
+    ollama pull phi3 2>&1 | while IFS= read -r line; do
+        if [[ $line =~ pulling.*([0-9]+)% ]]; then
+            local pct=${BASH_REMATCH[1]}
+            show_progress "$pct" 100
         fi
+    done
+
+    if ollama list | grep -q "phi3"; then
+        echo -e "\n  ${GREEN}✓ Phi-3 ready${RESET}"
+        echo "PHI3_ENABLED=true" >> "$INSTALL_DIR/config"
+        echo "RESPONSE_MODE=natural" >> "$INSTALL_DIR/config"
     else
+        echo -e "\n  ${YELLOW}⚠ Using templates${RESET}"
         echo "PHI3_ENABLED=false" >> "$INSTALL_DIR/config"
         echo "RESPONSE_MODE=template" >> "$INSTALL_DIR/config"
     fi
+else
+    echo "PHI3_ENABLED=false" >> "$INSTALL_DIR/config"
+    echo "RESPONSE_MODE=template" >> "$INSTALL_DIR/config"
 fi
 
 # Step 7: Privacy Level Configuration
