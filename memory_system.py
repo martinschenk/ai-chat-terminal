@@ -538,27 +538,65 @@ class ChatMemorySystem:
             if self.vector_support:
                 query_embedding = self.encode_for_search(query)
 
-                # Search in ALL messages with privacy metadata (any PII type)
-                cursor.execute("""
+                # Define truly sensitive categories (matches pii_detector.py whitelist)
+                TRULY_SENSITIVE = [
+                    'CREDIT_CARD', 'IBAN_CODE', 'CRYPTO',
+                    'PASSWORD', 'API_KEY', 'JWT_TOKEN',
+                    'US_SSN', 'UK_NHS', 'US_PASSPORT', 'US_DRIVER_LICENSE',
+                    'MEDICAL_LICENSE', 'NIF', 'DNI',
+                    'PHONE_NUMBER', 'EMAIL_ADDRESS',
+                    'IP_ADDRESS',
+                    'OPENAI_API_KEY', 'OPENAI_PROJECT_KEY',
+                    'AWS_ACCESS_KEY', 'AWS_SECRET_KEY',
+                    'GITHUB_TOKEN', 'GITHUB_CLASSIC_TOKEN',
+                    'GOOGLE_API_KEY', 'SLACK_TOKEN', 'STRIPE_KEY',
+                    'TELEGRAM_BOT_TOKEN', 'PRIVATE_KEY', 'DB_CONNECTION',
+                    'GENERIC_API_KEY',
+                ]
+
+                # Build SQL IN clause for truly sensitive categories
+                placeholders = ','.join('?' * len(TRULY_SENSITIVE))
+
+                # Search ONLY truly sensitive data (not LOCATION, PERSON, etc.)
+                cursor.execute(f"""
                     SELECT h.content, h.metadata, h.created_at,
                            vec_distance(e.message_embedding, ?) as distance
                     FROM chat_history h
                     JOIN chat_embeddings e ON h.id = e.rowid
-                    WHERE json_extract(h.metadata, '$.privacy_category') IS NOT NULL
+                    WHERE json_extract(h.metadata, '$.privacy_category') IN ({placeholders})
                       AND distance < 0.7
                     ORDER BY distance
                     LIMIT ?
-                """, (query_embedding.tobytes(), limit))
+                """, (query_embedding.tobytes(), *TRULY_SENSITIVE, limit))
             else:
-                # Fallback to text search for ALL private data
-                cursor.execute("""
+                # Define truly sensitive categories (matches pii_detector.py whitelist)
+                TRULY_SENSITIVE = [
+                    'CREDIT_CARD', 'IBAN_CODE', 'CRYPTO',
+                    'PASSWORD', 'API_KEY', 'JWT_TOKEN',
+                    'US_SSN', 'UK_NHS', 'US_PASSPORT', 'US_DRIVER_LICENSE',
+                    'MEDICAL_LICENSE', 'NIF', 'DNI',
+                    'PHONE_NUMBER', 'EMAIL_ADDRESS',
+                    'IP_ADDRESS',
+                    'OPENAI_API_KEY', 'OPENAI_PROJECT_KEY',
+                    'AWS_ACCESS_KEY', 'AWS_SECRET_KEY',
+                    'GITHUB_TOKEN', 'GITHUB_CLASSIC_TOKEN',
+                    'GOOGLE_API_KEY', 'SLACK_TOKEN', 'STRIPE_KEY',
+                    'TELEGRAM_BOT_TOKEN', 'PRIVATE_KEY', 'DB_CONNECTION',
+                    'GENERIC_API_KEY',
+                ]
+
+                # Build SQL IN clause for truly sensitive categories
+                placeholders = ','.join('?' * len(TRULY_SENSITIVE))
+
+                # Fallback to text search for ONLY truly sensitive data
+                cursor.execute(f"""
                     SELECT content, metadata, created_at
                     FROM chat_history
-                    WHERE json_extract(metadata, '$.privacy_category') IS NOT NULL
+                    WHERE json_extract(metadata, '$.privacy_category') IN ({placeholders})
                       AND content LIKE ?
                     ORDER BY created_at DESC
                     LIMIT ?
-                """, (f"%{query}%", limit))
+                """, (*TRULY_SENSITIVE, f"%{query}%", limit))
 
             results = []
             for row in cursor.fetchall():
