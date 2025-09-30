@@ -583,29 +583,38 @@ if [[ "$install_phi3" =~ ^[Yy]$ ]]; then
 
     # Try to download Phi-3
     if ollama list &>/dev/null; then
-        echo "  • Downloading Phi-3 (2.3GB)..."
-        if ollama pull phi3 2>&1 | while IFS= read -r line; do
-            if [[ $line =~ pulling.*([0-9]+)% ]]; then
-                local pct=${BASH_REMATCH[1]}
-                show_progress "$pct" 100
-            fi
-        done; then
-            if ollama list | grep -q "phi3"; then
-                echo -e "\n  ${GREEN}✓ Phi-3 ready${RESET}"
-                echo "PHI3_ENABLED=true" >> "$INSTALL_DIR/config"
-                echo "RESPONSE_MODE=natural" >> "$INSTALL_DIR/config"
-            else
-                echo -e "\n  ${YELLOW}⚠️  Phi-3 installation failed${RESET}"
-                echo -e "     Using templates. Install later with: /config"
-                echo "PHI3_ENABLED=false" >> "$INSTALL_DIR/config"
-                echo "RESPONSE_MODE=template" >> "$INSTALL_DIR/config"
-            fi
+        echo -n "  • Downloading Phi-3 (2.3GB)... "
+
+        # Run ollama pull in background and show spinner
+        (ollama pull phi3 > /tmp/ollama_pull.log 2>&1) &
+        local pull_pid=$!
+
+        # Show spinner while downloading
+        local spin='⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏'
+        local i=0
+        while kill -0 $pull_pid 2>/dev/null; do
+            i=$(( (i+1) %10 ))
+            printf "\r  • Downloading Phi-3 (2.3GB)... ${spin:$i:1}"
+            sleep 0.1
+        done
+
+        # Wait for process to finish
+        wait $pull_pid
+        local exit_code=$?
+
+        if [[ $exit_code -eq 0 ]] && ollama list | grep -q "phi3"; then
+            echo -e "\r  ${GREEN}✓${RESET} Phi-3 downloaded and ready           "
+            echo "PHI3_ENABLED=true" >> "$INSTALL_DIR/config"
+            echo "RESPONSE_MODE=natural" >> "$INSTALL_DIR/config"
         else
-            echo -e "\n  ${YELLOW}⚠️  Ollama download failed${RESET}"
+            echo -e "\r  ${YELLOW}⚠️${RESET}  Phi-3 installation failed           "
             echo -e "     Using templates. Install later with: /config"
             echo "PHI3_ENABLED=false" >> "$INSTALL_DIR/config"
             echo "RESPONSE_MODE=template" >> "$INSTALL_DIR/config"
         fi
+
+        # Cleanup
+        rm -f /tmp/ollama_pull.log
     else
         echo -e "\n  ${YELLOW}⚠️  Ollama service not responding${RESET}"
         echo -e "     Using templates. Install later with: /config"
