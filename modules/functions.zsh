@@ -74,7 +74,7 @@ chat_loop() {
                 else
                     # Normal character
                     INPUT="${INPUT}${char}"
-                    echo -n "$char"
+                    printf '%s' "$char"  # Use printf instead of echo for safety
                 fi
             done
         else
