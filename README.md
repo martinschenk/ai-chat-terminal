@@ -58,8 +58,9 @@
 
 **Step 1: Install**
 ```bash
-curl -sL https://raw.githubusercontent.com/martinschenk/ai-chat-terminal/main/install.sh | bash
+curl -sL https://raw.githubusercontent.com/martinschenk/ai-chat-terminal/main/install.sh | zsh
 ```
+*Note: Use `zsh` for compatibility. On older systems, `bash` might not support associative arrays.*
 
 **Step 2: Reload shell**
 ```bash

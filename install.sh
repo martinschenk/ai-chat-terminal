@@ -1,8 +1,22 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # AI Chat Terminal - Smart Interactive Installer v6.2.0
 # Licensed under MIT License - https://opensource.org/licenses/MIT
+# Requires: Bash 4+ or ZSH (for associative arrays)
 
 set -e
+
+# Check for Bash 4+ or ZSH
+if [[ -n "$BASH_VERSION" ]]; then
+    BASH_MAJOR="${BASH_VERSION%%.*}"
+    if [[ "$BASH_MAJOR" -lt 4 ]]; then
+        echo "Error: This script requires Bash 4+ or ZSH"
+        echo "Your Bash version: $BASH_VERSION"
+        echo ""
+        echo "Please run with ZSH instead:"
+        echo "  curl -sL https://raw.githubusercontent.com/martinschenk/ai-chat-terminal/main/install.sh | zsh"
+        exit 1
+    fi
+fi
 
 # Colors
 RED='\033[0;31m'
