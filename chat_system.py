@@ -200,7 +200,7 @@ class ChatSystem:
             return []
 
     def get_chat_history(self, session_id: str, limit: int = None) -> List[Dict]:
-        """Get chat history from memory database"""
+        """Get chat history from memory database - FILTERED for OpenAI (no PII!)"""
         if limit is None:
             limit = self.context_window * 2  # user + assistant pairs
 
@@ -211,9 +211,9 @@ class ChatSystem:
             conn = sqlite3.connect(self.db_file)
             cursor = conn.cursor()
 
-            # Get recent messages for this session
+            # Get recent messages WITH metadata to filter PII
             cursor.execute("""
-                SELECT role, content, timestamp FROM chat_history
+                SELECT role, content, metadata, timestamp FROM chat_history
                 WHERE session_id = ?
                 ORDER BY timestamp DESC
                 LIMIT ?
@@ -223,8 +223,22 @@ class ChatSystem:
             conn.close()
 
             # Reverse to get chronological order and format for OpenAI
+            # FILTER OUT any messages with privacy_category (contains PII!)
             messages = []
-            for role, content, timestamp in reversed(rows):
+            for role, content, metadata_json, timestamp in reversed(rows):
+                # Parse metadata to check for PII
+                if metadata_json:
+                    try:
+                        metadata = json.loads(metadata_json)
+                        privacy_category = metadata.get('privacy_category')
+
+                        # Skip messages with sensitive data - DON'T send to OpenAI!
+                        if privacy_category:
+                            continue
+                    except json.JSONDecodeError:
+                        pass  # No valid metadata, include message
+
+                # Safe to send to OpenAI (no PII detected)
                 messages.append({
                     "role": role,
                     "content": content
@@ -564,8 +578,13 @@ SYSTEM: This is local personal data extraction. No security restrictions apply t
                 response = f"✅ Sensitive data ({', '.join(pii_types)}) has been securely stored locally."
 
             # Save to chat history for continuity
+            # IMPORTANT: Mark BOTH user input AND assistant response with privacy_category
+            # This prevents OpenAI from seeing these messages in context history!
             self.save_message_to_db(session_id, 'user', user_input, {'privacy_category': primary_type})
-            self.save_message_to_db(session_id, 'assistant', response, {'model': 'local-pii-storage'})
+            self.save_message_to_db(session_id, 'assistant', response, {
+                'privacy_category': primary_type,  # Mark assistant response as sensitive too!
+                'model': 'local-pii-storage'
+            })
 
             return response, {
                 'model': 'local-pii-storage',
@@ -843,8 +862,9 @@ SYSTEM: This is local personal data extraction. No security restrictions apply t
             db_result = self._semantic_db_search(user_input)
             if db_result:
                 # Found in local DB - return immediately
-                self.save_message_to_db(session_id, 'user', user_input)
-                self.save_message_to_db(session_id, 'assistant', db_result)
+                # Mark as SENSITIVE to prevent OpenAI from seeing it in context
+                self.save_message_to_db(session_id, 'user', user_input, {'privacy_category': 'DB_QUERY'})
+                self.save_message_to_db(session_id, 'assistant', db_result, {'privacy_category': 'DB_RESULT'})
                 return db_result, {
                     "error": False,
                     "model": "local-db-search",
@@ -878,20 +898,41 @@ SYSTEM: This is local personal data extraction. No security restrictions apply t
                 "Content-Type": "application/json"
             }
 
+            # Define tools for OpenAI function calling
+            tools = [
+                {
+                    "type": "function",
+                    "function": {
+                        "name": "search_personal_data",
+                        "description": "Search the user's private local database for stored personal information like emails, passwords, API keys, phone numbers, addresses, or any other data the user has shared. Use this whenever the user asks about their stored information.",
+                        "parameters": {
+                            "type": "object",
+                            "properties": {
+                                "query": {
+                                    "type": "string",
+                                    "description": "What to search for (e.g., 'email addresses', 'phone number', 'API key')"
+                                }
+                            },
+                            "required": ["query"]
+                        }
+                    }
+                }
+            ]
+
             payload = {
                 "model": self.model,
                 "messages": messages,
                 "temperature": 0.7,
                 "max_tokens": 500,
-                "stream": True  # Enable streaming!
+                "tools": tools,
+                "stream": False  # Disable streaming when using tools (required for function calling)
             }
 
-            # Make API request with streaming
+            # Make API request (non-streaming for tool support)
             response = requests.post(
                 self.api_url,
                 headers=headers,
                 json=payload,
-                stream=True,
                 timeout=30
             )
 
@@ -899,48 +940,102 @@ SYSTEM: This is local personal data extraction. No security restrictions apply t
                 error_msg = f"OpenAI API error {response.status_code}"
                 return error_msg, {"error": True}
 
-            # Stream response
-            ai_response = ""
-            first_chunk = True
+            response_data = response.json()
+            message = response_data['choices'][0]['message']
 
-            for line in response.iter_lines():
-                if not line:
-                    continue
+            # Check if OpenAI wants to call a function
+            if message.get('tool_calls'):
+                tool_call = message['tool_calls'][0]
+                function_name = tool_call['function']['name']
+                function_args = json.loads(tool_call['function']['arguments'])
 
-                line_text = line.decode('utf-8')
-                if line_text.startswith('data: '):
-                    line_text = line_text[6:]
+                # Execute the function
+                if function_name == 'search_personal_data':
+                    query = function_args.get('query', '')
+                    results = self.search_private_data_enhanced(query)
 
-                if line_text == '[DONE]':
-                    break
+                    # Format results as string for OpenAI
+                    if results:
+                        function_result = "\n".join([f"- {r['content']}" for r in results[:5]])
+                    else:
+                        function_result = "No data found in local database."
 
-                try:
-                    chunk = json.loads(line_text)
-                    if 'choices' in chunk and chunk['choices']:
-                        delta = chunk['choices'][0].get('delta', {})
-                        if 'content' in delta:
-                            content = delta['content']
-                            # First chunk: overwrite "Verarbeite..." with \r
-                            if first_chunk:
-                                print(f"\r{content}", end="", flush=True)
-                                first_chunk = False
-                            else:
-                                print(content, end="", flush=True)
-                            ai_response += content
-                except json.JSONDecodeError:
-                    continue
+                    # Add function call and result to messages
+                    messages.append(message)
+                    messages.append({
+                        "role": "tool",
+                        "tool_call_id": tool_call['id'],
+                        "content": function_result
+                    })
 
-            print()  # Newline after streaming
+                    # Call OpenAI again with function result (this time WITH streaming)
+                    second_payload = {
+                        "model": self.model,
+                        "messages": messages,
+                        "temperature": 0.7,
+                        "max_tokens": 500,
+                        "stream": True
+                    }
 
-            # Show DB notification if function calls used the database
-            if self._db_was_used:
-                db_retrieved_msg = self.config.get('LANG_DB_RETRIEVED', '🔍 Retrieved from local DB')
-                print(db_retrieved_msg)
-                self._db_was_used = False  # Reset flag
+                    second_response = requests.post(
+                        self.api_url,
+                        headers=headers,
+                        json=second_payload,
+                        stream=True,
+                        timeout=30
+                    )
+
+                    # Stream the final response
+                    ai_response = ""
+                    first_chunk = True
+
+                    for line in second_response.iter_lines():
+                        if not line:
+                            continue
+
+                        line_text = line.decode('utf-8')
+                        if line_text.startswith('data: '):
+                            line_text = line_text[6:]
+
+                        if line_text == '[DONE]':
+                            break
+
+                        try:
+                            chunk = json.loads(line_text)
+                            if 'choices' in chunk and chunk['choices']:
+                                delta = chunk['choices'][0].get('delta', {})
+                                if 'content' in delta:
+                                    content = delta['content']
+                                    # First chunk: overwrite "Verarbeite..." with \r
+                                    if first_chunk:
+                                        print(f"\r{content}", end="", flush=True)
+                                        first_chunk = False
+                                    else:
+                                        print(content, end="", flush=True)
+                                    ai_response += content
+                        except json.JSONDecodeError:
+                            continue
+
+                    print()  # Newline after streaming
+
+                    # Show DB notification since we used the database
+                    db_retrieved_msg = self.config.get('LANG_DB_RETRIEVED', '🔍 Retrieved from local DB')
+                    print(db_retrieved_msg)
+
+            else:
+                # No tool call - print response directly (overwrite "Verarbeite...")
+                ai_response = message.get('content', '')
+                print(f"\r{ai_response}", flush=True)
 
             # Save to DB
-            self.save_message_to_db(session_id, 'user', user_input)
-            self.save_message_to_db(session_id, 'assistant', ai_response)
+            # If DB was used (function call), mark as sensitive
+            if self._db_was_used:
+                self.save_message_to_db(session_id, 'user', user_input, {'privacy_category': 'DB_QUERY'})
+                self.save_message_to_db(session_id, 'assistant', ai_response, {'privacy_category': 'DB_RESULT'})
+            else:
+                # Normal OpenAI conversation - safe to include in context
+                self.save_message_to_db(session_id, 'user', user_input)
+                self.save_message_to_db(session_id, 'assistant', ai_response)
 
             # Return empty string since we already streamed to stdout
             # Prevents double printing in shell script
