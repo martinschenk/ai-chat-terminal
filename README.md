@@ -76,6 +76,39 @@ chat
 
 ---
 
+## API Key Configuration
+
+The installation automatically checks your macOS Keychain for an OpenAI API key.
+
+**Option A - Automatic (during installation):**
+```bash
+# Key found in Keychain → Automatically configured ✓
+# Service: "OpenAI API", Account: "openai"
+```
+
+**Option B - Interactive (first start):**
+```bash
+chat     # Prompts for API key if not found
+
+# Choose:
+# [1] Enter key now (saved to ~/.aichat/.env)
+# [2] Load from macOS Keychain
+# [3] Cancel
+```
+
+**Option C - Manual:**
+```bash
+echo "OPENAI_API_KEY=sk-..." > ~/.aichat/.env
+chmod 600 ~/.aichat/.env
+```
+
+**Save to Keychain (optional):**
+```bash
+security add-generic-password -a "openai" -s "OpenAI API" -w "sk-your-key-here"
+```
+
+---
+
 ## Requirements
 
 | | Minimum | Recommended |

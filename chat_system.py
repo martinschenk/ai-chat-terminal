@@ -83,19 +83,61 @@ class ChatSystem:
             self.response_generator = ResponseGenerator(self.config_dir)
 
     def load_api_key(self) -> str:
-        """Load OpenAI API key from .env file"""
-        if not os.path.exists(self.env_file):
-            raise FileNotFoundError(f"API key file not found: {self.env_file}")
+        """Load OpenAI API key from .env file or prompt user"""
 
-        with open(self.env_file, 'r') as f:
-            for line in f:
-                line = line.strip()
-                if line.startswith('OPENAI_API_KEY='):
-                    key = line.split('=', 1)[1].strip().strip('"\'')
-                    if key:
-                        return key
+        # Try to load from .env
+        if os.path.exists(self.env_file):
+            with open(self.env_file, 'r') as f:
+                for line in f:
+                    line = line.strip()
+                    if line.startswith('OPENAI_API_KEY='):
+                        key = line.split('=', 1)[1].strip().strip('"\'')
+                        if key:
+                            return key
 
-        raise ValueError("OPENAI_API_KEY not found in .env file")
+        # .env not found or empty - interactive prompt
+        print("\n🔑 OpenAI API Key benötigt\n")
+        print("  [1] Jetzt eingeben (wird in ~/.aichat/.env gespeichert)")
+        print("  [2] Aus macOS Keychain laden")
+        print("  [3] Abbrechen\n")
+
+        choice = input("Wahl [1-3]: ").strip()
+
+        if choice == "1":
+            key = input("\nOpenAI API Key: ").strip()
+            if key:
+                self._save_api_key(key)
+                return key
+        elif choice == "2":
+            key = self._load_from_keychain()
+            if key:
+                self._save_api_key(key)
+                return key
+            else:
+                print("\n❌ Kein Key im Keychain gefunden (Service: 'OpenAI API', Account: 'openai')")
+
+        raise ValueError("OpenAI API Key nicht konfiguriert")
+
+    def _save_api_key(self, key: str):
+        """Save API key to .env file"""
+        with open(self.env_file, 'w') as f:
+            f.write(f"OPENAI_API_KEY={key}\n")
+        os.chmod(self.env_file, 0o600)
+        print(f"\n✓ API Key gespeichert in {self.env_file}")
+
+    def _load_from_keychain(self) -> str:
+        """Load API key from macOS Keychain"""
+        try:
+            import subprocess
+            result = subprocess.run(
+                ['security', 'find-generic-password', '-s', 'OpenAI API', '-a', 'openai', '-w'],
+                capture_output=True,
+                text=True,
+                check=True
+            )
+            return result.stdout.strip()
+        except:
+            return ""
 
     def load_config(self) -> Dict[str, str]:
         """Load configuration from config file"""

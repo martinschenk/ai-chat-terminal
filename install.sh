@@ -574,9 +574,9 @@ if [[ "$install_phi3" =~ ^[Yy]$ ]]; then
         brew services start ollama &>/dev/null || true
     fi
 
-    # Wait for Ollama to be ready (max 10 seconds)
+    # Wait for Ollama HTTP server (port 11434) - max 30 seconds
     local wait_count=0
-    while ! ollama list &>/dev/null && [ $wait_count -lt 10 ]; do
+    while ! curl -s http://localhost:11434/api/tags >/dev/null 2>&1 && [ $wait_count -lt 30 ]; do
         sleep 1
         ((wait_count++))
     done
@@ -630,7 +630,24 @@ fi
 # Save language preference
 echo "LANGUAGE=$SELECTED_LANG" >> "$INSTALL_DIR/config"
 
-# Step 8: Initialize Models
+# Step 8: Configure OpenAI API Key
+echo -e "\n${CYAN}${BOLD}Konfiguriere OpenAI API Key...${RESET}"
+
+# Try to load from macOS Keychain
+OPENAI_KEY=$(security find-generic-password -s "OpenAI API" -a "openai" -w 2>/dev/null || echo "")
+
+if [[ -n "$OPENAI_KEY" ]]; then
+    echo "OPENAI_API_KEY=$OPENAI_KEY" > "$INSTALL_DIR/.env"
+    chmod 600 "$INSTALL_DIR/.env"
+    echo -e "  ${GREEN}✓${RESET} API Key aus Keychain geladen"
+else
+    echo -e "  ${YELLOW}⚠${RESET} Kein API Key im Keychain gefunden"
+    echo -e "     ${DIM}Beim ersten Start von 'chat' wirst du danach gefragt${RESET}"
+    echo -e "     ${DIM}Oder speichere ihn im Keychain:${RESET}"
+    echo -e "     ${DIM}security add-generic-password -a \"openai\" -s \"OpenAI API\" -w \"sk-...\"${RESET}"
+fi
+
+# Step 9: Initialize Models
 echo -e "\n${BLUE}Initializing AI models...${RESET}"
 
 echo -n "  • Downloading e5-base (278MB)... "
