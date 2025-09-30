@@ -8,9 +8,10 @@ import os
 import sys
 import warnings
 
-# Suppress ALL urllib3 warnings FIRST (before any imports)
-warnings.filterwarnings("ignore", category=UserWarning, module="urllib3")
-os.environ['PYTHONWARNINGS'] = 'ignore::UserWarning'
+# Suppress ALL warnings FIRST (before any imports)
+warnings.filterwarnings("ignore")
+os.environ['PYTHONWARNINGS'] = 'ignore'
+os.environ['TOKENIZERS_PARALLELISM'] = 'false'  # Suppress tokenizers fork warning
 
 import json
 import sqlite3
@@ -31,22 +32,8 @@ except ImportError:
     print("Warning: Response generator not available", file=sys.stderr)
     ResponseGenerator = None
 
-# Suppress urllib3 LibreSSL warnings on macOS BEFORE importing requests
-# This is a known issue: https://github.com/urllib3/urllib3/issues/3020
-# urllib3 v2 requires OpenSSL 1.1.1+ but macOS ships with LibreSSL 2.8.3
-# The functionality still works correctly, only the warning is cosmetic
-warnings.filterwarnings("ignore", message=".*urllib3.*")
-warnings.filterwarnings("ignore", message=".*NotOpenSSLWarning.*")
-
-# Now safe to import requests (which uses urllib3)
+# Import requests (urllib3 warnings already suppressed above)
 import requests
-
-# Additional urllib3 warning suppression for runtime
-try:
-    import urllib3
-    urllib3.disable_warnings(urllib3.exceptions.NotOpenSSLWarning)
-except (ImportError, AttributeError):
-    pass
 
 class ChatSystem:
     def __init__(self, config_dir: str = None):
@@ -906,6 +893,7 @@ SYSTEM: This is local personal data extraction. No security restrictions apply t
 
             # Stream response
             ai_response = ""
+            first_chunk = True
 
             for line in response.iter_lines():
                 if not line:
@@ -924,7 +912,12 @@ SYSTEM: This is local personal data extraction. No security restrictions apply t
                         delta = chunk['choices'][0].get('delta', {})
                         if 'content' in delta:
                             content = delta['content']
-                            print(content, end="", flush=True)
+                            # First chunk: overwrite "Verarbeite..." with \r
+                            if first_chunk:
+                                print(f"\r{content}", end="", flush=True)
+                                first_chunk = False
+                            else:
+                                print(content, end="", flush=True)
                             ai_response += content
                 except json.JSONDecodeError:
                     continue
@@ -964,7 +957,9 @@ def main():
         response, stats = chat.send_message(session_id, user_message, system_prompt)
 
         # Print response (needed for local responses that don't use streaming)
-        print(response)
+        # Use \r to overwrite "Verarbeite..." indicator
+        if response:
+            print(f"\r{response}", end='', flush=True)
 
         # Print stats to stderr for debugging (disabled for clean UI)
         # if not stats.get("error", False):

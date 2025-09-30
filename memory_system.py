@@ -4,10 +4,17 @@ AI Chat Terminal - Memory System
 SQLite-based semantic memory with vector embeddings
 """
 
+import os
+import sys
+import warnings
+
+# Suppress all warnings BEFORE any other imports
+warnings.filterwarnings("ignore")
+os.environ['PYTHONWARNINGS'] = 'ignore'
+os.environ['TOKENIZERS_PARALLELISM'] = 'false'  # Suppress tokenizers fork warning
+
 import json
 import time
-import sys
-import os
 import re
 from pathlib import Path
 
