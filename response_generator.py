@@ -116,8 +116,44 @@ class ResponseGenerator:
             }
         }
 
+    def format_stored_data(self, user_message: str, language: str = None) -> str:
+        """
+        Format confirmation for data stored locally (v8.0.0 keyword system)
+        User explicitly said "speichere lokal" or similar
+
+        Args:
+            user_message: The original user message that was stored
+            language: Language code (de, en, es, etc.)
+
+        Returns:
+            Natural confirmation message
+        """
+        if language is None:
+            language = self.language
+
+        # Map to base language if dialect
+        base_lang = language.split('-')[0] if '-' in language else language
+        if base_lang not in self.templates:
+            base_lang = 'en'
+
+        templates = self.templates[base_lang]
+
+        # Prefer Phi-3 for dynamic, natural responses
+        if self.phi3_available and self.config.get('PHI3_ENABLED', 'false').lower() == 'true':
+            try:
+                return self._generate_with_phi3_stored(user_message, language)
+            except Exception as e:
+                print(f"Phi-3 generation failed: {e}", file=sys.stderr)
+                # Fall through to simple fallback
+
+        # Simple fallback when Phi-3 unavailable
+        return templates['generic_sensitive']
+
     def confirm_storage(self, pii_types: List[str], language: str = None) -> str:
-        """Generate confirmation message for stored PII"""
+        """
+        Generate confirmation message for stored PII
+        DEPRECATED in v8.0.0 - use format_stored_data() instead
+        """
         if language is None:
             language = self.language
 
@@ -140,8 +176,51 @@ class ResponseGenerator:
         # No hardcoded cases - one template for all
         return templates['generic_sensitive']
 
+    def format_retrieved_data(self, user_query: str, db_results: List[Dict], language: str = None) -> str:
+        """
+        Format retrieved data from local database (v8.0.0 keyword system)
+        User explicitly said "aus meiner db" or similar
+
+        Args:
+            user_query: The user's query
+            db_results: List of matching results from DB
+            language: Language code (de, en, es, etc.)
+
+        Returns:
+            Natural response with the data
+        """
+        if language is None:
+            language = self.language
+
+        # Map to base language if dialect
+        base_lang = language.split('-')[0] if '-' in language else language
+        if base_lang not in self.templates:
+            base_lang = 'en'
+
+        templates = self.templates[base_lang]
+
+        # Handle no results
+        if not db_results:
+            return templates['not_found'].format(query=user_query)
+
+        # Prefer Phi-3 for natural responses
+        if self.phi3_available and self.config.get('PHI3_ENABLED', 'false').lower() == 'true':
+            try:
+                return self._generate_with_phi3_retrieved(user_query, db_results, language)
+            except Exception as e:
+                print(f"Phi-3 generation failed: {e}", file=sys.stderr)
+                # Fall through to template
+
+        # Simple template fallback - just show the data
+        result = db_results[0]  # Best match
+        content = result.get('content', '')
+        return templates['found_generic'].format(value=content)
+
     def generate_response(self, query: str, db_results: List[Dict], intent: str = 'QUERY', language: str = None) -> str:
-        """Generate response based on database results"""
+        """
+        Generate response based on database results
+        DEPRECATED in v8.0.0 - use format_retrieved_data() instead
+        """
         if language is None:
             language = self.language
 
@@ -193,8 +272,67 @@ class ResponseGenerator:
         else:
             return templates['found_generic'].format(value=content)
 
+    def _generate_with_phi3_stored(self, user_message: str, language: str) -> str:
+        """
+        Generate storage confirmation using Phi-3 (v8.0.0)
+        User explicitly said "speichere lokal" or similar
+        """
+        lang_instruction = self._get_language_instruction(language)
+
+        # Extract key info from message (remove "speichere lokal" keywords)
+        clean_message = user_message
+        for keyword in ['speichere lokal', 'save locally', 'guarda localmente', 'speicher lokal', 'store locally']:
+            clean_message = clean_message.replace(keyword, '').strip(':, ')
+
+        prompt = f"""TASK: Confirm data stored locally. {lang_instruction}
+
+User said: "{clean_message[:100]}"
+
+RULES (STRICT):
+1. Maximum 4 words total (including emoji)
+2. Must include exactly 1 emoji
+3. Be cool and modern
+4. Vary your response
+
+VALID EXAMPLES:
+✅ Gespeichert! 🔒
+💾 Hab's!
+🔐 Lokal sicher
+✨ Gesichert!
+🎯 Alles da!
+
+Your response (4 words max):"""
+
+        return self._call_phi3(prompt)
+
+    def _generate_with_phi3_retrieved(self, user_query: str, db_results: List[Dict], language: str) -> str:
+        """
+        Generate retrieval response using Phi-3 (v8.0.0)
+        User explicitly said "aus meiner db" or similar
+        """
+        lang_instruction = self._get_language_instruction(language)
+
+        result = db_results[0]
+        content = result.get('content', '')
+
+        prompt = f"""You are a helpful assistant. {lang_instruction}
+
+User asked: "{user_query}"
+
+Found in local database: {content}
+
+Provide a brief, natural response. Be conversational and use appropriate emojis.
+Keep it under 30 words.
+
+Response:"""
+
+        return self._call_phi3(prompt)
+
     def _generate_with_phi3_storage(self, pii_types: List[str], language: str) -> str:
-        """Generate storage confirmation using Phi-3 - DYNAMIC & COOL"""
+        """
+        Generate storage confirmation using Phi-3 - DYNAMIC & COOL
+        DEPRECATED in v8.0.0 - use _generate_with_phi3_stored() instead
+        """
         lang_instruction = self._get_language_instruction(language)
 
         prompt = f"""TASK: Confirm data stored. {lang_instruction}
