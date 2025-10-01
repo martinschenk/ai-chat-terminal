@@ -133,7 +133,6 @@ check_installed_models() {
     # Check Python packages
     local python_packages=(
         "sentence-transformers:multilingual-e5-base"
-        "presidio-analyzer:Microsoft Presidio"
         "spacy:spaCy NLP"
     )
 
@@ -397,7 +396,6 @@ curl -sL "$BASE_URL/modules/config-menu.zsh" -o "$INSTALL_DIR/modules/config-men
 curl -sL "$BASE_URL/modules/language-utils.zsh" -o "$INSTALL_DIR/modules/language-utils.zsh" && \
 curl -sL "$BASE_URL/memory_system.py" -o "$INSTALL_DIR/memory_system.py" && \
 curl -sL "$BASE_URL/chat_system.py" -o "$INSTALL_DIR/chat_system.py" && \
-curl -sL "$BASE_URL/pii_detector.py" -o "$INSTALL_DIR/pii_detector.py" && \
 curl -sL "$BASE_URL/response_generator.py" -o "$INSTALL_DIR/response_generator.py" && \
 chmod +x "$INSTALL_DIR"/*.py && \
 echo -e "${GREEN}✓${RESET}" || echo -e "${RED}✗${RESET}"
@@ -465,57 +463,6 @@ else
     MODEL_RECOMMENDATIONS[spacy_multi]="skip"
 fi
 
-# Presidio PII Detection
-if [[ "${MODEL_RECOMMENDATIONS[presidio]}" == "recommended" ]]; then
-    echo -e "${GREEN}[EMPFOHLEN]${RESET} ${BOLD}Microsoft Presidio${RESET} - PII Detection (350MB)"
-    echo -e "${DIM}  Erkennt 50+ sensible Datentypen (Telefonnummern, Adressen, Namen)${RESET}"
-    echo ""
-    echo -e "  💬 ${BOLD}Warum empfohlen für dich?${RESET}"
-    echo -e "     ${DIM}Dein Mac hat ${SYSTEM_RAM} GB RAM - perfekt für Presidio!${RESET}"
-    echo -e "     ${DIM}Schützt private Daten professionell.${RESET}"
-    echo -e "     ${DIM}Global installiert - kann von anderen Apps genutzt werden.${RESET}"
-    echo ""
-    default_presidio="Y"
-elif [[ "${MODEL_RECOMMENDATIONS[presidio]}" == "optional" ]]; then
-    echo -e "${YELLOW}[OPTIONAL]${RESET} ${BOLD}Microsoft Presidio${RESET} - PII Detection (350MB)"
-    echo ""
-    echo -e "  💬 ${BOLD}Für deinen Mac (${SYSTEM_RAM} GB RAM):${RESET}"
-    echo -e "     ${DIM}Läuft, aber bei wenig RAM evtl. langsamer.${RESET}"
-    echo -e "     ${DIM}Basis-Schutz funktioniert auch ohne Presidio!${RESET}"
-    echo ""
-    default_presidio="N"
-else
-    echo -e "${DIM}[ÜBERSPRUNGEN]${RESET} Presidio"
-    echo -e "  ${DIM}Braucht mindestens 8 GB RAM.${RESET}"
-    echo "PRESIDIO_ENABLED=false" >> "$INSTALL_DIR/config"
-    default_presidio="skip"
-fi
-if [[ "$default_presidio" != "skip" ]]; then
-    echo -n "Installieren? [Y/n, default=$default_presidio]: "
-    read -r install_presidio < /dev/tty
-    install_presidio=${install_presidio:-$default_presidio}
-else
-    install_presidio="N"
-fi
-
-if [[ "$install_presidio" =~ ^[Yy]$ ]]; then
-    echo -n "  • Installing Presidio... "
-    pip3 install --user --quiet presidio-analyzer presidio-anonymizer 2>/dev/null && {
-        echo -e "${GREEN}✓${RESET}"
-        echo "PRESIDIO_ENABLED=true" >> "$INSTALL_DIR/config"
-
-        # Install spaCy models for PII
-        echo -n "  • spaCy EN/DE models (120MB)... "
-        python3 -m spacy download en_core_web_sm --quiet 2>/dev/null && \
-        python3 -m spacy download de_core_news_sm --quiet 2>/dev/null && \
-        echo -e "${GREEN}✓${RESET}" || echo -e "${YELLOW}⚠${RESET}"
-    } || {
-        echo -e "${YELLOW}⚠${RESET}"
-        echo "PRESIDIO_ENABLED=false" >> "$INSTALL_DIR/config"
-    }
-else
-    echo "PRESIDIO_ENABLED=false" >> "$INSTALL_DIR/config"
-fi
 
 # Phi-3 for Natural Responses
 echo ""

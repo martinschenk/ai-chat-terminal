@@ -18,14 +18,7 @@ import sqlite3
 from datetime import datetime
 from typing import Dict, List, Optional, Tuple
 
-# Import our enhanced privacy modules
-# Note: FastPrivacyClassifier deprecated - replaced by Presidio PIIDetector
-try:
-    from pii_detector import PIIDetector
-except ImportError:
-    print("Warning: PII detector not available", file=sys.stderr)
-    PIIDetector = None
-
+# Import response generator for natural language responses
 try:
     from response_generator import ResponseGenerator
 except ImportError:
@@ -54,11 +47,7 @@ class ChatSystem:
         self.model = self.config.get("AI_CHAT_MODEL", "gpt-4o-mini")
         self.context_window = int(self.config.get("AI_CHAT_CONTEXT_WINDOW", "20"))
 
-        # Initialize PII detector
-        self.pii_detector = None
-        if PIIDetector:
-            self.pii_detector = PIIDetector(language=self.config.get('AI_CHAT_LANGUAGE', 'en'))
-
+        # Initialize response generator for natural confirmations
         self.response_generator = None
         if ResponseGenerator:
             self.response_generator = ResponseGenerator(self.config_dir)
@@ -310,45 +299,6 @@ class ChatSystem:
             print(f"Warning: Could not load DB indicator: {e}", file=sys.stderr)
             return "🗄️ Source: Local database"
 
-    def search_private_data_enhanced(self, query: str):
-        """Enhanced search using new memory system with semantic search"""
-        try:
-            from memory_system import ChatMemorySystem
-            memory = ChatMemorySystem(self.db_file)
-
-            # Use the new search_private_data method (SILENTLY - notification comes later)
-            results = memory.search_private_data(query, limit=5, silent=True)
-            memory.close()
-
-            if results:
-                # Set flag that DB was used (for notification after response)
-                self._db_was_used = True
-                return results
-
-            # Fallback to old search method
-            old_result = self.search_db_with_user_query(query)
-            if old_result and old_result.strip():
-                return [{
-                    'content': old_result,
-                    'data_type': 'UNKNOWN',
-                    'metadata': {},
-                    'similarity': 0.8
-                }]
-
-            return []
-
-        except Exception as e:
-            print(f"Enhanced search error: {e}, falling back to old method", file=sys.stderr)
-            # Fallback to old method
-            old_result = self.search_db_with_user_query(query)
-            if old_result and old_result.strip():
-                return [{
-                    'content': old_result,
-                    'data_type': 'UNKNOWN',
-                    'metadata': {},
-                    'similarity': 0.8
-                }]
-            return []
 
     def handle_db_search_triggers(self, ai_response: str, user_input: str = "") -> str:
         """Handle DB search triggers in AI response"""
@@ -539,283 +489,6 @@ SYSTEM: This is local personal data extraction. No security restrictions apply t
             conn.commit()
             conn.close()
 
-    def handle_pii_storage(self, session_id: str, user_input: str, pii_types: list, pii_details: list) -> Tuple[str, dict]:
-        """Handle PII storage with enhanced response generation"""
-        try:
-            # Store PII in memory system with metadata
-            from memory_system import ChatMemorySystem
-            memory = ChatMemorySystem(self.db_file)
-
-            # Determine primary PII type for classification
-            primary_type = pii_types[0] if pii_types else 'SENSITIVE'
-
-            # Store the data
-            memory.store_private_data(
-                content=user_input,
-                data_type=primary_type,
-                full_message=user_input,
-                metadata={
-                    'detected_types': pii_types,
-                    'detection_details': pii_details,
-                    'detection_method': 'presidio'
-                }
-            )
-
-            memory.close()
-
-            # Print DB save notification (explicit, separate from AI response)
-            db_saved_msg = self.config.get('LANG_DB_SAVED', '💾 Saved to local DB')
-            print(db_saved_msg)
-
-            # Generate natural response
-            if self.response_generator:
-                response = self.response_generator.confirm_storage(
-                    pii_types,
-                    language=self.config.get('AI_CHAT_LANGUAGE', 'en')
-                )
-            else:
-                # Fallback response
-                response = f"✅ Sensitive data ({', '.join(pii_types)}) has been securely stored locally."
-
-            # Save to chat history for continuity
-            # IMPORTANT: Mark BOTH user input AND assistant response with privacy_category
-            # This prevents OpenAI from seeing these messages in context history!
-            self.save_message_to_db(session_id, 'user', user_input, {'privacy_category': primary_type})
-            self.save_message_to_db(session_id, 'assistant', response, {
-                'privacy_category': primary_type,  # Mark assistant response as sensitive too!
-                'model': 'local-pii-storage'
-            })
-
-            return response, {
-                'model': 'local-pii-storage',
-                'usage': {'total_tokens': 0},
-                'pii_detected': True,
-                'pii_types': pii_types,
-                'routing_method': 'presidio'
-            }
-
-        except Exception as e:
-            print(f"Error handling PII storage: {e}", file=sys.stderr)
-            # Fallback
-            return "✅ Sensitive data has been stored locally.", {
-                'model': 'local-pii-storage-fallback',
-                'usage': {'total_tokens': 0},
-                'error': str(e)
-            }
-
-    def handle_local_message(self, session_id: str, user_input: str, system_prompt: str, routing_info: dict) -> Tuple[str, dict]:
-        """Handle messages locally for privacy-sensitive content"""
-        try:
-            privacy_category = routing_info['privacy_category']
-            intent = routing_info['intent']
-
-            # Save user message to database first with privacy category
-            user_metadata = {'privacy_category': privacy_category}
-            self.save_message_to_db(session_id, 'user', user_input, user_metadata)
-
-            if intent == 'STORAGE':
-                # Handle storage requests locally
-                response = self.handle_local_storage(user_input, privacy_category, system_prompt)
-            elif intent == 'DELETE':
-                # Handle deletion requests locally
-                response = self.handle_local_delete(user_input, privacy_category, system_prompt)
-            else:  # QUERY
-                # Handle query requests locally
-                response = self.handle_local_query(user_input, privacy_category, system_prompt)
-
-            # Save AI response to database with category
-            response_metadata = {'privacy_category': privacy_category}
-            self.save_message_to_db(session_id, 'assistant', response, response_metadata)
-
-            # Return response with metadata
-            return response, {
-                "error": False,
-                "input_tokens": self.count_tokens(user_input),
-                "output_tokens": self.count_tokens(response),
-                "total_tokens": self.count_tokens(user_input + response),
-                "model": "local-privacy-routing",
-                "messages_in_context": 2,
-                "privacy_info": routing_info
-            }
-
-        except Exception as e:
-            error_response = f"Error processing request locally: {e}"
-            print(error_response, file=sys.stderr)
-            return error_response, {"error": True, "privacy_info": routing_info}
-
-    def handle_local_storage(self, user_input: str, privacy_category: str, system_prompt: str) -> str:
-        """Handle storage requests for sensitive data"""
-        # Data is already saved to DB by save_message_to_db
-        # Return confirmation in appropriate language
-
-        # Detect language from system prompt
-        if "[SYSTEM: Antworte auf Deutsch]" in system_prompt:
-            if privacy_category == 'SENSITIVE':
-                return "Ihre sensiblen Daten wurden sicher in der lokalen Datenbank gespeichert."
-            elif privacy_category == 'PROPRIETARY':
-                return "Die internen Firmendaten wurden lokal gespeichert."
-            elif privacy_category == 'PERSONAL':
-                return "Ihre persönlichen Informationen wurden notiert."
-            else:
-                return "Die Information wurde gespeichert."
-        else:
-            # Default English
-            if privacy_category == 'SENSITIVE':
-                return "Your sensitive data has been securely saved to the local database."
-            elif privacy_category == 'PROPRIETARY':
-                return "The proprietary information has been stored locally."
-            elif privacy_category == 'PERSONAL':
-                return "Your personal information has been noted."
-            else:
-                return "The information has been stored."
-
-    def handle_local_delete(self, user_input: str, privacy_category: str, system_prompt: str) -> str:
-        """Handle deletion requests for sensitive data"""
-        is_german = "[SYSTEM: Antworte auf Deutsch]" in system_prompt
-
-        # Extract what to delete from the user input
-        deleted_items = self.delete_from_database(user_input)
-
-        if deleted_items > 0:
-            if is_german:
-                return f"Ich habe {deleted_items} Einträge aus der lokalen Datenbank gelöscht."
-            else:
-                return f"I have deleted {deleted_items} entries from the local database."
-        else:
-            if is_german:
-                return "Ich konnte keine entsprechenden Einträge zum Löschen finden."
-            else:
-                return "I couldn't find any matching entries to delete."
-
-    def delete_from_database(self, user_input: str) -> int:
-        """Delete matching entries from the database"""
-        try:
-            # Extract keywords/patterns to search for deletion
-            text_lower = user_input.lower()
-
-            # Common patterns to identify what to delete
-            delete_targets = []
-
-            # Credit card patterns
-            if any(word in text_lower for word in ['kreditkarte', 'credit card', 'card', 'karte']):
-                delete_targets.extend(['kreditkarte', 'credit card', 'card', 'karte'])
-                # Also look for specific numbers if mentioned
-                import re
-                numbers = re.findall(r'\d{4}[-\s]?\d{4}[-\s]?\d{4}[-\s]?\d{4}|\d{4}', user_input)
-                delete_targets.extend(numbers)
-
-            # Password patterns
-            if any(word in text_lower for word in ['password', 'passwort', 'contraseña']):
-                delete_targets.extend(['password', 'passwort', 'contraseña'])
-
-            # Generic sensitive data
-            if any(word in text_lower for word in ['all', 'alle', 'everything', 'alles']):
-                delete_targets = ['%']  # Match everything
-
-            if not delete_targets:
-                return 0
-
-            # Connect to database and delete matching entries
-            conn = sqlite3.connect(self.db_file)
-            cursor = conn.cursor()
-
-            deleted_count = 0
-
-            for target in delete_targets:
-                if target == '%':
-                    # Delete all sensitive data (be careful!)
-                    cursor.execute("""
-                        DELETE FROM chat_history
-                        WHERE content LIKE '%kreditkarte%'
-                           OR content LIKE '%credit card%'
-                           OR content LIKE '%password%'
-                           OR content LIKE '%passwort%'
-                           OR content LIKE '%pin%'
-                           OR content LIKE '%api%'
-                           OR content LIKE '%token%'
-                    """)
-                    deleted_count += cursor.rowcount
-                else:
-                    # Delete specific entries containing the target
-                    cursor.execute("DELETE FROM chat_history WHERE content LIKE ?", (f'%{target}%',))
-                    deleted_count += cursor.rowcount
-
-            conn.commit()
-            conn.close()
-
-            return deleted_count
-
-        except Exception as e:
-            print(f"Error deleting from database: {e}", file=sys.stderr)
-            return 0
-
-    def handle_local_query(self, user_input: str, privacy_category: str, system_prompt: str) -> str:
-        """Handle query requests for sensitive data"""
-        # Search local database
-        search_result = self.search_db_with_user_query(user_input)
-
-        if search_result and search_result.strip():
-            # Format response using local templates instead of OpenAI
-            return self.format_local_response(search_result, user_input, system_prompt)
-        else:
-            # No data found - respond in detected language
-            language = self.detect_language(user_input, system_prompt)
-            if language == "de":
-                return "Ich habe keine entsprechenden Informationen in meiner lokalen Datenbank gefunden."
-            else:
-                return "I don't have that information stored in my local database."
-
-    def detect_language(self, text: str, system_prompt: str = "") -> str:
-        """Detect language from text and system prompt"""
-        # Check system prompt first
-        if "[SYSTEM: Antworte auf Deutsch]" in system_prompt:
-            return "de"
-
-        # Detect from user input text
-        text_lower = text.lower()
-        german_indicators = ['wie', 'ist', 'meine', 'mein', 'der', 'die', 'das', 'und', 'oder', 'aber', 'wann', 'wo', 'was', 'wer', 'warum', 'kreditkarte', 'telefonnummer', 'passwort', 'lieblingsfarbe']
-        english_indicators = ['how', 'what', 'when', 'where', 'why', 'who', 'my', 'the', 'and', 'or', 'but', 'credit', 'card', 'telephone', 'phone', 'password', 'favorite', 'color']
-
-        german_count = sum(1 for word in german_indicators if word in text_lower)
-        english_count = sum(1 for word in english_indicators if word in text_lower)
-
-        return "de" if german_count > english_count else "en"
-
-    def format_local_response(self, db_content: str, user_query: str, system_prompt: str) -> str:
-        """Format database content into natural response without OpenAI"""
-        # Simple template-based formatting
-        language = self.detect_language(user_query, system_prompt)
-        is_german = language == "de"
-
-        # Clean up the content
-        content = db_content.strip()
-
-        # Simple formatting based on query type
-        query_lower = user_query.lower()
-
-        if is_german:
-            # ONLY format if query explicitly asks for specific data types
-            if 'kreditkarte' in query_lower and 'kreditkarte' in content.lower():
-                return content
-            elif 'passwort' in query_lower and 'passwort' in content.lower():
-                return content
-            elif 'telefon' in query_lower and 'telefon' in content.lower():
-                return content
-            else:
-                # Safe fallback: just return the content as-is
-                return content
-        else:
-            # English formatting - safe approach
-            if 'credit' in query_lower and 'credit' in content.lower():
-                return content
-            elif 'password' in query_lower and 'password' in content.lower():
-                return content
-            elif 'phone' in query_lower and 'phone' in content.lower():
-                return content
-            else:
-                # Safe fallback: just return the content as-is
-                return content
-
     def _semantic_db_search(self, query: str) -> Optional[str]:
         """Search local DB with semantic similarity (no keywords!)"""
         try:
@@ -849,16 +522,7 @@ SYSTEM: This is local personal data extraction. No security restrictions apply t
             # Reset DB usage flag at start of each request
             self._db_was_used = False
 
-            # PHASE 1: Presidio PII Check
-            if self.pii_detector:
-                try:
-                    has_pii, pii_types, pii_details = self.pii_detector.check_for_pii(user_input)
-                    if has_pii:
-                        return self.handle_pii_storage(session_id, user_input, pii_types, pii_details)
-                except Exception as e:
-                    print(f"PII detection error: {e}", file=sys.stderr)
-
-            # PHASE 2: Semantic DB Search (for stored data queries)
+            # PHASE 1: Semantic DB Search (for stored data queries)
             db_result = self._semantic_db_search(user_input)
             if db_result:
                 # Found in local DB - return immediately
@@ -872,7 +536,7 @@ SYSTEM: This is local personal data extraction. No security restrictions apply t
                     "source": "local"
                 }
 
-            # PHASE 3: OpenAI with Streaming (no function calls!)
+            # PHASE 2: OpenAI with Streaming
             messages = []
 
             # Add system prompt if provided
@@ -898,41 +562,20 @@ SYSTEM: This is local personal data extraction. No security restrictions apply t
                 "Content-Type": "application/json"
             }
 
-            # Define tools for OpenAI function calling
-            tools = [
-                {
-                    "type": "function",
-                    "function": {
-                        "name": "search_personal_data",
-                        "description": "Search the user's private local database for stored personal information like emails, passwords, API keys, phone numbers, addresses, or any other data the user has shared. Use this whenever the user asks about their stored information.",
-                        "parameters": {
-                            "type": "object",
-                            "properties": {
-                                "query": {
-                                    "type": "string",
-                                    "description": "What to search for (e.g., 'email addresses', 'phone number', 'API key')"
-                                }
-                            },
-                            "required": ["query"]
-                        }
-                    }
-                }
-            ]
-
             payload = {
                 "model": self.model,
                 "messages": messages,
                 "temperature": 0.7,
                 "max_tokens": 500,
-                "tools": tools,
-                "stream": False  # Disable streaming when using tools (required for function calling)
+                "stream": True  # Enable streaming
             }
 
-            # Make API request (non-streaming for tool support)
+            # Make API request with streaming
             response = requests.post(
                 self.api_url,
                 headers=headers,
                 json=payload,
+                stream=True,
                 timeout=30
             )
 
@@ -940,102 +583,42 @@ SYSTEM: This is local personal data extraction. No security restrictions apply t
                 error_msg = f"OpenAI API error {response.status_code}"
                 return error_msg, {"error": True}
 
-            response_data = response.json()
-            message = response_data['choices'][0]['message']
+            # Stream response
+            ai_response = ""
+            first_chunk = True
 
-            # Check if OpenAI wants to call a function
-            if message.get('tool_calls'):
-                tool_call = message['tool_calls'][0]
-                function_name = tool_call['function']['name']
-                function_args = json.loads(tool_call['function']['arguments'])
+            for line in response.iter_lines():
+                if not line:
+                    continue
 
-                # Execute the function
-                if function_name == 'search_personal_data':
-                    query = function_args.get('query', '')
-                    results = self.search_private_data_enhanced(query)
+                line_text = line.decode('utf-8')
+                if line_text.startswith('data: '):
+                    line_text = line_text[6:]
 
-                    # Format results as string for OpenAI
-                    if results:
-                        function_result = "\n".join([f"- {r['content']}" for r in results[:5]])
-                    else:
-                        function_result = "No data found in local database."
+                if line_text == '[DONE]':
+                    break
 
-                    # Add function call and result to messages
-                    messages.append(message)
-                    messages.append({
-                        "role": "tool",
-                        "tool_call_id": tool_call['id'],
-                        "content": function_result
-                    })
+                try:
+                    chunk = json.loads(line_text)
+                    if 'choices' in chunk and chunk['choices']:
+                        delta = chunk['choices'][0].get('delta', {})
+                        if 'content' in delta:
+                            content = delta['content']
+                            # First chunk: overwrite "Verarbeite..." with \r
+                            if first_chunk:
+                                print(f"\r{content}", end="", flush=True)
+                                first_chunk = False
+                            else:
+                                print(content, end="", flush=True)
+                            ai_response += content
+                except json.JSONDecodeError:
+                    continue
 
-                    # Call OpenAI again with function result (this time WITH streaming)
-                    second_payload = {
-                        "model": self.model,
-                        "messages": messages,
-                        "temperature": 0.7,
-                        "max_tokens": 500,
-                        "stream": True
-                    }
+            print()  # Newline after streaming
 
-                    second_response = requests.post(
-                        self.api_url,
-                        headers=headers,
-                        json=second_payload,
-                        stream=True,
-                        timeout=30
-                    )
-
-                    # Stream the final response
-                    ai_response = ""
-                    first_chunk = True
-
-                    for line in second_response.iter_lines():
-                        if not line:
-                            continue
-
-                        line_text = line.decode('utf-8')
-                        if line_text.startswith('data: '):
-                            line_text = line_text[6:]
-
-                        if line_text == '[DONE]':
-                            break
-
-                        try:
-                            chunk = json.loads(line_text)
-                            if 'choices' in chunk and chunk['choices']:
-                                delta = chunk['choices'][0].get('delta', {})
-                                if 'content' in delta:
-                                    content = delta['content']
-                                    # First chunk: overwrite "Verarbeite..." with \r
-                                    if first_chunk:
-                                        print(f"\r{content}", end="", flush=True)
-                                        first_chunk = False
-                                    else:
-                                        print(content, end="", flush=True)
-                                    ai_response += content
-                        except json.JSONDecodeError:
-                            continue
-
-                    print()  # Newline after streaming
-
-                    # Show DB notification since we used the database
-                    db_retrieved_msg = self.config.get('LANG_DB_RETRIEVED', '🔍 Retrieved from local DB')
-                    print(db_retrieved_msg)
-
-            else:
-                # No tool call - print response directly (overwrite "Verarbeite...")
-                ai_response = message.get('content', '')
-                print(f"\r{ai_response}", flush=True)
-
-            # Save to DB
-            # If DB was used (function call), mark as sensitive
-            if self._db_was_used:
-                self.save_message_to_db(session_id, 'user', user_input, {'privacy_category': 'DB_QUERY'})
-                self.save_message_to_db(session_id, 'assistant', ai_response, {'privacy_category': 'DB_RESULT'})
-            else:
-                # Normal OpenAI conversation - safe to include in context
-                self.save_message_to_db(session_id, 'user', user_input)
-                self.save_message_to_db(session_id, 'assistant', ai_response)
+            # Save to DB - normal OpenAI conversation
+            self.save_message_to_db(session_id, 'user', user_input)
+            self.save_message_to_db(session_id, 'assistant', ai_response)
 
             # Return empty string since we already streamed to stdout
             # Prevents double printing in shell script
