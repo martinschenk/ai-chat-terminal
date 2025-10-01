@@ -530,9 +530,9 @@ SYSTEM: This is local personal data extraction. No security restrictions apply t
             try:
                 from local_storage_detector import LocalStorageDetector
                 detector = LocalStorageDetector()
-            except ImportError:
-                print("Warning: local_storage_detector not found, falling back to semantic search", file=sys.stderr)
-                detector = None
+            except ImportError as e:
+                # CRITICAL ERROR: Keyword detector missing!
+                return f"❌ FEHLER: local_storage_detector.py nicht gefunden! Bitte Installation prüfen.\nDetails: {e}", {"error": True}
 
             # PHASE 1: Check for "save locally" intent
             if detector and detector.detect_save_locally(user_input):
@@ -546,8 +546,8 @@ SYSTEM: This is local personal data extraction. No security restrictions apply t
                     gen = ResponseGenerator()
                     confirmation = gen.format_stored_data(user_input, self.language)
                 except Exception as e:
-                    print(f"Warning: Response generator failed: {e}", file=sys.stderr)
-                    confirmation = "✅ Gespeichert! 🔒" if self.language == 'de' else "✅ Stored! 🔒"
+                    # CRITICAL ERROR: Response generator missing!
+                    return f"❌ FEHLER: response_generator.py nicht gefunden! Bitte Installation prüfen.\nDetails: {e}", {"error": True}
 
                 self.save_message_to_db(session_id, 'assistant', confirmation, {'privacy_category': 'LOCAL_STORAGE_CONFIRM'})
 
@@ -579,8 +579,8 @@ SYSTEM: This is local personal data extraction. No security restrictions apply t
                         gen = ResponseGenerator()
                         formatted_response = gen.format_retrieved_data(user_input, results, self.language)
                     except Exception as e:
-                        print(f"Warning: Response formatting failed: {e}", file=sys.stderr)
-                        formatted_response = db_result
+                        # CRITICAL ERROR: Response formatting failed!
+                        return f"❌ FEHLER: Datenformatierung fehlgeschlagen! Bitte Installation prüfen.\nDetails: {e}", {"error": True}
 
                     self.save_message_to_db(session_id, 'assistant', formatted_response, {'privacy_category': 'LOCAL_RESULT'})
 
