@@ -517,26 +517,90 @@ SYSTEM: This is local personal data extraction. No security restrictions apply t
             return None
 
     def send_message(self, session_id: str, user_input: str, system_prompt: str = "") -> Tuple[str, Dict]:
-        """Send message - simplified flow with streaming"""
-        try:
-            # Reset DB usage flag at start of each request
-            self._db_was_used = False
+        """
+        Send message - v8.0.0 keyword-based flow
 
-            # PHASE 1: Semantic DB Search (for stored data queries)
-            db_result = self._semantic_db_search(user_input)
-            if db_result:
-                # Found in local DB - return immediately
-                # Mark as SENSITIVE to prevent OpenAI from seeing it in context
-                self.save_message_to_db(session_id, 'user', user_input, {'privacy_category': 'DB_QUERY'})
-                self.save_message_to_db(session_id, 'assistant', db_result, {'privacy_category': 'DB_RESULT'})
-                return db_result, {
+        3-Phase System:
+        1. Check for "speichere lokal" keywords → save to local DB
+        2. Check for "aus meiner db" keywords → retrieve from local DB
+        3. Normal OpenAI query (streaming)
+        """
+        try:
+            # Initialize keyword detector
+            try:
+                from local_storage_detector import LocalStorageDetector
+                detector = LocalStorageDetector()
+            except ImportError:
+                print("Warning: local_storage_detector not found, falling back to semantic search", file=sys.stderr)
+                detector = None
+
+            # PHASE 1: Check for "save locally" intent
+            if detector and detector.detect_save_locally(user_input):
+                # User explicitly wants to save data locally
+                # Store the entire message in DB with LOCAL_STORAGE category
+                self.save_message_to_db(session_id, 'user', user_input, {'privacy_category': 'LOCAL_STORAGE'})
+
+                # Generate natural confirmation response
+                try:
+                    from response_generator import ResponseGenerator
+                    gen = ResponseGenerator()
+                    confirmation = gen.format_stored_data(user_input, self.language)
+                except Exception as e:
+                    print(f"Warning: Response generator failed: {e}", file=sys.stderr)
+                    confirmation = "✅ Gespeichert! 🔒" if self.language == 'de' else "✅ Stored! 🔒"
+
+                self.save_message_to_db(session_id, 'assistant', confirmation, {'privacy_category': 'LOCAL_STORAGE_CONFIRM'})
+
+                return confirmation, {
                     "error": False,
-                    "model": "local-db-search",
+                    "model": "local-storage",
                     "tokens": 0,
                     "source": "local"
                 }
 
-            # PHASE 2: OpenAI with Streaming
+            # PHASE 2: Check for "retrieve from DB" intent
+            if detector and detector.detect_retrieve_from_db(user_input):
+                # User explicitly wants to retrieve from local DB
+                db_result = self._semantic_db_search(user_input)
+
+                if db_result:
+                    # Mark as LOCAL_RETRIEVAL to prevent OpenAI from seeing it
+                    self.save_message_to_db(session_id, 'user', user_input, {'privacy_category': 'LOCAL_RETRIEVAL'})
+
+                    # Format natural response
+                    try:
+                        from response_generator import ResponseGenerator
+                        from memory_system import MemorySystem
+
+                        # Get actual DB results for better formatting
+                        mem = MemorySystem()
+                        results = mem.search(user_input, limit=5)
+
+                        gen = ResponseGenerator()
+                        formatted_response = gen.format_retrieved_data(user_input, results, self.language)
+                    except Exception as e:
+                        print(f"Warning: Response formatting failed: {e}", file=sys.stderr)
+                        formatted_response = db_result
+
+                    self.save_message_to_db(session_id, 'assistant', formatted_response, {'privacy_category': 'LOCAL_RESULT'})
+
+                    return formatted_response, {
+                        "error": False,
+                        "model": "local-db-retrieval",
+                        "tokens": 0,
+                        "source": "local"
+                    }
+                else:
+                    # No results found
+                    no_results_msg = "❌ Keine Daten gefunden" if self.language == 'de' else "❌ No data found"
+                    return no_results_msg, {
+                        "error": False,
+                        "model": "local-db-retrieval",
+                        "tokens": 0,
+                        "source": "local"
+                    }
+
+            # PHASE 3: Normal OpenAI query (no keywords detected)
             messages = []
 
             # Add system prompt if provided
@@ -546,7 +610,7 @@ SYSTEM: This is local personal data extraction. No security restrictions apply t
                     "content": system_prompt
                 })
 
-            # Add current session chat history
+            # Add current session chat history (filtered - no PII!)
             history = self.get_chat_history(session_id)
             messages.extend(history)
 
@@ -616,7 +680,7 @@ SYSTEM: This is local personal data extraction. No security restrictions apply t
 
             print()  # Newline after streaming
 
-            # Save to DB - normal OpenAI conversation
+            # Save to DB - normal OpenAI conversation (no privacy_category)
             self.save_message_to_db(session_id, 'user', user_input)
             self.save_message_to_db(session_id, 'assistant', ai_response)
 
