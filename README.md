@@ -1,19 +1,33 @@
 # AI Chat Terminal
 
-**User-controlled local storage for sensitive data in your terminal.**
+**User-controlled local storage with military-grade encryption for your terminal.**
 
-[![Version](https://img.shields.io/badge/version-8.0.0-blue.svg)](https://github.com/martinschenk/ai-chat-terminal)
+[![Version](https://img.shields.io/badge/version-8.1.0-blue.svg)](https://github.com/martinschenk/ai-chat-terminal)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](https://github.com/martinschenk/ai-chat-terminal)
+[![Encryption](https://img.shields.io/badge/encryption-AES--256-green.svg)](https://github.com/martinschenk/ai-chat-terminal#database-security-)
 
 ## What is AI Chat Terminal?
 
-A terminal-based chat system where **YOU decide** what stays local and what goes to OpenAI. No automatic detection - full transparency and control.
+A terminal-based chat system where **YOU decide** what stays local and what goes to OpenAI. Your local data is **automatically encrypted** with AES-256. Full transparency and control.
 
 **How it works:**
-- Say "speichere lokal" (save locally) → Data stays on your Mac
-- Say "aus meiner db" (from my database) → Retrieves your local data
+- Say "speichere lokal" (save locally) → **Encrypted** on your Mac, NEVER to OpenAI
+- Say "aus meiner db" (from my database) → Retrieves your **encrypted** local data
 - Normal questions → Go to OpenAI (as usual)
+- **NEW in v8.1.0:** Database automatically encrypted with AES-256 🔐
+
+### v8.1.0: Database Encryption 🔐
+
+**NEW:** Your local database is now **encrypted with AES-256** - same encryption used by military and governments.
+
+- **Automatic:** Encryption key stored in macOS Keychain
+- **Transparent:** Zero configuration required
+- **Fast:** <100ms overhead
+- **Secure:** Database file useless without encryption key
+- **Export:** `--export-db` command for backups
+
+[→ Read full security documentation](#database-security-)
 
 ### v8.0.0: The Keyword Revolution 🎯
 
