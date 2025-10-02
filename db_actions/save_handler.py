@@ -40,13 +40,23 @@ class SaveHandler:
         label = data.get('label', '')
         context = data.get('context', '')
 
-        # Save user message to DB
-        self.memory.save_message(session_id, 'user', user_input, {
+        # Store private data using store_private_data method
+        self.memory.store_private_data(
+            content=value,
+            data_type=data_type,
+            full_message=user_input,
+            metadata={
+                'label': label,
+                'context': context,
+                'session_id': session_id
+            }
+        )
+
+        # Also save to chat history
+        self.memory.add_message(session_id, 'user', user_input, {
             'privacy_category': 'LOCAL_STORAGE',
             'data_type': data_type,
-            'label': label,
-            'value': value,
-            'context': context
+            'label': label
         })
 
         # Generate natural confirmation response
@@ -57,12 +67,11 @@ class SaveHandler:
         except Exception as e:
             # Fallback if response generator fails
             confirmation = self.lang.format('msg_save_confirmation',
-                type=data_type,
-                label=label if label else 'Daten'
+                label=label if label else data_type
             )
 
         # Save confirmation to DB
-        self.memory.save_message(session_id, 'assistant', confirmation, {
+        self.memory.add_message(session_id, 'assistant', confirmation, {
             'privacy_category': 'LOCAL_STORAGE_CONFIRM'
         })
 

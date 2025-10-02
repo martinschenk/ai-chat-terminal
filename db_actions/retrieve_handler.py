@@ -39,21 +39,21 @@ class RetrieveHandler:
         query = data.get('query', user_input)
         label = data.get('label', '')
 
-        # Search in database
-        results = self.memory.search(query, limit=5)
+        # Search in database using search_private_data
+        results = self.memory.search_private_data(query, limit=5, silent=True)
 
         if results:
             # Format results naturally
             formatted_response = self._format_results(results, query_type, query)
 
             # Save to history
-            self.memory.save_message(session_id, 'user', user_input, {
+            self.memory.add_message(session_id, 'user', user_input, {
                 'privacy_category': 'LOCAL_RETRIEVAL',
                 'query_type': query_type,
                 'query': query
             })
 
-            self.memory.save_message(session_id, 'assistant', formatted_response, {
+            self.memory.add_message(session_id, 'assistant', formatted_response, {
                 'privacy_category': 'LOCAL_RESULT'
             })
 

@@ -47,14 +47,17 @@ class ListHandler:
 
             for i, item in enumerate(all_data, 1):
                 content = item.get('content', '')
-                metadata = item.get('metadata', {})
+                metadata = item.get('metadata') or {}  # Handle None case
                 data_type = metadata.get('data_type', 'note')
 
                 # Format each item
                 formatted_items.append(f"  {i}. [{data_type}] {content[:80]}...")
 
             response = f"{header}\n" + "\n".join(formatted_items)
-            response += f"\n\n{self.lang.format('msg_list_total', count=len(all_data))}"
+            try:
+                response += f"\n\n{self.lang.format('msg_list_total', count=len(all_data))}"
+            except:
+                response += f"\n\nTotal: {len(all_data)} items"
 
             return response, {
                 "error": False,

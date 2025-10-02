@@ -38,23 +38,22 @@ class DeleteHandler:
         target = data.get('target', user_input)
         data_type = data.get('type', '')
 
-        # Search for matching items
-        results = self.memory.search(target, limit=10)
+        # Search for matching items using search_private_data
+        results = self.memory.search_private_data(target, limit=10, silent=True)
 
         if results:
-            # Delete found items
-            deleted_ids = []
-            for result in results:
-                try:
-                    self.memory.delete_message(result['id'])
-                    deleted_ids.append(result['id'])
-                except Exception as e:
-                    print(f"⚠️  Failed to delete {result['id']}: {e}", file=sys.stderr)
+            # Delete found items using delete_private_data
+            try:
+                self.memory.delete_private_data(target)
+                deleted_count = len(results)
+            except Exception as e:
+                print(f"⚠️  Failed to delete: {e}", file=sys.stderr)
+                deleted_count = 0
 
-            if deleted_ids:
+            if deleted_count > 0:
                 # Generate confirmation
                 confirmation = self.lang.format('msg_delete_confirmation',
-                    count=len(deleted_ids),
+                    count=deleted_count,
                     target=target,
                     type=data_type if data_type else ''
                 )
@@ -69,7 +68,7 @@ class DeleteHandler:
                     "tokens": 0,
                     "source": "local",
                     "action": "DELETE",
-                    "deleted_count": len(deleted_ids)
+                    "deleted_count": deleted_count
                 }
             else:
                 # Failed to delete

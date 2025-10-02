@@ -48,21 +48,25 @@ class UpdateHandler:
                 "action": "UPDATE_INSUFFICIENT_INFO"
             }
 
-        # Find items to update
-        results = self.memory.search(target, limit=1)
+        # Find items to update using search_private_data
+        results = self.memory.search_private_data(target, limit=1, silent=True)
 
         if results:
             old_item = results[0]
             old_content = old_item.get('content', '')
 
             try:
-                # Update the item
-                # This assumes MemorySystem has an update method
-                self.memory.update_message(old_item['id'], new_value, {
-                    'privacy_category': 'LOCAL_STORAGE',
-                    'data_type': data_type,
-                    'updated_from': old_content
-                })
+                # Update by deleting old and creating new (no direct update method)
+                self.memory.delete_private_data(target)
+                self.memory.store_private_data(
+                    content=new_value,
+                    data_type=data_type if data_type else 'note',
+                    full_message=user_input,
+                    metadata={
+                        'updated_from': old_content,
+                        'session_id': session_id
+                    }
+                )
 
                 # Generate confirmation
                 confirmation = self.lang.format('msg_update_confirmation',
@@ -81,8 +85,7 @@ class UpdateHandler:
                     "model": "local-db-update",
                     "tokens": 0,
                     "source": "local",
-                    "action": "UPDATE",
-                    "updated_id": old_item['id']
+                    "action": "UPDATE"
                 }
 
             except Exception as e:
