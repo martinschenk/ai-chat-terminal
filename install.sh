@@ -691,6 +691,7 @@ AI_CHAT_COMMAND="chat"
 AI_CHAT_MODEL="gpt-4o-mini"
 AI_CHAT_ESC_EXIT="true"
 AI_CHAT_CONTEXT_WINDOW="20"
+OLLAMA_ALWAYS_ON="false"
 EOF
 
 # Step 8: Configure OpenAI API Key
