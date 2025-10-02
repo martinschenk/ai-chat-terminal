@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# AI Chat Terminal - Smart Interactive Installer v6.2.0
+# AI Chat Terminal - Smart Interactive Installer v9.0.0
 # Licensed under MIT License - https://opensource.org/licenses/MIT
 # Requires: Bash 4+ or ZSH (for associative arrays)
 
@@ -342,10 +342,12 @@ echo -e "  ${GREEN}✓${RESET} ${FREE_SPACE} free space"
 echo -e "  ${GREEN}✓${RESET} ZSH available"
 
 # Check for existing models (ZSH compatible)
+echo -en "\n${BLUE}Checking installed AI models...${RESET} "
 EXISTING_MODELS=()
 while IFS= read -r line; do
     EXISTING_MODELS+=("$line")
 done < <(check_installed_models)
+echo -e "${GREEN}✓${RESET}"
 
 if [ ${#EXISTING_MODELS[@]} -gt 0 ]; then
     echo -e "\n${GREEN}${LANG_STRINGS[MODELS_FOUND]}:${RESET}"
@@ -397,15 +399,33 @@ curl -sL "$BASE_URL/modules/language-utils.zsh" -o "$INSTALL_DIR/modules/languag
 curl -sL "$BASE_URL/memory_system.py" -o "$INSTALL_DIR/memory_system.py" && \
 curl -sL "$BASE_URL/chat_system.py" -o "$INSTALL_DIR/chat_system.py" && \
 curl -sL "$BASE_URL/local_storage_detector.py" -o "$INSTALL_DIR/local_storage_detector.py" && \
+curl -sL "$BASE_URL/phi3_intent_parser.py" -o "$INSTALL_DIR/phi3_intent_parser.py" && \
 curl -sL "$BASE_URL/response_generator.py" -o "$INSTALL_DIR/response_generator.py" && \
 curl -sL "$BASE_URL/encryption_manager.py" -o "$INSTALL_DIR/encryption_manager.py" && \
 curl -sL "$BASE_URL/db_migration.py" -o "$INSTALL_DIR/db_migration.py" && \
 chmod +x "$INSTALL_DIR"/*.py && \
 echo -e "${GREEN}✓${RESET}" || echo -e "${RED}✗${RESET}"
 
-# Download language files
-LANGUAGES=(en de de-schwaebisch de-bayerisch de-saechsisch fr it es ca zh hi)
-echo -n "  • Language packs... "
+# Download v9.0.0 modules (db_actions, lang_manager)
+mkdir -p "$INSTALL_DIR/db_actions"
+mkdir -p "$INSTALL_DIR/lang_manager"
+
+echo -n "  • DB action handlers... "
+curl -sL "$BASE_URL/db_actions/__init__.py" -o "$INSTALL_DIR/db_actions/__init__.py" && \
+curl -sL "$BASE_URL/db_actions/save_handler.py" -o "$INSTALL_DIR/db_actions/save_handler.py" && \
+curl -sL "$BASE_URL/db_actions/retrieve_handler.py" -o "$INSTALL_DIR/db_actions/retrieve_handler.py" && \
+curl -sL "$BASE_URL/db_actions/delete_handler.py" -o "$INSTALL_DIR/db_actions/delete_handler.py" && \
+curl -sL "$BASE_URL/db_actions/list_handler.py" -o "$INSTALL_DIR/db_actions/list_handler.py" && \
+curl -sL "$BASE_URL/db_actions/update_handler.py" -o "$INSTALL_DIR/db_actions/update_handler.py" && \
+echo -e "${GREEN}✓${RESET}" || echo -e "${RED}✗${RESET}"
+
+echo -n "  • Language manager... "
+curl -sL "$BASE_URL/lang_manager/__init__.py" -o "$INSTALL_DIR/lang_manager/__init__.py" && \
+echo -e "${GREEN}✓${RESET}" || echo -e "${RED}✗${RESET}"
+
+# Download language files (all 19 languages from v9.0.0)
+LANGUAGES=(en de de-schwaebisch de-bayerisch de-saechsisch fr it es pt nl pl ru ja zh ko ar hi tr sv da fi no ca)
+echo -n "  • Language packs (19 languages)... "
 for lang in "${LANGUAGES[@]}"; do
     curl -sL "$BASE_URL/lang/${lang}.conf" -o "$INSTALL_DIR/lang/${lang}.conf" 2>/dev/null || true
 done
@@ -423,6 +443,126 @@ fi
 
 # Install OpenAI SDK
 pip3 install --user --quiet openai requests 2>/dev/null || pip3 install --user openai requests
+
+# ═══════════════════════════════════════════════════════════════════
+# MANDATORY: Phi-3 Requirement Check (v9.0.0 KO Criterion)
+# ═══════════════════════════════════════════════════════════════════
+
+echo -e "\n${CYAN}${BOLD}⚡ AI Chat Terminal v9.0.0 - Phi-3 Smart Intent System${RESET}"
+echo -e "${DIM}Phi-3 is MANDATORY for v9.0.0. No installation possible without it.${RESET}\n"
+
+# Check if Ollama is installed
+echo -n "  • Checking Ollama... "
+if ! command -v ollama &> /dev/null; then
+    echo -e "${YELLOW}not found${RESET}"
+    echo -e "\n${YELLOW}❌ Ollama is required for Phi-3!${RESET}"
+    echo ""
+    echo "  Installing Ollama via Homebrew..."
+
+    if ! command -v brew &> /dev/null; then
+        echo -e "\n${RED}❌ INSTALLATION FAILED${RESET}"
+        echo ""
+        echo "  Homebrew not found. Please install:"
+        echo "  1. Install Homebrew: https://brew.sh"
+        echo "  2. Run: brew install ollama"
+        echo "  3. Run this installer again"
+        echo ""
+        exit 1
+    fi
+
+    brew install ollama 2>&1 | grep -v "^=" || true
+
+    if ! command -v ollama &> /dev/null; then
+        echo -e "\n${RED}❌ INSTALLATION FAILED${RESET}"
+        echo ""
+        echo "  Ollama installation failed."
+        echo "  Please install manually: https://ollama.ai/download"
+        echo ""
+        exit 1
+    fi
+    echo -e "  ${GREEN}✓${RESET} Ollama installed"
+else
+    echo -e "${GREEN}✓${RESET}"
+fi
+
+# Start Ollama service
+echo -n "  • Starting Ollama service... "
+if command -v brew &> /dev/null; then
+    brew services start ollama &>/dev/null || true
+fi
+
+# Wait for Ollama HTTP server (port 11434) - max 30 seconds
+wait_count=0
+while ! curl -s http://localhost:11434/api/tags >/dev/null 2>&1 && [ $wait_count -lt 30 ]; do
+    sleep 1
+    ((wait_count++))
+done
+
+if ! curl -s http://localhost:11434/api/tags >/dev/null 2>&1; then
+    echo -e "${RED}✗${RESET}"
+    echo -e "\n${RED}❌ INSTALLATION FAILED${RESET}"
+    echo ""
+    echo "  Ollama service not responding after 30 seconds."
+    echo "  Please check Ollama installation and try again."
+    echo ""
+    exit 1
+fi
+echo -e "${GREEN}✓${RESET}"
+
+# Check/Install Phi-3 model
+echo -n "  • Checking Phi-3 model... "
+if ollama list 2>/dev/null | grep -q "phi3"; then
+    echo -e "${GREEN}✓ already installed${RESET}"
+else
+    echo -e "${YELLOW}not found${RESET}"
+    echo ""
+    echo "  📥 Downloading Phi-3 (2.3GB) - This is MANDATORY..."
+    echo "     ${DIM}Phi-3 powers the v9.0.0 Smart Intent System${RESET}"
+    echo ""
+
+    # Run ollama pull with live output
+    if ollama pull phi3; then
+        echo -e "\n  ${GREEN}✓${RESET} Phi-3 downloaded successfully"
+    else
+        echo -e "\n${RED}❌ INSTALLATION FAILED${RESET}"
+        echo ""
+        echo "  Phi-3 download/installation failed."
+        echo ""
+        echo "  Possible reasons:"
+        echo "  • Network connection issues"
+        echo "  • Insufficient disk space (need ~2.3GB free)"
+        echo "  • Ollama service issues"
+        echo ""
+        echo "  Please fix the issue and run installer again."
+        exit 1
+    fi
+fi
+
+# Test Phi-3 inference
+echo -n "  • Testing Phi-3 inference... "
+phi3_test=$(ollama run phi3 "Say OK" 2>&1 | head -1)
+if [[ $phi3_test == *"OK"* ]] || [[ -n "$phi3_test" ]]; then
+    echo -e "${GREEN}✓${RESET}"
+    # Save Phi-3 status to config
+    echo "PHI3_ENABLED=true" >> "$INSTALL_DIR/config"
+    echo "RESPONSE_MODE=natural" >> "$INSTALL_DIR/config"
+else
+    echo -e "${RED}✗${RESET}"
+    echo -e "\n${RED}❌ INSTALLATION FAILED${RESET}"
+    echo ""
+    echo "  Phi-3 is installed but inference test failed."
+    echo ""
+    echo "  Your system may not meet requirements:"
+    echo "  • Apple Silicon Mac (M1/M2/M3/M4) recommended"
+    echo "  • Minimum 8GB RAM"
+    echo "  • Phi-3 requires ~2GB RAM when running"
+    echo ""
+    echo "  AI Chat Terminal v9.0.0 cannot run without Phi-3."
+    exit 1
+fi
+
+echo -e "\n${GREEN}✅ Phi-3 Smart Intent System ready!${RESET}\n"
+sleep 2
 
 # Step 5: Installation Locations Info
 echo -e "\n${CYAN}${BOLD}${LANG_STRINGS[INSTALL_LOCATION_TITLE]:-📦 Installation Locations}${RESET}"
@@ -475,127 +615,16 @@ declare -A MODEL_RECOMMENDATIONS
 
 if [ $SYSTEM_RAM -ge 16 ]; then
     MODEL_RECOMMENDATIONS[presidio]="recommended"
-    MODEL_RECOMMENDATIONS[phi3]="recommended"
     MODEL_RECOMMENDATIONS[spacy_multi]="recommended"
 elif [ $SYSTEM_RAM -ge 8 ]; then
     MODEL_RECOMMENDATIONS[presidio]="recommended"
-    MODEL_RECOMMENDATIONS[phi3]="optional"
     MODEL_RECOMMENDATIONS[spacy_multi]="optional"
 else
     MODEL_RECOMMENDATIONS[presidio]="optional"
-    MODEL_RECOMMENDATIONS[phi3]="skip"
     MODEL_RECOMMENDATIONS[spacy_multi]="skip"
 fi
 
-
-# Phi-3 for Natural Responses
-echo ""
-if [[ "${MODEL_RECOMMENDATIONS[phi3]}" == "recommended" ]]; then
-    echo -e "${GREEN}[EMPFOHLEN]${RESET} ${BOLD}Phi-3${RESET} - Natural Language Responses (2.3GB)"
-    echo -e "${DIM}  Generiert natürliche Antworten für private Daten (statt Templates)${RESET}"
-    echo ""
-    echo -e "  💬 ${BOLD}Warum empfohlen für dich?${RESET}"
-    echo -e "     ${DIM}Dein Mac hat ${SYSTEM_RAM} GB RAM - Phi-3 läuft smooth!${RESET}"
-    echo -e "     ${DIM}Natürliche Antworten statt Template-Responses.${RESET}"
-    echo -e "     ${DIM}Global via Ollama - nutzbar für andere Projekte.${RESET}"
-    echo ""
-    default_phi3="Y"
-elif [[ "${MODEL_RECOMMENDATIONS[phi3]}" == "skip" ]]; then
-    echo -e "${DIM}[ÜBERSPRUNGEN]${RESET} Phi-3 (2.3GB)"
-    echo -e "  ${DIM}Braucht mindestens 8 GB RAM für gute Performance.${RESET}"
-    echo -e "  ${DIM}Templates funktionieren hervorragend auch ohne Phi-3!${RESET}"
-    echo "PHI3_ENABLED=false" >> "$INSTALL_DIR/config"
-    echo "RESPONSE_MODE=template" >> "$INSTALL_DIR/config"
-    default_phi3="skip"
-else
-    echo -e "${YELLOW}[OPTIONAL]${RESET} ${BOLD}Phi-3${RESET} - Natural Responses (2.3GB)"
-    echo ""
-    echo -e "  💬 ${BOLD}Für deinen Mac (${SYSTEM_RAM} GB RAM):${RESET}"
-    echo -e "     ${DIM}Läuft, aber Templates sind schneller und sparen RAM.${RESET}"
-    echo -e "     ${DIM}Empfehlung: Überspringe Phi-3 für bessere Performance.${RESET}"
-    echo ""
-    default_phi3="N"
-fi
-
-if [[ "$default_phi3" != "skip" ]]; then
-    echo -n "Installieren? [Y/n, default=$default_phi3]: "
-    read -r install_phi3 < /dev/tty
-    install_phi3=${install_phi3:-$default_phi3}
-else
-    install_phi3="N"
-fi
-
-if [[ "$install_phi3" =~ ^[Yy]$ ]]; then
-    # Check/Install Ollama
-    if ! command -v ollama &> /dev/null; then
-        echo "  • Installing Ollama..."
-        # macOS: Use Homebrew or direct download
-        if command -v brew &> /dev/null; then
-            brew install ollama 2>&1 | grep -v "^=" || true
-        else
-            echo "    Homebrew not found. Download Ollama from: https://ollama.ai/download"
-            echo "    Press Enter after installing Ollama..."
-            read -r < /dev/tty
-        fi
-    fi
-
-    # Start Ollama service
-    echo "  • Starting Ollama service..."
-    if command -v brew &> /dev/null; then
-        brew services start ollama &>/dev/null || true
-    fi
-
-    # Wait for Ollama HTTP server (port 11434) - max 30 seconds
-    local wait_count=0
-    while ! curl -s http://localhost:11434/api/tags >/dev/null 2>&1 && [ $wait_count -lt 30 ]; do
-        sleep 1
-        ((wait_count++))
-    done
-
-    # Try to download Phi-3
-    if ollama list &>/dev/null; then
-        echo -n "  • Downloading Phi-3 (2.3GB)... "
-
-        # Run ollama pull in background and show spinner
-        (ollama pull phi3 > /tmp/ollama_pull.log 2>&1) &
-        local pull_pid=$!
-
-        # Show spinner while downloading
-        local spin='⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏'
-        local i=0
-        while kill -0 $pull_pid 2>/dev/null; do
-            i=$(( (i+1) %10 ))
-            printf "\r  • Downloading Phi-3 (2.3GB)... ${spin:$i:1}"
-            sleep 0.1
-        done
-
-        # Wait for process to finish
-        wait $pull_pid
-        local exit_code=$?
-
-        if [[ $exit_code -eq 0 ]] && ollama list | grep -q "phi3"; then
-            echo -e "\r  ${GREEN}✓${RESET} Phi-3 downloaded and ready           "
-            echo "PHI3_ENABLED=true" >> "$INSTALL_DIR/config"
-            echo "RESPONSE_MODE=natural" >> "$INSTALL_DIR/config"
-        else
-            echo -e "\r  ${YELLOW}⚠️${RESET}  Phi-3 installation failed           "
-            echo -e "     Using templates. Install later with: /config"
-            echo "PHI3_ENABLED=false" >> "$INSTALL_DIR/config"
-            echo "RESPONSE_MODE=template" >> "$INSTALL_DIR/config"
-        fi
-
-        # Cleanup
-        rm -f /tmp/ollama_pull.log
-    else
-        echo -e "\n  ${YELLOW}⚠️  Ollama service not responding${RESET}"
-        echo -e "     Using templates. Install later with: /config"
-        echo "PHI3_ENABLED=false" >> "$INSTALL_DIR/config"
-        echo "RESPONSE_MODE=template" >> "$INSTALL_DIR/config"
-    fi
-else
-    echo "PHI3_ENABLED=false" >> "$INSTALL_DIR/config"
-    echo "RESPONSE_MODE=template" >> "$INSTALL_DIR/config"
-fi
+# Note: Phi-3 already installed as mandatory requirement above
 
 # Step 7: Privacy Level Configuration (automatic based on installed components)
 # Check if Presidio was installed and set privacy level accordingly

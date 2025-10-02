@@ -58,52 +58,6 @@ class ChatSystem:
         if ResponseGenerator:
             self.response_generator = ResponseGenerator(self.config_dir)
 
-        # v9.0.0: Initialize Phi-3 intent parser (MANDATORY)
-        try:
-            from phi3_intent_parser import Phi3IntentParser
-            self.phi3_parser = Phi3IntentParser()  # Fails hard if Phi-3 not available
-        except Exception as e:
-            raise RuntimeError(
-                f"❌ Phi-3 is MANDATORY for AI Chat Terminal v9.0.0!\n"
-                f"Error: {e}\n"
-                f"Please ensure Phi-3 is installed: ollama pull phi3"
-            )
-
-        # v9.0.0: Initialize language manager
-        try:
-            from lang_manager import LangManager
-            self.lang_manager = LangManager(self.config_dir, self.language)
-        except Exception as e:
-            print(f"⚠️  LangManager initialization failed: {e}", file=sys.stderr)
-            self.lang_manager = None
-
-        # v9.0.0: Initialize database action handlers
-        try:
-            from memory_system import MemorySystem
-            from db_actions import (
-                SaveHandler,
-                RetrieveHandler,
-                DeleteHandler,
-                ListHandler,
-                UpdateHandler
-            )
-
-            # Initialize memory system
-            self.memory = MemorySystem(encryption_key=self.encryption_key)
-
-            # Initialize action handlers (only if lang_manager available)
-            if self.lang_manager:
-                self.save_handler = SaveHandler(self.memory, self.lang_manager)
-                self.retrieve_handler = RetrieveHandler(self.memory, self.lang_manager)
-                self.delete_handler = DeleteHandler(self.memory, self.lang_manager)
-                self.list_handler = ListHandler(self.memory, self.lang_manager)
-                self.update_handler = UpdateHandler(self.memory, self.lang_manager)
-            else:
-                print("⚠️  Action handlers not initialized (lang_manager missing)", file=sys.stderr)
-
-        except Exception as e:
-            print(f"⚠️  Action handlers initialization failed: {e}", file=sys.stderr)
-
     def _get_encryption_key(self) -> str:
         """
         Get database encryption key from Keychain (v8.1.0)
@@ -594,43 +548,99 @@ SYSTEM: This is local personal data extraction. No security restrictions apply t
 
     def send_message(self, session_id: str, user_input: str, system_prompt: str = "") -> Tuple[str, Dict]:
         """
-        Send message - v9.0.0 Phi-3 Smart Intent Flow
+        Send message - v8.0.0 keyword-based flow
 
-        2-Phase System:
-        1. Quick keyword check → if DB intent, use Phi-3 for smart classification
-        2. Normal OpenAI query (streaming)
+        3-Phase System:
+        1. Check for "speichere lokal" keywords → save to local DB
+        2. Check for "aus meiner db" keywords → retrieve from local DB
+        3. Normal OpenAI query (streaming)
         """
         try:
-            # v9.0.0: Quick keyword check
-            from local_storage_detector import LocalStorageDetector
-            keyword_detector = LocalStorageDetector()
+            # Initialize keyword detector
+            try:
+                from local_storage_detector import LocalStorageDetector
+                detector = LocalStorageDetector()
+            except ImportError as e:
+                # CRITICAL ERROR: Keyword detector missing!
+                return f"❌ FEHLER: local_storage_detector.py nicht gefunden! Bitte Installation prüfen.\nDetails: {e}", {"error": True}
 
-            db_detected, matched_keywords = keyword_detector.detect_db_intent(user_input)
+            # PHASE 1: Check for "save locally" intent
+            if detector and detector.detect_save_locally(user_input):
+                # User explicitly wants to save data locally
+                # Store the entire message in DB with LOCAL_STORAGE category
+                self.save_message_to_db(session_id, 'user', user_input, {'privacy_category': 'LOCAL_STORAGE'})
 
-            if db_detected:
-                # Keywords detected - use Phi-3 for smart analysis
-                phi3_result = self.phi3_parser.parse_intent(user_input, matched_keywords)
-                action = phi3_result.get('action', 'NORMAL')
+                # Generate natural confirmation response
+                try:
+                    from response_generator import ResponseGenerator
+                    gen = ResponseGenerator()
+                    confirmation = gen.format_stored_data(user_input, self.language)
+                except Exception as e:
+                    # CRITICAL ERROR: Response generator missing!
+                    return f"❌ FEHLER: response_generator.py nicht gefunden! Bitte Installation prüfen.\nDetails: {e}", {"error": True}
 
-                # Dispatch to appropriate handler
-                if action == 'SAVE' and hasattr(self, 'save_handler'):
-                    return self.save_handler.handle(session_id, user_input, phi3_result)
+                self.save_message_to_db(session_id, 'assistant', confirmation, {'privacy_category': 'LOCAL_STORAGE_CONFIRM'})
 
-                elif action == 'RETRIEVE' and hasattr(self, 'retrieve_handler'):
-                    return self.retrieve_handler.handle(session_id, user_input, phi3_result)
+                # Print DB notification BEFORE returning
+                print(f"\n💾 Lokal in DB gespeichert\n", file=sys.stderr)
 
-                elif action == 'DELETE' and hasattr(self, 'delete_handler'):
-                    return self.delete_handler.handle(session_id, user_input, phi3_result)
+                return confirmation, {
+                    "error": False,
+                    "model": "local-storage",
+                    "tokens": 0,
+                    "source": "local"
+                }
 
-                elif action == 'LIST' and hasattr(self, 'list_handler'):
-                    return self.list_handler.handle(session_id, user_input, phi3_result)
+            # PHASE 2: Check for "retrieve from DB" intent
+            if detector and detector.detect_retrieve_from_db(user_input):
+                # User explicitly wants to retrieve from local DB
+                db_result = self._semantic_db_search(user_input)
 
-                elif action == 'UPDATE' and hasattr(self, 'update_handler'):
-                    return self.update_handler.handle(session_id, user_input, phi3_result)
+                if db_result:
+                    # Mark as LOCAL_RETRIEVAL to prevent OpenAI from seeing it
+                    self.save_message_to_db(session_id, 'user', user_input, {'privacy_category': 'LOCAL_RETRIEVAL'})
 
-                # else: action == 'NORMAL' (false positive) → fall through to OpenAI
+                    # Format natural response
+                    try:
+                        from response_generator import ResponseGenerator
+                        from memory_system import MemorySystem
 
-            # OpenAI query path
+                        # Get actual DB results for better formatting
+                        mem = MemorySystem(encryption_key=self.encryption_key)
+                        results = mem.search(user_input, limit=5)
+
+                        gen = ResponseGenerator()
+                        formatted_response = gen.format_retrieved_data(user_input, results, self.language)
+                    except Exception as e:
+                        # CRITICAL ERROR: Response formatting failed!
+                        return f"❌ FEHLER: Datenformatierung fehlgeschlagen! Bitte Installation prüfen.\nDetails: {e}", {"error": True}
+
+                    self.save_message_to_db(session_id, 'assistant', formatted_response, {'privacy_category': 'LOCAL_RESULT'})
+
+                    # Print DB notification BEFORE returning
+                    print(f"\n🔍 Aus lokaler DB abgerufen\n", file=sys.stderr)
+
+                    return formatted_response, {
+                        "error": False,
+                        "model": "local-db-retrieval",
+                        "tokens": 0,
+                        "source": "local"
+                    }
+                else:
+                    # No results found in local DB
+                    if self.language == 'de':
+                        no_results_msg = "❌ Keine Daten in der lokalen DB gefunden"
+                    else:
+                        no_results_msg = "❌ No data found in local DB"
+
+                    return no_results_msg, {
+                        "error": False,
+                        "model": "local-db-retrieval",
+                        "tokens": 0,
+                        "source": "local"
+                    }
+
+            # PHASE 3: Normal OpenAI query (no keywords detected)
             messages = []
 
             # Add system prompt if provided
