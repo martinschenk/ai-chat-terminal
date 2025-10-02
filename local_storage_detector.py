@@ -391,12 +391,16 @@ RETRIEVE_KEYWORDS = {
         'aus meiner db', 'aus der db', 'aus meiner datenbank', 'aus der datenbank',
         'von meiner db', 'von meinem computer', 'von meinem rechner',
         'vom lokalen speicher', 'lokal gespeichert', 'lokal abgelegt',
+        'in der db', 'in meiner db', 'in der datenbank', 'in meiner datenbank',
         # What did I save
         'was habe ich gespeichert', 'was hab ich gespeichert', 'was speicherte ich',
         'was habe ich notiert', 'was steht in meiner db', 'was ist gespeichert',
         # Show/Get data
         'zeige mir meine daten', 'zeig mir meine daten', 'hole meine daten',
         'gib mir meine daten', 'zeige gespeicherte', 'zeig gespeicherte',
+        # Question variations
+        'wie ist meine', 'wie lautet meine', 'welche ist meine', 'was ist meine',
+        'wie war meine', 'wie heißt meine', 'welches ist mein',
         # Recall/Remember
         'erinnerst du dich', 'erinnerst du dich an', 'was weißt du über',
         'erinnere dich', 'was hast du über', 'hast du gespeichert',
@@ -411,12 +415,16 @@ RETRIEVE_KEYWORDS = {
         'from my db', 'from the db', 'from my database', 'from the database',
         'from my computer', 'from my machine', 'from local storage',
         'locally stored', 'locally saved', 'saved locally',
+        'in the db', 'in my db', 'in the database', 'in my database',
         # What did I save
         'what did i save', 'what did i store', 'what have i saved',
         'what did i note', 'what\'s in my db', 'what is stored',
         # Show/Get data
         'show my data', 'show me my data', 'get my data',
         'give me my data', 'show stored', 'retrieve my data',
+        # Question variations
+        'what is my', 'what\'s my', 'what was my', 'which is my',
+        'how is my', 'tell me my',
         # Recall/Remember
         'do you remember', 'remember what', 'what do you know about',
         'recall', 'what do you have about', 'have you saved',
@@ -431,12 +439,16 @@ RETRIEVE_KEYWORDS = {
         'de mi db', 'de la db', 'de mi base de datos', 'de la base de datos',
         'de mi ordenador', 'de mi computadora', 'del almacenamiento local',
         'guardado localmente', 'almacenado localmente',
+        'en la db', 'en mi db', 'en la base de datos', 'en mi base de datos',
         # What did I save
         'qué guardé', 'qué almacené', 'qué he guardado', 'qué anoté',
         'qué hay en mi db', 'qué está guardado',
         # Show/Get data
         'muestra mis datos', 'muéstrame mis datos', 'dame mis datos',
         'obtén mis datos', 'muestra guardados', 'recupera mis datos',
+        # Question variations
+        'cuál es mi', 'cómo es mi', 'qué es mi', 'cuál era mi',
+        'dime mi', 'cual es mi',
         # Recall/Remember
         'te acuerdas', 'recuerdas', 'qué sabes sobre', 'qué tienes sobre',
         'has guardado', 'recuerda',
