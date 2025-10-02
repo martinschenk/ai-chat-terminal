@@ -1,72 +1,92 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Local Storage Detector - Minimal Keyword System (v9.0.0)
+Local Storage Detector - Expanded Keyword System (v9.0.1)
 Fast keyword detection to trigger Phi-3 intent analysis
-Only 8 keywords per language - Phi-3 does the intelligent work
+~12 keywords per language - covers all 5 operations (SAVE/RETRIEVE/DELETE/LIST/UPDATE)
 """
 
 from typing import Tuple, List
 
-# Minimal keywords for "database intent" - just 8 per language
+# Expanded keywords for "database intent" - ~12 per language
+# Covers all operations: SAVE, RETRIEVE, DELETE, LIST, UPDATE
 # Phi-3 will do the intelligent classification and false-positive detection
 DB_INTENT_KEYWORDS = {
     'de': [
-        'db', 'datenbank', 'lokal', 'speicher', 'speichern', 'merke', 'hole', 'gespeichert'
+        'db', 'datenbank', 'lokal', 'speicher', 'speichern', 'merke', 'hole', 'gespeichert',
+        'vergiss', 'lösche', 'zeig', 'liste'
     ],
     'en': [
-        'db', 'database', 'local', 'storage', 'save', 'remember', 'get', 'stored'
+        'db', 'database', 'local', 'storage', 'save', 'remember', 'get', 'stored',
+        'forget', 'delete', 'show', 'list'
     ],
     'es': [
-        'db', 'base de datos', 'local', 'guarda', 'guardar', 'recuerda', 'muestra', 'guardado'
+        'db', 'base de datos', 'local', 'guarda', 'guardar', 'recuerda', 'muestra', 'guardado',
+        'olvida', 'elimina', 'lista', 'actualiza'
     ],
     'fr': [
-        'db', 'base de données', 'local', 'stockage', 'sauvegarde', 'souviens', 'récupère', 'enregistré'
+        'db', 'base de données', 'local', 'stockage', 'sauvegarde', 'souviens', 'récupère', 'enregistré',
+        'oublie', 'supprime', 'affiche', 'liste'
     ],
     'it': [
-        'db', 'database', 'locale', 'archivio', 'salva', 'ricorda', 'mostra', 'salvato'
+        'db', 'database', 'locale', 'archivio', 'salva', 'ricorda', 'mostra', 'salvato',
+        'dimentica', 'elimina', 'lista', 'aggiorna'
     ],
     'pt': [
-        'db', 'base de dados', 'local', 'armazenamento', 'salvar', 'lembrar', 'mostrar', 'salvo'
+        'db', 'base de dados', 'local', 'armazenamento', 'salvar', 'lembrar', 'mostrar', 'salvo',
+        'esquecer', 'apagar', 'listar', 'atualizar'
     ],
     'nl': [
-        'db', 'database', 'lokaal', 'opslag', 'opslaan', 'onthoud', 'haal', 'opgeslagen'
+        'db', 'database', 'lokaal', 'opslag', 'opslaan', 'onthoud', 'haal', 'opgeslagen',
+        'vergeet', 'verwijder', 'toon', 'lijst'
     ],
     'pl': [
-        'db', 'baza danych', 'lokalnie', 'pamięć', 'zapisz', 'zapamiętaj', 'pokaż', 'zapisane'
+        'db', 'baza danych', 'lokalnie', 'pamięć', 'zapisz', 'zapamiętaj', 'pokaż', 'zapisane',
+        'zapomnij', 'usuń', 'lista', 'aktualizuj'
     ],
     'ru': [
-        'бд', 'база данных', 'локально', 'хранилище', 'сохрани', 'запомни', 'покажи', 'сохранено'
+        'бд', 'база данных', 'локально', 'хранилище', 'сохрани', 'запомни', 'покажи', 'сохранено',
+        'забудь', 'удали', 'список', 'обнови'
     ],
     'ja': [
-        'db', 'データベース', 'ローカル', 'ストレージ', '保存', '覚えて', '取得', '保存した'
+        'db', 'データベース', 'ローカル', 'ストレージ', '保存', '覚えて', '取得', '保存した',
+        '忘れて', '削除', 'リスト', '更新'
     ],
     'zh': [
-        'db', '数据库', '本地', '存储', '保存', '记住', '显示', '已保存'
+        'db', '数据库', '本地', '存储', '保存', '记住', '显示', '已保存',
+        '忘记', '删除', '列表', '更新'
     ],
     'ko': [
-        'db', '데이터베이스', '로컬', '저장소', '저장', '기억해', '보여줘', '저장된'
+        'db', '데이터베이스', '로컬', '저장소', '저장', '기억해', '보여줘', '저장된',
+        '잊어', '삭제', '목록', '업데이트'
     ],
     'ar': [
-        'db', 'قاعدة بيانات', 'محلي', 'تخزين', 'احفظ', 'تذكر', 'أظهر', 'محفوظ'
+        'db', 'قاعدة بيانات', 'محلي', 'تخزين', 'احفظ', 'تذكر', 'أظهر', 'محفوظ',
+        'انسى', 'احذف', 'قائمة', 'حدث'
     ],
     'hi': [
-        'db', 'डेटाबेस', 'स्थानीय', 'संग्रहण', 'सहेजें', 'याद रखें', 'दिखाएं', 'सहेजा'
+        'db', 'डेटाबेस', 'स्थानीय', 'संग्रहण', 'सहेजें', 'याद रखें', 'दिखाएं', 'सहेजा',
+        'भूल जाओ', 'हटाएं', 'सूची', 'अद्यतन'
     ],
     'tr': [
-        'db', 'veritabanı', 'yerel', 'depolama', 'kaydet', 'hatırla', 'göster', 'kaydedildi'
+        'db', 'veritabanı', 'yerel', 'depolama', 'kaydet', 'hatırla', 'göster', 'kaydedildi',
+        'unut', 'sil', 'liste', 'güncelle'
     ],
     'sv': [
-        'db', 'databas', 'lokal', 'lagring', 'spara', 'kom ihåg', 'visa', 'sparat'
+        'db', 'databas', 'lokal', 'lagring', 'spara', 'kom ihåg', 'visa', 'sparat',
+        'glöm', 'ta bort', 'lista', 'uppdatera'
     ],
     'da': [
-        'db', 'database', 'lokal', 'lagring', 'gem', 'husk', 'vis', 'gemt'
+        'db', 'database', 'lokal', 'lagring', 'gem', 'husk', 'vis', 'gemt',
+        'glem', 'slet', 'liste', 'opdater'
     ],
     'fi': [
-        'db', 'tietokanta', 'paikallinen', 'tallennus', 'tallenna', 'muista', 'näytä', 'tallennettu'
+        'db', 'tietokanta', 'paikallinen', 'tallennus', 'tallenna', 'muista', 'näytä', 'tallennettu',
+        'unohda', 'poista', 'lista', 'päivitä'
     ],
     'no': [
-        'db', 'database', 'lokal', 'lagring', 'lagre', 'husk', 'vis', 'lagret'
+        'db', 'database', 'lokal', 'lagring', 'lagre', 'husk', 'vis', 'lagret',
+        'glem', 'slett', 'liste', 'oppdater'
     ]
 }
 
