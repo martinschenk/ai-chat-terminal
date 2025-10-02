@@ -398,6 +398,8 @@ curl -sL "$BASE_URL/memory_system.py" -o "$INSTALL_DIR/memory_system.py" && \
 curl -sL "$BASE_URL/chat_system.py" -o "$INSTALL_DIR/chat_system.py" && \
 curl -sL "$BASE_URL/local_storage_detector.py" -o "$INSTALL_DIR/local_storage_detector.py" && \
 curl -sL "$BASE_URL/response_generator.py" -o "$INSTALL_DIR/response_generator.py" && \
+curl -sL "$BASE_URL/encryption_manager.py" -o "$INSTALL_DIR/encryption_manager.py" && \
+curl -sL "$BASE_URL/db_migration.py" -o "$INSTALL_DIR/db_migration.py" && \
 chmod +x "$INSTALL_DIR"/*.py && \
 echo -e "${GREEN}✓${RESET}" || echo -e "${RED}✗${RESET}"
 
@@ -434,7 +436,28 @@ echo -e "${YELLOW}${LANG_STRINGS[INSTALL_LOCATION_WARNING]:-⚠️  If you unins
 echo ""
 sleep 3
 
-# Step 6: AI Models - Small Models (Auto-Install)
+# Step 6: Database Encryption (v8.1.0)
+echo -e "\n${BLUE}🔐 Database Encryption${RESET}"
+
+# Check if SQLCipher is installed
+echo -n "  • SQLCipher (AES-256)... "
+if command -v sqlcipher &> /dev/null; then
+    echo -e "${GREEN}✓${RESET}"
+else
+    echo -e "${YELLOW}installing...${RESET}"
+    if command -v brew &> /dev/null; then
+        brew install sqlcipher &> /dev/null && echo -e "    ${GREEN}✓ installed${RESET}" || echo -e "    ${RED}✗ failed${RESET}"
+    else
+        echo -e "    ${RED}✗ Homebrew not found${RESET}"
+        echo -e "    ${YELLOW}Install manually: brew install sqlcipher${RESET}"
+    fi
+fi
+
+# Install Python bindings for SQLCipher
+echo -n "  • sqlcipher3-binary (Python)... "
+pip3 install --user --quiet sqlcipher3-binary 2>/dev/null && echo -e "${GREEN}✓${RESET}" || echo -e "${YELLOW}⚠${RESET}"
+
+# Step 7: AI Models - Small Models (Auto-Install)
 echo -e "\n${BLUE}${LANG_STRINGS[SMALL_MODELS]}${RESET}"
 
 echo -n "  • sentence-transformers (60MB)... "
@@ -612,6 +635,39 @@ else
     echo -e "     ${DIM}Beim ersten Start von 'chat' wirst du danach gefragt${RESET}"
     echo -e "     ${DIM}Oder speichere ihn im Keychain:${RESET}"
     echo -e "     ${DIM}security add-generic-password -a \"openai\" -s \"OpenAI API\" -w \"sk-...\"${RESET}"
+fi
+
+# Step 8: Migrate existing database to encrypted (v8.1.0)
+if [ -f "$INSTALL_DIR/memory.db" ]; then
+    echo -e "\n${BLUE}🔐 Database Migration${RESET}"
+    echo -n "  • Migrating to encrypted database... "
+
+    # Check if encryption available
+    python3 -c "import sqlcipher3" 2>/dev/null
+    if [ $? -eq 0 ]; then
+        # Backup existing database
+        cp "$INSTALL_DIR/memory.db" "$INSTALL_DIR/memory.db.pre-v8.1.backup" 2>/dev/null
+
+        # Run migration
+        python3 "$INSTALL_DIR/db_migration.py" migrate \
+            "$INSTALL_DIR/memory.db.pre-v8.1.backup" \
+            "$INSTALL_DIR/memory.db.encrypted" \
+            "$(python3 -c 'from encryption_manager import EncryptionManager; m = EncryptionManager(); print(m.get_or_create_key())')" \
+            2>/dev/null
+
+        if [ $? -eq 0 ] && [ -f "$INSTALL_DIR/memory.db.encrypted" ]; then
+            # Success - replace old DB with encrypted one
+            mv "$INSTALL_DIR/memory.db.encrypted" "$INSTALL_DIR/memory.db"
+            echo -e "${GREEN}✓${RESET}"
+            echo -e "     ${DIM}Backup: memory.db.pre-v8.1.backup${RESET}"
+        else
+            # Migration failed - keep original
+            rm -f "$INSTALL_DIR/memory.db.encrypted" 2>/dev/null
+            echo -e "${YELLOW}⚠ keeping unencrypted${RESET}"
+        fi
+    else
+        echo -e "${YELLOW}⚠ SQLCipher not available${RESET}"
+    fi
 fi
 
 # Step 9: Initialize Models

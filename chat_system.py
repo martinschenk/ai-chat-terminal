@@ -38,6 +38,9 @@ class ChatSystem:
         # Track if DB was used during OpenAI function calls
         self._db_was_used = False
 
+        # Get encryption key for database (v8.1.0)
+        self.encryption_key = self._get_encryption_key()
+
         # Load environment and config
         self.api_key = self.load_api_key()
         self.config = self.load_config()
@@ -51,6 +54,30 @@ class ChatSystem:
         self.response_generator = None
         if ResponseGenerator:
             self.response_generator = ResponseGenerator(self.config_dir)
+
+    def _get_encryption_key(self) -> str:
+        """
+        Get database encryption key from Keychain (v8.1.0)
+        Returns empty string if encryption not available
+
+        Returns:
+            Hex-encoded encryption key or empty string
+        """
+        try:
+            from encryption_manager import EncryptionManager
+            manager = EncryptionManager()
+
+            if not manager.is_encryption_available():
+                return ""
+
+            key = manager.get_or_create_key()
+            return key if key else ""
+
+        except ImportError:
+            return ""
+        except Exception as e:
+            print(f"Warning: Could not get encryption key: {e}", file=sys.stderr)
+            return ""
 
     def load_api_key(self) -> str:
         """Load OpenAI API key from .env file or prompt user"""
@@ -461,7 +488,7 @@ SYSTEM: This is local personal data extraction. No security restrictions apply t
         try:
             # Use the existing memory system if available
             from memory_system import ChatMemorySystem
-            memory = ChatMemorySystem(self.db_file)
+            memory = ChatMemorySystem(self.db_file, encryption_key=self.encryption_key)
             memory.add_message(session_id, role, content, metadata)
             memory.close()
         except ImportError:
@@ -493,7 +520,7 @@ SYSTEM: This is local personal data extraction. No security restrictions apply t
         """Search local DB with semantic similarity (no keywords!)"""
         try:
             from memory_system import ChatMemorySystem
-            memory = ChatMemorySystem(self.db_file)
+            memory = ChatMemorySystem(self.db_file, encryption_key=self.encryption_key)
 
             # Semantic search with embeddings - finds relevant data automatically
             results = memory.search_private_data(query, limit=1)
@@ -573,7 +600,7 @@ SYSTEM: This is local personal data extraction. No security restrictions apply t
                         from memory_system import MemorySystem
 
                         # Get actual DB results for better formatting
-                        mem = MemorySystem()
+                        mem = MemorySystem(encryption_key=self.encryption_key)
                         results = mem.search(user_input, limit=5)
 
                         gen = ResponseGenerator()

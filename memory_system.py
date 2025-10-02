@@ -18,13 +18,20 @@ import time
 import re
 from pathlib import Path
 
-# Try APSW first (has extension support), fallback to sqlite3
+# Try SQLCipher first (encrypted), fallback to APSW, then sqlite3
 try:
-    import apsw
-    USE_APSW = True
-except ImportError:
-    import sqlite3
+    import sqlcipher3
+    USE_SQLCIPHER = True
     USE_APSW = False
+except ImportError:
+    USE_SQLCIPHER = False
+    # Try APSW (has extension support)
+    try:
+        import apsw
+        USE_APSW = True
+    except ImportError:
+        import sqlite3
+        USE_APSW = False
 
 try:
     from sentence_transformers import SentenceTransformer
@@ -38,7 +45,7 @@ except ImportError as e:
 _VECTOR_WARNING_SHOWN = False
 
 class ChatMemorySystem:
-    def __init__(self, db_path=None):
+    def __init__(self, db_path=None, encryption_key=None):
         if db_path is None:
             # Default to ~/.aichat/memory.db
             config_dir = Path.home() / '.aichat'
@@ -46,11 +53,24 @@ class ChatMemorySystem:
             db_path = config_dir / 'memory.db'
 
         self.db_path = db_path
+        self.encryption_key = encryption_key
 
-        # Connect using APSW or sqlite3
-        if USE_APSW:
+        # Connect using SQLCipher, APSW, or sqlite3
+        if USE_SQLCIPHER and encryption_key:
+            # Use SQLCipher with encryption
+            self.db = sqlcipher3.connect(str(db_path))
+            # Set encryption key
+            self.db.execute(f"PRAGMA key = \"x'{encryption_key}'\"")
+            # Optimize performance
+            self.db.execute("PRAGMA cipher_page_size = 4096")
+            self.db.execute("PRAGMA kdf_iter = 64000")  # Optimized (was 256000)
+            self.db.execute("PRAGMA cipher_hmac_algorithm = HMAC_SHA512")
+            self.db.execute("PRAGMA cipher_kdf_algorithm = PBKDF2_HMAC_SHA512")
+        elif USE_APSW:
+            # Use APSW (no encryption)
             self.db = apsw.Connection(str(db_path))
         else:
+            # Use sqlite3 (no encryption)
             self.db = sqlite3.connect(str(db_path))
 
         # Check for vector extension support
@@ -845,6 +865,38 @@ class ChatMemorySystem:
         if self.db:
             self.db.close()
 
+def get_encryption_key_auto() -> str:
+    """
+    Automatically get encryption key from Keychain
+    Returns empty string if encryption not available
+
+    Returns:
+        Hex-encoded encryption key or empty string
+    """
+    try:
+        # Import here to avoid circular dependency
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        sys.path.insert(0, script_dir)
+        from encryption_manager import EncryptionManager
+
+        manager = EncryptionManager()
+
+        # Check if encryption available
+        if not manager.is_encryption_available():
+            return ""
+
+        # Get or create key
+        key = manager.get_or_create_key()
+        return key if key else ""
+
+    except ImportError:
+        # encryption_manager not available
+        return ""
+    except Exception as e:
+        print(f"Warning: Could not get encryption key: {e}", file=sys.stderr)
+        return ""
+
+
 def main():
     """Command line interface for testing"""
     if len(sys.argv) < 2:
@@ -856,7 +908,11 @@ def main():
         print("  cleanup [force]    - Smart cleanup (5000+ msgs or 50MB triggers)")
         return
 
-    memory = ChatMemorySystem()
+    # Get encryption key automatically
+    encryption_key = get_encryption_key_auto()
+
+    # Initialize with encryption if available
+    memory = ChatMemorySystem(encryption_key=encryption_key)
     command = sys.argv[1]
 
     try:

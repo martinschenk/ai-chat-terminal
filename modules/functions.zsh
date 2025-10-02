@@ -85,6 +85,38 @@ chat_loop() {
         # Skip empty input
         [[ -z "$INPUT" ]] && continue
 
+        # Handle export-db command (v8.1.0)
+        if [[ "$INPUT" =~ ^--export-db[[:space:]]+ ]]; then
+            local EXPORT_PATH="${INPUT#--export-db }"
+            EXPORT_PATH="${EXPORT_PATH// /}"  # Remove spaces
+
+            if [[ -z "$EXPORT_PATH" ]]; then
+                echo -e "${YELLOW}Usage: --export-db <output-file>${RESET}"
+                echo -e "${DIM}Example: --export-db ~/Desktop/backup.db${RESET}"
+                continue
+            fi
+
+            # Expand ~ to home directory
+            EXPORT_PATH="${EXPORT_PATH/#\~/$HOME}"
+
+            echo -e "${COMMAND_COLOR}📤 Exporting encrypted database...${RESET}"
+
+            # Get encryption key and export
+            python3 "$SCRIPT_DIR/db_migration.py" export \
+                "$CONFIG_DIR/memory.db" \
+                "$EXPORT_PATH" \
+                "$(python3 -c 'from encryption_manager import EncryptionManager; m = EncryptionManager(); print(m.get_key_from_keychain() or "")')" \
+                2>&1
+
+            if [[ $? -eq 0 ]]; then
+                echo -e "${GREEN}✓ Exported to: ${EXPORT_PATH}${RESET}"
+                echo -e "${YELLOW}⚠️  WARNING: ${EXPORT_PATH} is NOT encrypted!${RESET}"
+            else
+                echo -e "${YELLOW}✗ Export failed${RESET}"
+            fi
+            continue
+        fi
+
         # Handle commands
         case "$INPUT" in
             /config|/settings|/menu|config|settings|menu|cfg)
