@@ -153,13 +153,22 @@ class Phi3IntentParser:
 
         except subprocess.TimeoutExpired:
             print("⚠️  Phi-3 inference timeout", file=sys.stderr)
-            return self._fallback_response()
+            return self._fallback_response(user_message, matched_keywords)
         except json.JSONDecodeError as e:
             print(f"⚠️  Failed to parse Phi-3 JSON: {e}", file=sys.stderr)
-            return self._fallback_response()
+            # Try to extract action from malformed JSON
+            if 'RETRIEVE' in response_text.upper():
+                return {
+                    "action": "RETRIEVE",
+                    "confidence": 0.7,
+                    "reasoning": "Recovered from JSON parse error - detected RETRIEVE intent",
+                    "false_positive": False,
+                    "data": {"type": "unknown", "query": user_message}
+                }
+            return self._fallback_response(user_message, matched_keywords)
         except Exception as e:
             print(f"⚠️  Phi-3 error: {e}", file=sys.stderr)
-            return self._fallback_response()
+            return self._fallback_response(user_message, matched_keywords)
 
     def _build_prompt(self, user_message: str, matched_keywords: List[str]) -> str:
         """Build the Phi-3 prompt with false-positive detection"""
@@ -308,8 +317,44 @@ User: "{user_message}"
 Keywords detected: [{keywords_str}]
 """
 
-    def _fallback_response(self) -> Dict[str, Any]:
-        """Fallback response if Phi-3 fails"""
+    def _fallback_response(self, user_message: str = "", matched_keywords: List[str] = None) -> Dict[str, Any]:
+        """Intelligent fallback response if Phi-3 fails - tries to guess intent from keywords"""
+
+        # If we have keywords, try to guess the action
+        if matched_keywords:
+            msg_lower = user_message.lower()
+
+            # RETRIEVE indicators: hole, get, wie ist, was ist mein/e
+            if any(kw in msg_lower for kw in ['hole', 'get', 'wie ist', 'was ist mein', 'what is my']):
+                return {
+                    "action": "RETRIEVE",
+                    "confidence": 0.6,
+                    "reasoning": "Phi-3 failed, guessed RETRIEVE from keywords",
+                    "false_positive": False,
+                    "data": {"type": "unknown", "query": user_message}
+                }
+
+            # LIST indicators: zeig, liste, list, show all
+            if any(kw in msg_lower for kw in ['zeig', 'liste', 'list', 'show', 'alle']):
+                return {
+                    "action": "LIST",
+                    "confidence": 0.6,
+                    "reasoning": "Phi-3 failed, guessed LIST from keywords",
+                    "false_positive": False,
+                    "data": {}
+                }
+
+            # DELETE indicators: vergiss, lösche, delete, forget
+            if any(kw in msg_lower for kw in ['vergiss', 'lösche', 'delete', 'forget', 'remove']):
+                return {
+                    "action": "DELETE",
+                    "confidence": 0.6,
+                    "reasoning": "Phi-3 failed, guessed DELETE from keywords",
+                    "false_positive": False,
+                    "data": {"target": user_message}
+                }
+
+        # Default: send to OpenAI
         return {
             "action": "NORMAL",
             "confidence": 0.5,
