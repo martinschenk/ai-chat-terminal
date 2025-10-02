@@ -144,9 +144,21 @@ class Phi3IntentParser:
 
             if json_start == -1 or json_end == 0:
                 print(f"⚠️  No JSON in Phi-3 response: {response_text[:100]}", file=sys.stderr)
-                return self._fallback_response()
+                return self._fallback_response(user_message, matched_keywords)
 
             json_str = response_text[json_start:json_end]
+
+            # Try to fix incomplete JSON (truncated reasoning field)
+            if not json_str.endswith('}'):
+                # Response was truncated - try to close it properly
+                # Find last complete field and close JSON
+                last_quote = json_str.rfind('"')
+                if last_quote > 0:
+                    # Truncate to last complete field
+                    json_str = json_str[:last_quote+1]
+                    # Close the JSON object
+                    json_str += '\n  }\n}'
+
             parsed = json.loads(json_str)
 
             return parsed
@@ -221,6 +233,7 @@ Examples of REAL DB OPERATIONS (these are COMMANDS):
 - "db list" → LIST
 - "was hast du in der db gespeichert?" → LIST
 - "Vergiss meine alte Adresse" → DELETE
+- "vergiss meine email" → DELETE (imperative! not conversation!)
 - "lösche aus lokaler datenbank" → DELETE
 
 KEY RULE FOR LIST:

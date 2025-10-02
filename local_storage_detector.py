@@ -14,11 +14,11 @@ from typing import Tuple, List
 DB_INTENT_KEYWORDS = {
     'de': [
         'db', 'datenbank', 'lokal', 'speicher', 'speichern', 'merke', 'hole', 'gespeichert',
-        'vergiss', 'lösche', 'zeig', 'liste'
+        'vergiss', 'lösche', 'zeig', 'liste', 'meine', 'mein'
     ],
     'en': [
         'db', 'database', 'local', 'storage', 'save', 'remember', 'get', 'stored',
-        'forget', 'delete', 'show', 'list'
+        'forget', 'delete', 'show', 'list', 'my', 'mine'
     ],
     'es': [
         'db', 'base de datos', 'local', 'guarda', 'guardar', 'recuerda', 'muestra', 'guardado',

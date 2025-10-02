@@ -607,10 +607,17 @@ SYSTEM: This is local personal data extraction. No security restrictions apply t
 
             db_detected, matched_keywords = keyword_detector.detect_db_intent(user_input)
 
+            # DEBUG: Log keyword detection
+            print(f"🔍 Keyword check: detected={db_detected}, keywords={matched_keywords[:3] if matched_keywords else []}", file=sys.stderr)
+
             if db_detected:
                 # Keywords detected - use Phi-3 for smart analysis
                 phi3_result = self.phi3_parser.parse_intent(user_input, matched_keywords)
                 action = phi3_result.get('action', 'NORMAL')
+                false_pos = phi3_result.get('false_positive', False)
+
+                # DEBUG: Log Phi-3 decision
+                print(f"🤖 Phi-3: action={action}, false_positive={false_pos}, confidence={phi3_result.get('confidence')}", file=sys.stderr)
 
                 # Dispatch to appropriate handler
                 if action == 'SAVE' and hasattr(self, 'save_handler'):
