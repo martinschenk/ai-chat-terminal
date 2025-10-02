@@ -601,14 +601,18 @@ SYSTEM: This is local personal data extraction. No security restrictions apply t
         2. Normal OpenAI query (streaming)
         """
         try:
+            import time
+            start_time = time.time()
+
             # v9.0.0: Quick keyword check
             from local_storage_detector import LocalStorageDetector
             keyword_detector = LocalStorageDetector()
 
             db_detected, matched_keywords = keyword_detector.detect_db_intent(user_input)
 
-            # DEBUG: Log keyword detection
-            print(f"🔍 Keyword check: detected={db_detected}, keywords={matched_keywords[:3] if matched_keywords else []}", file=sys.stderr)
+            elapsed_ms = (time.time() - start_time) * 1000
+            # DEBUG: Log keyword detection with timing
+            print(f"🔍 Keyword check ({elapsed_ms:.1f}ms): detected={db_detected}, keywords={matched_keywords[:3] if matched_keywords else []}", file=sys.stderr)
 
             if db_detected:
                 # Keywords detected - use Phi-3 for smart analysis
