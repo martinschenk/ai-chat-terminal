@@ -791,8 +791,28 @@ class ChatMemorySystem:
             if metadata is None:
                 metadata = {}
 
+            # Map Phi-3 data types to PII categories that search_private_data expects
+            TYPE_TO_PII_CATEGORY = {
+                'email': 'EMAIL_ADDRESS',
+                'phone': 'PHONE_NUMBER',
+                'phone_number': 'PHONE_NUMBER',
+                'password': 'PASSWORD',
+                'api_key': 'API_KEY',
+                'credit_card': 'CREDIT_CARD',
+                'ssn': 'US_SSN',
+                'passport': 'US_PASSPORT',
+                'nif': 'NIF',
+                'dni': 'DNI',
+                'ip_address': 'IP_ADDRESS',
+                'note': 'GENERIC_API_KEY',  # Generic fallback for notes
+            }
+
+            # Convert to PII category for compatibility with search_private_data
+            pii_category = TYPE_TO_PII_CATEGORY.get(data_type.lower(), 'GENERIC_API_KEY')
+
             # Set privacy category in metadata
-            metadata['privacy_category'] = data_type
+            metadata['privacy_category'] = pii_category
+            metadata['data_type'] = data_type  # Keep original for display
             metadata['is_private'] = True
 
             # Store in chat_history

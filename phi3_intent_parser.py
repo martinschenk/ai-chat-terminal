@@ -98,7 +98,9 @@ class Phi3IntentParser:
                 text=True,
                 timeout=10
             )
-            return result.returncode == 0 and len(result.stdout) > 0
+            # Just check if ollama run completed successfully (returncode 0)
+            # Output may contain ANSI codes, so don't check stdout content
+            return result.returncode == 0
         except:
             return False
 
