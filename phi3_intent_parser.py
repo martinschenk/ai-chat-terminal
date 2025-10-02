@@ -148,6 +148,11 @@ class Phi3IntentParser:
 
             json_str = response_text[json_start:json_end]
 
+            # Clean up JSON: remove comments and fix common issues
+            import re
+            # Remove // comments (Phi-3 sometimes adds them)
+            json_str = re.sub(r'//[^\n]*', '', json_str)
+
             # Try to fix incomplete JSON (truncated reasoning field)
             if not json_str.endswith('}'):
                 # Response was truncated - try to close it properly
@@ -240,11 +245,11 @@ KEY RULE FOR LIST:
 If user asks to "show", "list", "display" what's stored/saved in DB/local → LIST action!
 Don't overthink it - imperative verbs (zeig, liste, hole) = commands, not questions!
 
-RESPOND IN JSON:
+RESPOND IN JSON (NO COMMENTS, PURE JSON ONLY):
 {{
   "action": "SAVE|RETRIEVE|DELETE|LIST|UPDATE|NORMAL",
   "confidence": 0.0-1.0,
-  "reasoning": "why you chose this action",
+  "reasoning": "short reason (max 50 chars)",
   "false_positive": true|false,
   "data": {{
     "type": "email|phone|name|address|api_key|password|note|...",
@@ -254,6 +259,11 @@ RESPOND IN JSON:
   }}
 }}
 
+IMPORTANT:
+- NO // comments in JSON!
+- Keep reasoning SHORT (max 50 characters)
+- PURE JSON ONLY!
+
 EXAMPLES:
 
 User: "merke dir meine Email ist max@test.com"
@@ -261,7 +271,7 @@ Keywords: ['merke', 'speicher']
 {{
   "action": "SAVE",
   "confidence": 0.98,
-  "reasoning": "Clear command to remember/save email address",
+  "reasoning": "Save email command",
   "false_positive": false,
   "data": {{
     "type": "email",
