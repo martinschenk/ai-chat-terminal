@@ -79,7 +79,7 @@ class ChatSystem:
 
         # v9.0.0: Initialize database action handlers
         try:
-            from memory_system import MemorySystem
+            from memory_system import ChatMemorySystem
             from db_actions import (
                 SaveHandler,
                 RetrieveHandler,
@@ -89,7 +89,7 @@ class ChatSystem:
             )
 
             # Initialize memory system
-            self.memory = MemorySystem(encryption_key=self.encryption_key)
+            self.memory = ChatMemorySystem(encryption_key=self.encryption_key)
 
             # Initialize action handlers (only if lang_manager available)
             if self.lang_manager:
