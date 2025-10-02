@@ -173,72 +173,105 @@ first_run_setup() {
 
     mkdir -p "$CONFIG_DIR"
 
+    # v9.0.0: Check if install.sh already configured everything
+    local language_configured=false
+    local api_key_configured=false
+
+    # Check if language already set by install.sh
+    if [[ -f "$CONFIG_FILE" ]]; then
+        local existing_lang=$(grep "^AI_CHAT_LANGUAGE=" "$CONFIG_FILE" 2>/dev/null | cut -d'=' -f2 | tr -d '"')
+        if [[ -n "$existing_lang" ]]; then
+            language_configured=true
+            language="$existing_lang"
+        fi
+    fi
+
+    # Check if API key already set by install.sh
+    if [[ -f "$ENV_FILE" ]]; then
+        local existing_key=$(grep "^OPENAI_API_KEY=" "$ENV_FILE" 2>/dev/null | cut -d'=' -f2 | tr -d '"')
+        if [[ -n "$existing_key" ]] && [[ ${#existing_key} -gt 20 ]]; then
+            api_key_configured=true
+            openai_key="$existing_key"
+        fi
+    fi
+
+    # If everything is already configured, skip first-run setup
+    if [[ "$language_configured" == "true" ]] && [[ "$api_key_configured" == "true" ]]; then
+        # Already configured by install.sh - just start chat
+        return 0
+    fi
+
+    # Show welcome only if we need to configure something
     clear
     echo -e "\033[1;36m\033[1m👋 Welcome to AI Chat Terminal!\033[0m"
     echo -e "\033[1;36m================================\033[0m\n"
     echo -e "\033[0;37mLet's get you set up with your personal AI assistant.\033[0m"
     echo -e "\033[0;37mThis will only take a minute...\033[0m\n"
 
-    # Step 1: Language Selection
-    echo -e "\033[1;33mStep 1/4: Select Your Language\033[0m"
-    echo "────────────────────────────────────"
-    echo ""
-    echo "  [1] 🇬🇧 English (default)"
-    echo "  [2] 🇩🇪 Deutsch"
-    echo "  [3] 🇫🇷 Français"
-    echo "  [4] 🇮🇹 Italiano"
-    echo "  [5] 🇪🇸 Español"
-    echo "  [6] 🇨🇳 中文 (Mandarin)"
-    echo "  [7] 🇮🇳 हिन्दी (Hindi)"
-    echo "  [8] 🏴 Euskera (Basque)"
-    echo "  [9] 🏴 Català (Catalan)"
-    echo "  [10] 🏴 Galego (Galician)"
-    echo ""
-    echo -n "Select [1-10] (default: 1): "
-    read -r lang_choice
+    # Step 1: Language Selection (skip if already configured)
+    if [[ "$language_configured" == "false" ]]; then
+        echo -e "\033[1;33mStep 1/4: Select Your Language\033[0m"
+        echo "────────────────────────────────────"
+        echo ""
+        echo "  [1] 🇬🇧 English (default)"
+        echo "  [2] 🇩🇪 Deutsch"
+        echo "  [3] 🇫🇷 Français"
+        echo "  [4] 🇮🇹 Italiano"
+        echo "  [5] 🇪🇸 Español"
+        echo "  [6] 🇨🇳 中文 (Mandarin)"
+        echo "  [7] 🇮🇳 हिन्दी (Hindi)"
+        echo "  [8] 🏴 Euskera (Basque)"
+        echo "  [9] 🏴 Català (Catalan)"
+        echo "  [10] 🏴 Galego (Galician)"
+        echo ""
+        echo -n "Select [1-10] (default: 1): "
+        read -r lang_choice
 
-    local language="en"
-    case "$lang_choice" in
-        2)
-            language="de"
-            handle_german_selection
-            language="$selected_lang"
-            ;;
-        3) language="fr" ;;
-        4) language="it" ;;
-        5)
-            language="es"
-            handle_spanish_selection
-            language="$selected_lang"
-            ;;
-        6) language="zh" ;;
-        7) language="hi" ;;
-        8) language="eu" ;;
-        9) language="ca" ;;
-        10) language="gl" ;;
-        *) language="en" ;;
-    esac
-    echo -e "\033[0;32m✓ Language set to: $language\033[0m\n"
+        local language="en"
+        case "$lang_choice" in
+            2)
+                language="de"
+                handle_german_selection
+                language="$selected_lang"
+                ;;
+            3) language="fr" ;;
+            4) language="it" ;;
+            5)
+                language="es"
+                handle_spanish_selection
+                language="$selected_lang"
+                ;;
+            6) language="zh" ;;
+            7) language="hi" ;;
+            8) language="eu" ;;
+            9) language="ca" ;;
+            10) language="gl" ;;
+            *) language="en" ;;
+        esac
+        echo -e "\033[0;32m✓ Language set to: $language\033[0m\n"
+    fi
 
-    # Step 2: OpenAI API Key
-    echo -e "\033[1;33mStep 2/3: OpenAI API Key (Required)\033[0m"
-    echo "────────────────────────────────────"
-    echo -e "Get your key at: \033[0;36mhttps://platform.openai.com/api-keys\033[0m"
-    echo ""
+    # Step 2: OpenAI API Key (skip if already configured)
+    if [[ "$api_key_configured" == "false" ]]; then
+        echo -e "\033[1;33mStep 2/3: OpenAI API Key (Required)\033[0m"
+        echo "────────────────────────────────────"
+        echo -e "Get your key at: \033[0;36mhttps://platform.openai.com/api-keys\033[0m"
+        echo ""
 
-    local openai_key=""
-    while [[ -z "$openai_key" ]]; do
-        echo -n "Enter your OpenAI API key: "
-        read -r openai_key
-        if [[ -z "$openai_key" ]]; then
-            echo -e "\033[0;31m⚠ API key is required to continue!\033[0m"
-            echo -e "\033[2mPress Ctrl+C to cancel setup\033[0m"
-        elif [[ ${#openai_key} -lt 20 ]]; then
-            echo -e "\033[0;31m⚠ That doesn't look like a valid API key\033[0m"
-            openai_key=""
-        fi
-    done
-    echo -e "\033[0;32m✓ OpenAI API key configured (includes web search)\033[0m\n"
+        local openai_key=""
+        while [[ -z "$openai_key" ]]; do
+            echo -n "Enter your OpenAI API key: "
+            read -r openai_key
+            if [[ -z "$openai_key" ]]; then
+                echo -e "\033[0;31m⚠ API key is required to continue!\033[0m"
+                echo -e "\033[2mPress Ctrl+C to cancel setup\033[0m"
+            elif [[ ${#openai_key} -lt 20 ]]; then
+                echo -e "\033[0;31m⚠ That doesn't look like a valid API key\033[0m"
+                openai_key=""
+            fi
+        done
+        echo -e "\033[0;32m✓ OpenAI API key configured (includes web search)\033[0m\n"
+    fi
 
     # Step 3: Select OpenAI Model
     echo -e "\033[1;33mStep 3/3: Select AI Model\033[0m"
