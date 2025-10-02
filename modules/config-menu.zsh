@@ -49,7 +49,8 @@ show_config_menu() {
         echo -e "${PURPLE}│${RESET}  ├─ ${LANG_CONFIG_LANGUAGE}: ${YELLOW}$LANGUAGE${RESET}"
         echo -e "${PURPLE}│${RESET}  ├─ AI Model: ${YELLOW}${AI_CHAT_MODEL}${RESET}"
         echo -e "${PURPLE}│${RESET}  ├─ ${LANG_CONFIG_CONTEXT_WINDOW:-Context Window}: ${YELLOW}$CONTEXT_WINDOW ${LANG_CONTEXT_MESSAGES:-messages}${RESET}"
-        echo -e "${PURPLE}│${RESET}  └─ ${LANG_CONFIG_ESC}: ${YELLOW}$ENABLE_ESC${RESET}"
+        echo -e "${PURPLE}│${RESET}  ├─ ${LANG_CONFIG_ESC}: ${YELLOW}$ENABLE_ESC${RESET}"
+        echo -e "${PURPLE}│${RESET}  └─ Ollama always-on: ${YELLOW}${OLLAMA_ALWAYS_ON:-false}${RESET}"
         echo -e "${PURPLE}├─────────────────────────────────────${RESET}"
         echo -e "${PURPLE}│${RESET}  ${GREEN}[1]${RESET} ${LANG_CONFIG_OPT1}"
         echo -e "${PURPLE}│${RESET}  ${GREEN}[2]${RESET} ${LANG_CONFIG_OPT2}"
@@ -59,15 +60,16 @@ show_config_menu() {
         echo -e "${PURPLE}│${RESET}  ${GREEN}[6]${RESET} 🔑 Set OpenAI API key"
         echo -e "${PURPLE}│${RESET}  ${GREEN}[7]${RESET} 🧠 ${LANG_CONFIG_MEMORY_SYSTEM:-Memory system}"
         echo -e "${PURPLE}│${RESET}  ${GREEN}[8]${RESET} 🔒 Privacy & AI Models"
-        echo -e "${PURPLE}│${RESET}  ${GREEN}[9]${RESET} 🧹 ${LANG_CONFIG_OPT7}"
-        echo -e "${PURPLE}│${RESET}  ${GREEN}[10]${RESET} ℹ️  ${LANG_CONFIG_ABOUT:-About & Version}"
-        echo -e "${PURPLE}│${RESET}  ${GREEN}[11]${RESET} ${LANG_CONFIG_OPT6}"
+        echo -e "${PURPLE}│${RESET}  ${GREEN}[9]${RESET} ⚡ Toggle Ollama always-on"
+        echo -e "${PURPLE}│${RESET}  ${GREEN}[10]${RESET} 🧹 ${LANG_CONFIG_OPT7}"
+        echo -e "${PURPLE}│${RESET}  ${GREEN}[11]${RESET} ℹ️  ${LANG_CONFIG_ABOUT:-About & Version}"
+        echo -e "${PURPLE}│${RESET}  ${GREEN}[12]${RESET} ${LANG_CONFIG_OPT6}"
         echo -e "${PURPLE}│${RESET}"
-        echo -e "${PURPLE}│${RESET}  ${RED}[12]${RESET} 🗑️  ${LANG_CONFIG_OPT9}"
+        echo -e "${PURPLE}│${RESET}  ${RED}[13]${RESET} 🗑️  ${LANG_CONFIG_OPT9}"
         echo -e "${PURPLE}└─────────────────────────────────────${RESET}"
         echo ""
 
-        echo -ne "${CYAN}${LANG_CONFIG_SELECT_OPTION:-Select [1-12]:} ${RESET}"
+        echo -ne "${CYAN}${LANG_CONFIG_SELECT_OPTION:-Select [1-13]:} ${RESET}"
 
         # Handle ESC key detection in config menu
         local choice=""
@@ -131,16 +133,19 @@ show_config_menu() {
             8)  # Privacy & AI Models
                 privacy_models_menu
                 ;;
-            9)  # Clear cache
+            9)  # Toggle Ollama always-on
+                toggle_ollama_always_on
+                ;;
+            10)  # Clear cache
                 clear_chat_cache
                 ;;
-            10)  # About & Version
+            11)  # About & Version
                 show_about_info
                 ;;
-            11)  # Back to chat
+            12)  # Back to chat
                 return
                 ;;
-            12)  # Uninstall
+            13)  # Uninstall
                 uninstall_terminal
                 # If uninstall was cancelled, we continue the loop
                 # If uninstall succeeded, the script will have exited
@@ -264,6 +269,38 @@ toggle_esc() {
     sed -i '' "s/AI_CHAT_ESC_EXIT=.*/AI_CHAT_ESC_EXIT=\"$new_val\"/" "$CONFIG_FILE"
     echo -e "${GREEN}✅ ESC exit toggled to: $new_val${RESET}"
     sleep 2
+}
+
+# Toggle Ollama always-on function
+toggle_ollama_always_on() {
+    echo -e "\n${CYAN}⚡ Ollama Daemon Management${RESET}"
+    echo ""
+    echo "Current mode: ${YELLOW}${OLLAMA_ALWAYS_ON:-false}${RESET}"
+    echo ""
+    echo -e "${BOLD}Modes:${RESET}"
+    echo "  • ${GREEN}false${RESET} (managed) - Ollama starts/stops with chat (saves RAM)"
+    echo "  • ${YELLOW}true${RESET}  (always-on) - Ollama runs continuously"
+    echo ""
+
+    local current="${OLLAMA_ALWAYS_ON:-false}"
+    local new_val="true"
+    [[ "$current" == "true" ]] && new_val="false"
+
+    if grep -q "OLLAMA_ALWAYS_ON" "$CONFIG_FILE"; then
+        sed -i '' "s/OLLAMA_ALWAYS_ON=.*/OLLAMA_ALWAYS_ON=\"$new_val\"/" "$CONFIG_FILE"
+    else
+        echo "OLLAMA_ALWAYS_ON=\"$new_val\"" >> "$CONFIG_FILE"
+    fi
+
+    echo -e "${GREEN}✅ Ollama mode changed to: $new_val${RESET}"
+
+    if [[ "$new_val" == "false" ]]; then
+        echo -e "${CYAN}ℹ️  Ollama will now start/stop with chat sessions (saves RAM)${RESET}"
+    else
+        echo -e "${CYAN}ℹ️  Ollama will run continuously in background${RESET}"
+    fi
+
+    sleep 3
 }
 
 # Change AI model function
