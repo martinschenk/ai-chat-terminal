@@ -578,6 +578,9 @@ SYSTEM: This is local personal data extraction. No security restrictions apply t
 
                 self.save_message_to_db(session_id, 'assistant', confirmation, {'privacy_category': 'LOCAL_STORAGE_CONFIRM'})
 
+                # Print DB notification BEFORE returning
+                print(f"\n💾 Lokal in DB gespeichert\n", file=sys.stderr)
+
                 return confirmation, {
                     "error": False,
                     "model": "local-storage",
@@ -610,6 +613,9 @@ SYSTEM: This is local personal data extraction. No security restrictions apply t
                         return f"❌ FEHLER: Datenformatierung fehlgeschlagen! Bitte Installation prüfen.\nDetails: {e}", {"error": True}
 
                     self.save_message_to_db(session_id, 'assistant', formatted_response, {'privacy_category': 'LOCAL_RESULT'})
+
+                    # Print DB notification BEFORE returning
+                    print(f"\n🔍 Aus lokaler DB abgerufen\n", file=sys.stderr)
 
                     return formatted_response, {
                         "error": False,
