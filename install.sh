@@ -289,6 +289,36 @@ load_language() {
             LANG_STRINGS[COMPLETE]="¡Instalación completa!"
             LANG_STRINGS[CONFIG_LATER]="Puedes cambiar todo con '/config' más tarde"
             ;;
+        *)
+            # Default to English for all other languages (ar, da, fi, fr, hi, it, ja, ko, nl, no, pl, pt, ru, sv, tr, zh)
+            # Chat will use proper translations from lang/*.conf files
+            LANG_STRINGS[TITLE]="🤖 AI Chat Terminal Installation"
+            LANG_STRINGS[SYSTEM_ANALYSIS]="System Analysis..."
+            LANG_STRINGS[RAM_DETECTED]="RAM detected"
+            LANG_STRINGS[CPU_DETECTED]="CPU cores detected"
+            LANG_STRINGS[MODELS_FOUND]="Already installed models found"
+            LANG_STRINGS[NO_MODELS]="No models found - fresh installation"
+            LANG_STRINGS[CHOOSE_INSTALL]="Choose installation type"
+            LANG_STRINGS[FRESH_INSTALL]="Fresh install (recommended for first use)"
+            LANG_STRINGS[UPDATE]="Update (keeps settings)"
+            LANG_STRINGS[CANCEL]="Cancel"
+            LANG_STRINGS[DOWNLOADING]="Downloading files..."
+            LANG_STRINGS[MODEL_RECOMMENDATION]="Model recommendations based on your system"
+            LANG_STRINGS[SMALL_MODELS]="Small models (<100MB) will be installed automatically"
+            LANG_STRINGS[LARGE_MODELS]="Large models - installation optional"
+            LANG_STRINGS[RECOMMENDED]="Recommended"
+            LANG_STRINGS[OPTIONAL]="Optional"
+            LANG_STRINGS[SIZE]="Size"
+            LANG_STRINGS[INSTALL_QUESTION]="Install?"
+            LANG_STRINGS[PRIVACY_TITLE]="Privacy Configuration"
+            LANG_STRINGS[PRIVACY_DESC]="How should sensitive data be handled?"
+            LANG_STRINGS[PRIVACY_ENHANCED]="Enhanced - AI + Microsoft Presidio (recommended)"
+            LANG_STRINGS[PRIVACY_BASIC]="Basic - AI-based detection only"
+            LANG_STRINGS[PRIVACY_OFF]="Off - No privacy protection (not recommended)"
+            LANG_STRINGS[PRIVACY_WHY]="Why enhanced? Presidio detects 50+ PII types (names, emails, credit cards, etc.)"
+            LANG_STRINGS[COMPLETE]="Installation complete!"
+            LANG_STRINGS[CONFIG_LATER]="You can change all settings later with '/config'"
+            ;;
     esac
 }
 
@@ -304,17 +334,50 @@ echo "╔═══════════════════════�
 echo "║   🌍 Language / Sprache / Idioma     ║"
 echo "╚═══════════════════════════════════════╝"
 echo -e "${RESET}\n"
-echo "  [1] English"
-echo "  [2] Deutsch"
-echo "  [3] Español"
+echo "  [1]  🇦🇪 Arabic (العربية)"
+echo "  [2]  🇩🇰 Danish (Dansk)"
+echo "  [3]  🇩🇪 Deutsch (German)"
+echo "  [4]  🇬🇧 English (default)"
+echo "  [5]  🇪🇸 Español (Spanish)"
+echo "  [6]  🇫🇮 Finnish (Suomi)"
+echo "  [7]  🇫🇷 Français (French)"
+echo "  [8]  🇮🇳 हिन्दी (Hindi)"
+echo "  [9]  🇮🇹 Italiano (Italian)"
+echo "  [10] 🇯🇵 日本語 (Japanese)"
+echo "  [11] 🇰🇷 한국어 (Korean)"
+echo "  [12] 🇳🇱 Nederlands (Dutch)"
+echo "  [13] 🇳🇴 Norsk (Norwegian)"
+echo "  [14] 🇵🇱 Polski (Polish)"
+echo "  [15] 🇵🇹 Português (Portuguese)"
+echo "  [16] 🇷🇺 Русский (Russian)"
+echo "  [17] 🇸🇪 Svenska (Swedish)"
+echo "  [18] 🇹🇷 Türkçe (Turkish)"
+echo "  [19] 🇨🇳 中文 (Chinese)"
 echo ""
-echo -n "Select language [1-3, default=1]: "
+echo -n "Select language [1-19, default=4]: "
 read -r lang_choice < /dev/tty
 
 case "$lang_choice" in
-    2) SELECTED_LANG="de" ;;
-    3) SELECTED_LANG="es" ;;
-    *) SELECTED_LANG="en" ;;
+    1)  SELECTED_LANG="ar" ;;
+    2)  SELECTED_LANG="da" ;;
+    3)  SELECTED_LANG="de" ;;
+    4)  SELECTED_LANG="en" ;;
+    5)  SELECTED_LANG="es" ;;
+    6)  SELECTED_LANG="fi" ;;
+    7)  SELECTED_LANG="fr" ;;
+    8)  SELECTED_LANG="hi" ;;
+    9)  SELECTED_LANG="it" ;;
+    10) SELECTED_LANG="ja" ;;
+    11) SELECTED_LANG="ko" ;;
+    12) SELECTED_LANG="nl" ;;
+    13) SELECTED_LANG="no" ;;
+    14) SELECTED_LANG="pl" ;;
+    15) SELECTED_LANG="pt" ;;
+    16) SELECTED_LANG="ru" ;;
+    17) SELECTED_LANG="sv" ;;
+    18) SELECTED_LANG="tr" ;;
+    19) SELECTED_LANG="zh" ;;
+    *)  SELECTED_LANG="en" ;;
 esac
 
 load_language "$SELECTED_LANG"
