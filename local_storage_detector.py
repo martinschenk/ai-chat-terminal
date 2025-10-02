@@ -14,7 +14,7 @@ from typing import Tuple, List
 DB_INTENT_KEYWORDS = {
     'de': [
         'db', 'datenbank', 'lokal', 'speicher', 'speichern', 'merke', 'hole', 'gespeichert',
-        'vergiss', 'lösche', 'zeig', 'liste', 'meine', 'mein'
+        'vergiss', 'lösche', 'zeig', 'zeige', 'liste', 'meine', 'mein'
     ],
     'en': [
         'db', 'database', 'local', 'storage', 'save', 'remember', 'get', 'stored',

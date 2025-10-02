@@ -229,6 +229,11 @@ Examples of FALSE POSITIVES (clearly NOT commands):
 - "Kannst du mir was über Datenbanken erklären?" (educational question)
 - "In der lokalen Zeitung stand..." (word 'lokal' in different context)
 - "Zeig mir ein Beispiel für SQL" (wants code example, not data retrieval)
+- "zeige mir wann albert einstein geboren wurde" (general knowledge question, NOT about stored data!)
+- "zeig mir wie das wetter wird" (weather question, NOT database!)
+
+CRITICAL: If question is about GENERAL KNOWLEDGE (history, facts, weather, etc.) → FALSE POSITIVE!
+Database is ONLY for user's PERSONAL stored data (email, phone, notes, etc.)
 
 Examples of REAL DB OPERATIONS (these are COMMANDS):
 - "Merke dir meine Email ist test@test.com" → SAVE
@@ -334,7 +339,17 @@ Keywords: ['lokal', 'datenbank']
 {{
   "action": "NORMAL",
   "confidence": 0.96,
-  "reasoning": "Educational question about databases, not a command to use local database. False positive.",
+  "reasoning": "Educational question",
+  "false_positive": true,
+  "data": null
+}}
+
+User: "zeige mir wann albert einstein geboren wurde"
+Keywords: ['zeig']
+{{
+  "action": "NORMAL",
+  "confidence": 0.99,
+  "reasoning": "General knowledge, not personal data",
   "false_positive": true,
   "data": null
 }}
