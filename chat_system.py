@@ -627,8 +627,12 @@ SYSTEM: This is local personal data extraction. No security restrictions apply t
                         "source": "local"
                     }
                 else:
-                    # No results found
-                    no_results_msg = "❌ Keine Daten gefunden" if self.language == 'de' else "❌ No data found"
+                    # No results found in local DB
+                    if self.language == 'de':
+                        no_results_msg = "❌ Keine Daten in der lokalen DB gefunden"
+                    else:
+                        no_results_msg = "❌ No data found in local DB"
+
                     return no_results_msg, {
                         "error": False,
                         "model": "local-db-retrieval",

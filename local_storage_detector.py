@@ -398,6 +398,7 @@ RETRIEVE_KEYWORDS = {
         # Show/Get data
         'zeige mir meine daten', 'zeig mir meine daten', 'hole meine daten',
         'gib mir meine daten', 'zeige gespeicherte', 'zeig gespeicherte',
+        'zeige mir alles', 'zeig mir alles', 'zeige alles', 'alle daten',
         # Question variations
         'wie ist meine', 'wie lautet meine', 'welche ist meine', 'was ist meine',
         'wie war meine', 'wie heißt meine', 'welches ist mein',
@@ -841,10 +842,12 @@ class LocalStorageDetector:
             intent_type: 'save_local', 'retrieve_local', or 'normal'
             detected: True if keyword detected, False otherwise
         """
-        if self.detect_save_locally(text):
-            return ('save_local', True)
-        elif self.detect_retrieve_from_db(text):
+        # Check RETRIEVE first - higher priority than SAVE
+        # (e.g. "zeige mir was gespeichert ist" should be RETRIEVE, not SAVE)
+        if self.detect_retrieve_from_db(text):
             return ('retrieve_local', True)
+        elif self.detect_save_locally(text):
+            return ('save_local', True)
         else:
             return ('normal', False)
 
