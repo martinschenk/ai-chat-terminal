@@ -103,7 +103,19 @@ class RetrieveHandler:
             if len(results) == 1:
                 return results[0]['content']
             else:
-                # Multiple results - show first one primarily
-                main = results[0]['content']
-                count = len(results)
-                return f"{main}\n\n({count} {self.lang.get('msg_results_found')})"
+                # Multiple results - show all unique values
+                unique_contents = []
+                seen = set()
+                for r in results:
+                    content = r.get('content', '').strip()
+                    if content and content not in seen:
+                        unique_contents.append(content)
+                        seen.add(content)
+
+                if len(unique_contents) == 1:
+                    return unique_contents[0]
+                else:
+                    # Show all unique results
+                    formatted = '\n'.join(f"• {c}" for c in unique_contents)
+                    count = len(unique_contents)
+                    return f"{formatted}\n\n({count} {self.lang.get('msg_results_found')})"

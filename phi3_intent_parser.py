@@ -175,6 +175,9 @@ class Phi3IntentParser:
 
         keywords_str = ', '.join(matched_keywords) if matched_keywords else 'none'
 
+        # Escape user message for safe inclusion in prompt (avoid @ and other special chars breaking JSON)
+        safe_message = user_message.replace('"', '\\"').replace('\n', ' ')
+
         return f"""You are a local database assistant powered by Phi-3.
 The keyword detector flagged this message as potentially database-related.
 
@@ -183,7 +186,7 @@ YOUR JOB:
 2. If real DB operation: Extract structured data
 3. If false positive: Return NORMAL (send to OpenAI instead)
 
-USER MESSAGE: "{user_message}"
+USER MESSAGE: "{safe_message}"
 
 CONTEXT:
 - Keywords detected: [{keywords_str}]
@@ -313,7 +316,7 @@ Keywords: ['lokal', 'datenbank']
 }}
 
 NOW ANALYZE THIS REQUEST AND RESPOND WITH JSON ONLY:
-User: "{user_message}"
+User: "{safe_message}"
 Keywords detected: [{keywords_str}]
 """
 
