@@ -86,12 +86,29 @@ class ListHandler:
             List of messages with LOCAL_STORAGE category
         """
         try:
-            # Query database for all LOCAL_STORAGE messages
-            # This assumes MemorySystem has a method to filter by metadata
-            return self.memory.get_by_category('LOCAL_STORAGE', limit=100)
-        except AttributeError:
-            # Fallback: search with empty query to get recent items
-            all_messages = self.memory.search('', limit=100)
-            # Filter for LOCAL_STORAGE
-            return [msg for msg in all_messages
-                    if msg.get('metadata', {}).get('privacy_category') == 'LOCAL_STORAGE']
+            # Use direct DB query to get ALL private data entries
+            cursor = self.memory.db.cursor()
+
+            # Get all messages from 'private_data' session
+            cursor.execute("""
+                SELECT content, metadata, created_at
+                FROM chat_history
+                WHERE session_id = 'private_data'
+                ORDER BY created_at DESC
+                LIMIT 100
+            """)
+
+            results = []
+            for row in cursor.fetchall():
+                import json
+                metadata = json.loads(row[1]) if row[1] else {}
+                results.append({
+                    'content': row[0],
+                    'metadata': metadata,
+                    'created_at': row[2]
+                })
+
+            return results
+        except Exception as e:
+            print(f"⚠️  Error getting local storage: {e}", file=sys.stderr)
+            return []

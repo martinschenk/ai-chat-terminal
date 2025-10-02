@@ -191,17 +191,28 @@ ACTIONS:
 IMPORTANT - FALSE POSITIVE DETECTION:
 Ask yourself: "Does the user ACTUALLY want to use the local database?"
 
-Examples of FALSE POSITIVES:
-- "Ich habe das in der Datenbank gespeichert" (past tense, talking about something)
-- "Kannst du mir was über Datenbanken erklären?" (asking about databases, not using them)
-- "In der lokalen Zeitung stand..." (word 'lokal' in different context)
-- "Zeig mir ein Beispiel für SQL" (technical question, not a command)
+⚠️ BE LESS CONSERVATIVE: If keywords match AND it COULD be a DB command, classify as DB operation!
+Only mark as FALSE POSITIVE if it's clearly NOT a database command.
 
-Examples of REAL DB OPERATIONS:
+Examples of FALSE POSITIVES (clearly NOT commands):
+- "Ich habe das in der Datenbank gespeichert" (past tense, telling a story)
+- "Kannst du mir was über Datenbanken erklären?" (educational question)
+- "In der lokalen Zeitung stand..." (word 'lokal' in different context)
+- "Zeig mir ein Beispiel für SQL" (wants code example, not data retrieval)
+
+Examples of REAL DB OPERATIONS (these are COMMANDS):
 - "Merke dir meine Email ist test@test.com" → SAVE
-- "Was ist meine Telefonnummer?" → RETRIEVE
+- "hole meine Email aus der DB" → RETRIEVE
 - "Zeig mir alles was du gespeichert hast" → LIST
+- "liste alle lokalen daten auf" → LIST
+- "db list" → LIST
+- "was hast du in der db gespeichert?" → LIST
 - "Vergiss meine alte Adresse" → DELETE
+- "lösche aus lokaler datenbank" → DELETE
+
+KEY RULE FOR LIST:
+If user asks to "show", "list", "display" what's stored/saved in DB/local → LIST action!
+Don't overthink it - imperative verbs (zeig, liste, hole) = commands, not questions!
 
 RESPOND IN JSON:
 {{
@@ -245,6 +256,30 @@ Keywords: ['meine']
     "type": "phone_number",
     "query": "Telefonnummer",
     "label": "meine Telefonnummer"
+  }}
+}}
+
+User: "liste alle lokalen daten auf"
+Keywords: ['lokal']
+{{
+  "action": "LIST",
+  "confidence": 0.97,
+  "reasoning": "Clear command to list all stored data - imperative verb 'liste' indicates command",
+  "false_positive": false,
+  "data": {{
+    "filter": null
+  }}
+}}
+
+User: "db list"
+Keywords: ['db']
+{{
+  "action": "LIST",
+  "confidence": 0.99,
+  "reasoning": "Direct database command to list data - 'db list' is a clear technical command",
+  "false_positive": false,
+  "data": {{
+    "filter": null
   }}
 }}
 
