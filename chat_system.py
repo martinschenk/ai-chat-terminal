@@ -45,6 +45,9 @@ class ChatSystem:
         self.api_key = self.load_api_key()
         self.config = self.load_config()
 
+        # Get language setting for response generation
+        self.language = self.config.get("AI_CHAT_LANGUAGE", "en")
+
         # OpenAI API settings
         self.api_url = "https://api.openai.com/v1/chat/completions"
         self.model = self.config.get("AI_CHAT_MODEL", "gpt-4o-mini")
