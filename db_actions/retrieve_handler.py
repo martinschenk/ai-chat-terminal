@@ -40,7 +40,15 @@ class RetrieveHandler:
         label = data.get('label', '')
 
         # Search in database using search_private_data
-        results = self.memory.search_private_data(query, limit=5, silent=True)
+        results = self.memory.search_private_data(query, limit=10, silent=True)
+
+        # Filter by type if Phi-3 identified a specific type
+        if query_type and results:
+            # Map query_type to expected metadata.data_type
+            filtered = [r for r in results
+                       if r.get('metadata', {}).get('data_type', '').lower() == query_type.lower()]
+            if filtered:
+                results = filtered
 
         if results:
             # Format results naturally

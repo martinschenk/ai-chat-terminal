@@ -156,6 +156,7 @@ class Phi3IntentParser:
             return self._fallback_response(user_message, matched_keywords)
         except json.JSONDecodeError as e:
             print(f"⚠️  Failed to parse Phi-3 JSON: {e}", file=sys.stderr)
+            print(f"⚠️  Problematic JSON: {json_str[:200]}", file=sys.stderr)
             # Try to extract action from malformed JSON
             if 'RETRIEVE' in response_text.upper():
                 return {
