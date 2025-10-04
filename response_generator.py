@@ -284,28 +284,22 @@ class ResponseGenerator:
         for keyword in ['speichere lokal', 'save locally', 'guarda localmente', 'speicher lokal', 'store locally']:
             clean_message = clean_message.replace(keyword, '').strip(':, ')
 
-        prompt = f"""TASK: Confirm data stored locally. {lang_instruction}
+        prompt = f"""TASK: Confirm data stored. {lang_instruction}
 
-User said: "{clean_message[:100]}"
+STRICT RULES - FOLLOW EXACTLY:
+1. MAXIMUM 3 WORDS + 1 EMOJI (example: "💾 Hab's gemerkt!")
+2. NO explanations, NO punctuation except emoji
+3. Vary your phrasing
 
-RULES:
-1. 2-5 words max (keep it short & punchy!)
-2. Include 1-2 emojis
-3. Be HUMAN, PLAYFUL, VARIED - NOT robotic!
-4. Change your phrasing EVERY time
-5. Use varied verbs: gespeichert/notiert/gemerkt/versteckt/gesichert/verräumt/eingepackt
-
-PLAYFUL EXAMPLES:
-💾 Hab's gemerkt!
-🔒 Alles versteckt
-✨ Sicher verräumt!
+VALID (pick one style):
+💾 Hab's!
+🔒 Versteckt!
+✨ Gesichert!
 🎯 Is drin!
-🔐 Hab ich!
-💼 Eingepackt & safe
-🗄️ Lokal notiert
-📦 Verstaut!
+🔐 Gemerkt!
+📦 Verräumt!
 
-Your creative response:"""
+OUTPUT (3 words max):"""
 
         return self._call_phi3(prompt)
 
@@ -319,26 +313,21 @@ Your creative response:"""
         result = db_results[0]
         content = result.get('content', '')
 
-        prompt = f"""You are a PLAYFUL, HUMAN assistant. {lang_instruction}
+        prompt = f"""TASK: Show retrieved data. {lang_instruction}
 
-User asked: "{user_query}"
+Data: {content}
 
-Found in local database: {content}
+STRICT RULES:
+1. Just show the data + 1 short phrase (5 words max)
+2. Use 1 emoji: 🔍/💾/✨/🎯
+3. NO explanations!
 
-RULES:
-1. Be CREATIVE & VARIED - change your phrasing each time!
-2. Use playful verbs: herausgezaubert/gefunden/extrahiert/rausgekramt/ausgegraben/entdeckt
-3. Include 1-2 emojis (🔍/💾/✨/🎯/📦)
-4. Keep it short (max 25 words)
-5. Sound HUMAN, not robotic!
+VALID:
+🔍 Gefunden: {content[:30]}
+💾 {content[:30]}
+✨ Hier: {content[:30]}
 
-PLAYFUL EXAMPLES:
-🔍 Hab's rausgekramt: {content[:20]}...
-✨ Aus der DB gezaubert: {content[:20]}...
-💾 Gefunden! {content[:20]}...
-🎯 Extrahiert: {content[:20]}...
-
-Your creative response:"""
+OUTPUT:"""
 
         return self._call_phi3(prompt)
 
