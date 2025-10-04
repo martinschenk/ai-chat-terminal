@@ -547,9 +547,11 @@ show_about_info() {
     echo -e "  • ${GREEN}AI Vector Database memory${RESET}"
     echo -e "  • ${GREEN}19 languages + dialects${RESET}"
     echo -e "  • ${GREEN}Function calling support${RESET}"
+    echo -e "  • ${GREEN}Hybrid daemon architecture${RESET}"
+    echo -e "  • ${GREEN}95% faster responses${RESET}"
     echo ""
 
-    echo -e "${DIM}Built on Shell-GPT by TheR1D${RESET}"
+    echo -e "${DIM}Powered by OpenAI GPT-4, Phi-3 & Ollama${RESET}"
     echo -e "${DIM}Copyright © 2025 Martin Schenk${RESET}"
     echo ""
     echo -e "${CYAN}Press any key to return...${RESET}"

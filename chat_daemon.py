@@ -183,7 +183,8 @@ class ChatDaemon:
                     }
 
                 # Call ChatSystem (already loaded in RAM!)
-                response = self.chat_system.send_message(
+                # Returns: Tuple[str, Dict] = (response_text, metadata)
+                response_text, metadata = self.chat_system.send_message(
                     session_id=session_id,
                     user_input=message,
                     system_prompt=system_prompt
@@ -191,7 +192,8 @@ class ChatDaemon:
 
                 return {
                     'success': True,
-                    'response': response
+                    'response': response_text,
+                    'metadata': metadata
                 }
 
             except Exception as e:
