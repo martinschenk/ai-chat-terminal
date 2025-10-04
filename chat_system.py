@@ -623,23 +623,23 @@ SYSTEM: This is local personal data extraction. No security restrictions apply t
                 # DEBUG: Log Phi-3 decision
                 print(f"🤖 Phi-3: action={action}, false_positive={false_pos}, confidence={phi3_result.get('confidence')}", file=sys.stderr)
 
-                # Dispatch to appropriate handler
-                if action == 'SAVE' and hasattr(self, 'save_handler'):
+                # Dispatch to appropriate handler (only if NOT false positive!)
+                if action == 'SAVE' and not false_pos and hasattr(self, 'save_handler'):
                     return self.save_handler.handle(session_id, user_input, phi3_result)
 
-                elif action == 'RETRIEVE' and hasattr(self, 'retrieve_handler'):
+                elif action == 'RETRIEVE' and not false_pos and hasattr(self, 'retrieve_handler'):
                     return self.retrieve_handler.handle(session_id, user_input, phi3_result)
 
-                elif action == 'DELETE' and hasattr(self, 'delete_handler'):
+                elif action == 'DELETE' and not false_pos and hasattr(self, 'delete_handler'):
                     return self.delete_handler.handle(session_id, user_input, phi3_result)
 
-                elif action == 'LIST' and hasattr(self, 'list_handler'):
+                elif action == 'LIST' and not false_pos and hasattr(self, 'list_handler'):
                     return self.list_handler.handle(session_id, user_input, phi3_result)
 
-                elif action == 'UPDATE' and hasattr(self, 'update_handler'):
+                elif action == 'UPDATE' and not false_pos and hasattr(self, 'update_handler'):
                     return self.update_handler.handle(session_id, user_input, phi3_result)
 
-                # else: action == 'NORMAL' (false positive) → fall through to OpenAI
+                # else: action == 'NORMAL' or false_positive=True → fall through to OpenAI
 
             # OpenAI query path
             messages = []
