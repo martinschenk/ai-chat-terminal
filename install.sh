@@ -516,6 +516,7 @@ curl -sL "$BASE_URL/memory_system.py" -o "$INSTALL_DIR/memory_system.py" && \
 curl -sL "$BASE_URL/chat_system.py" -o "$INSTALL_DIR/chat_system.py" && \
 curl -sL "$BASE_URL/chat_daemon.py" -o "$INSTALL_DIR/chat_daemon.py" && \
 curl -sL "$BASE_URL/daemon_manager.py" -o "$INSTALL_DIR/daemon_manager.py" && \
+curl -sL "$BASE_URL/ollama_manager.py" -o "$INSTALL_DIR/ollama_manager.py" && \
 curl -sL "$BASE_URL/local_storage_detector.py" -o "$INSTALL_DIR/local_storage_detector.py" && \
 curl -sL "$BASE_URL/phi3_intent_parser.py" -o "$INSTALL_DIR/phi3_intent_parser.py" && \
 curl -sL "$BASE_URL/response_generator.py" -o "$INSTALL_DIR/response_generator.py" && \

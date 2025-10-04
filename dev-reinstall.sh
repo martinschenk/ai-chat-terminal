@@ -116,8 +116,8 @@ echo -e "\n${BLUE}4. Syncing Files${RESET}"
 
 # Python core files
 echo -n "  • Python core files... "
-for file in chat_system.py memory_system.py chat_daemon.py \
-            local_storage_detector.py phi3_intent_parser.py \
+for file in chat_system.py memory_system.py chat_daemon.py daemon_manager.py \
+            ollama_manager.py local_storage_detector.py phi3_intent_parser.py \
             response_generator.py encryption_manager.py db_migration.py; do
     if [[ -f "$DEV_DIR/$file" ]]; then
         cp "$DEV_DIR/$file" "$INSTALL_DIR/"
