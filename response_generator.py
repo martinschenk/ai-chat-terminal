@@ -284,22 +284,14 @@ class ResponseGenerator:
         for keyword in ['speichere lokal', 'save locally', 'guarda localmente', 'speicher lokal', 'store locally']:
             clean_message = clean_message.replace(keyword, '').strip(':, ')
 
-        prompt = f"""TASK: Confirm data stored. {lang_instruction}
+        prompt = f"""{lang_instruction} Confirm data stored in 2-3 words + ONE emoji.
 
-STRICT RULES - FOLLOW EXACTLY:
-1. MAXIMUM 3 WORDS + 1 EMOJI (example: "💾 Hab's gemerkt!")
-2. NO explanations, NO punctuation except emoji
-3. Vary your phrasing
-
-VALID (pick one style):
+EXAMPLES:
 💾 Hab's!
-🔒 Versteckt!
-✨ Gesichert!
-🎯 Is drin!
-🔐 Gemerkt!
-📦 Verräumt!
+🔒 Gesichert!
+✨ Notiert!
 
-OUTPUT (3 words max):"""
+Your 2-3 word response:"""
 
         return self._call_phi3(prompt)
 
