@@ -672,15 +672,14 @@ SYSTEM: This is local personal data extraction. No security restrictions apply t
                 "messages": messages,
                 "temperature": 0.7,
                 "max_tokens": 500,
-                "stream": True  # Enable streaming
+                "stream": False  # Daemon-compatible: Get full response
             }
 
-            # Make API request with streaming
+            # Make API request (non-streaming for daemon compatibility)
             response = requests.post(
                 self.api_url,
                 headers=headers,
                 json=payload,
-                stream=True,
                 timeout=30
             )
 
@@ -688,46 +687,16 @@ SYSTEM: This is local personal data extraction. No security restrictions apply t
                 error_msg = f"OpenAI API error {response.status_code}"
                 return error_msg, {"error": True}
 
-            # Stream response
-            ai_response = ""
-            first_chunk = True
-
-            for line in response.iter_lines():
-                if not line:
-                    continue
-
-                line_text = line.decode('utf-8')
-                if line_text.startswith('data: '):
-                    line_text = line_text[6:]
-
-                if line_text == '[DONE]':
-                    break
-
-                try:
-                    chunk = json.loads(line_text)
-                    if 'choices' in chunk and chunk['choices']:
-                        delta = chunk['choices'][0].get('delta', {})
-                        if 'content' in delta:
-                            content = delta['content']
-                            # First chunk: overwrite "Verarbeite..." with \r
-                            if first_chunk:
-                                print(f"\r{content}", end="", flush=True)
-                                first_chunk = False
-                            else:
-                                print(content, end="", flush=True)
-                            ai_response += content
-                except json.JSONDecodeError:
-                    continue
-
-            print()  # Newline after streaming
+            # Parse response (non-streaming)
+            response_data = response.json()
+            ai_response = response_data['choices'][0]['message']['content']
 
             # Save to DB - normal OpenAI conversation (no privacy_category)
             self.save_message_to_db(session_id, 'user', user_input)
             self.save_message_to_db(session_id, 'assistant', ai_response)
 
-            # Return empty string since we already streamed to stdout
-            # Prevents double printing in shell script
-            return "", {
+            # Return full response (daemon will display it)
+            return ai_response, {
                 "error": False,
                 "model": self.model,
                 "tokens": self.count_tokens(ai_response),
