@@ -299,29 +299,41 @@ Your 2-3 word response:"""
         """
         Generate retrieval response using Phi-3 (v8.0.0)
         User explicitly said "aus meiner db" or similar
+
+        CRITICAL: MUST include 🔍 icon to show data comes from DB!
         """
         lang_instruction = self._get_language_instruction(language)
 
         result = db_results[0]
         content = result.get('content', '')
 
-        prompt = f"""TASK: Show retrieved data. {lang_instruction}
+        # Generate playful phrase with Phi-3
+        prompt = f"""{lang_instruction} Create a SHORT (2-4 words) playful phrase for retrieving data from database.
 
-Data: {content}
+EXAMPLES (German):
+- Aus DB geholt
+- Gefunden
+- Hier ist's
+- DB sagt
 
-STRICT RULES:
-1. Just show the data + 1 short phrase (5 words max)
-2. Use 1 emoji: 🔍/💾/✨/🎯
-3. NO explanations!
+EXAMPLES (English):
+- Found in DB
+- Got it
+- Here you go
 
-VALID:
-🔍 Gefunden: {content[:30]}
-💾 {content[:30]}
-✨ Hier: {content[:30]}
+Your SHORT phrase (2-4 words max):"""
 
-OUTPUT:"""
+        try:
+            phrase = self._call_phi3(prompt).strip(':!.,')
+        except:
+            # Fallback phrases
+            phrases_de = ["Aus DB geholt", "Gefunden", "Hier ist's"]
+            phrases_en = ["Found in DB", "Got it", "Here you go"]
+            import random
+            phrase = random.choice(phrases_de if 'deutsch' in lang_instruction.lower() else phrases_en)
 
-        return self._call_phi3(prompt)
+        # ALWAYS add icon prefix (NON-NEGOTIABLE!)
+        return f"🔍 {phrase}: {content}"
 
     def _generate_with_phi3_deleted(self, target: str, count: int, language: str) -> str:
         """Generate deletion confirmation using Phi-3 (v9.0.0)"""
@@ -396,24 +408,16 @@ Your creative response:"""
         """Generate LIST header using Phi-3 (v9.0.0)"""
         lang_instruction = self._get_language_instruction(language)
 
-        prompt = f"""TASK: Create header for list of {count} stored items. {lang_instruction}
+        prompt = f"""{lang_instruction} Create ONE short header for {count} stored items.
 
-Count: {count} items
-
-RULES:
-1. 3-7 words max
-2. Include 1 emoji (📦/🗄️/💾/📋/🔍)
-3. Be playful but clear
-4. Vary your phrasing
+STRICT FORMAT: [EMOJI] [2-4 words]:
 
 EXAMPLES:
-📦 Deine {count} Schätze:
-🗄️ {count} Items im Tresor
-💾 Gespeichert ({count}):
-📋 Deine {count} Notizen
-🔍 {count}x lokal dabei
+📦 Deine Daten ({count}):
+🗄️ Lokal gespeichert:
+💾 {count} Einträge:
 
-Your creative header:"""
+OUTPUT (ONE line only):"""
 
         return self._call_phi3(prompt)
 
@@ -450,25 +454,43 @@ Your response (4 words max):"""
         return self._call_phi3(prompt)
 
     def _generate_with_phi3_query(self, query: str, db_results: List[Dict], language: str) -> str:
-        """Generate query response using Phi-3"""
+        """
+        Generate query response using Phi-3
+
+        CRITICAL: MUST include 🔍 icon to show data comes from DB!
+        """
         lang_instruction = self._get_language_instruction(language)
 
         result = db_results[0]
         content = result.get('content', '')
 
-        prompt = f"""You are a helpful assistant. {lang_instruction}
+        # Generate playful phrase with Phi-3
+        prompt = f"""{lang_instruction} Create a SHORT (2-4 words) playful phrase for retrieving data from database.
 
-User asked: "{query}"
+EXAMPLES (German):
+- Aus DB geholt
+- Gefunden
+- Hier ist's
+- DB sagt
 
-Found in local database: {content}
+EXAMPLES (English):
+- Found in DB
+- Got it
+- Here you go
 
-Provide a brief, natural response that gives the user their requested information. Be conversational and use appropriate emojis.
+Your SHORT phrase (2-4 words max):"""
 
-Keep it under 30 words.
+        try:
+            phrase = self._call_phi3(prompt).strip(':!.,')
+        except:
+            # Fallback phrases
+            phrases_de = ["Aus DB geholt", "Gefunden", "Hier ist's"]
+            phrases_en = ["Found in DB", "Got it", "Here you go"]
+            import random
+            phrase = random.choice(phrases_de if 'deutsch' in lang_instruction.lower() else phrases_en)
 
-Response:"""
-
-        return self._call_phi3(prompt)
+        # ALWAYS add icon prefix (NON-NEGOTIABLE!)
+        return f"🔍 {phrase}: {content}"
 
     def _call_phi3(self, prompt: str) -> str:
         """Call Phi-3 model via Ollama"""

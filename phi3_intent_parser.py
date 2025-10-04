@@ -196,59 +196,80 @@ class Phi3IntentParser:
         # Escape user message for safe inclusion in prompt (avoid @ and other special chars breaking JSON)
         safe_message = user_message.replace('"', '\\"').replace('\n', ' ')
 
-        return f"""You are a local database assistant powered by Phi-3.
-The keyword detector flagged this message as potentially database-related.
+        return f"""You are a MULTILINGUAL local database assistant (German/English/Spanish).
+Keywords detected: [{keywords_str}] in message: "{safe_message}"
 
-YOUR JOB:
-1. Verify if this is REALLY a database operation or FALSE POSITIVE
-2. If real DB operation: Extract structured data
-3. If false positive: Return NORMAL (send to OpenAI instead)
+⚡ YOUR TASK:
+Determine if this is a REAL database operation or FALSE POSITIVE.
 
-USER MESSAGE: "{safe_message}"
+📊 ACTIONS:
+- SAVE: Store NEW data in local DB
+- RETRIEVE: Get STORED data from local DB
+- DELETE: Remove data from local DB
+- LIST: Show ALL stored data
+- UPDATE: Modify existing data
+- NORMAL: FALSE POSITIVE (not a DB command → send to OpenAI)
 
-CONTEXT:
-- Keywords detected: [{keywords_str}]
-- This might be a FALSE POSITIVE if user just mentioned these words in conversation
+🚨 CRITICAL RULES FOR RETRIEVE:
 
-ACTIONS:
-- SAVE: Store new information in local database
-- RETRIEVE: Get previously stored information from local database
-- DELETE: Remove information from local database
-- LIST: Show all stored data
-- UPDATE: Modify existing stored information
-- NORMAL: FALSE POSITIVE - not a real database command, send to OpenAI
+1. **"meine/my/mi X"** + keywords = RETRIEVE
+   - "wie ist meine email?" → RETRIEVE
+   - "what's my phone?" → RETRIEVE
+   - "cuál es mi email?" → RETRIEVE
 
-IMPORTANT - FALSE POSITIVE DETECTION:
-Ask yourself: "Does the user ACTUALLY want to use the local database?"
+2. **"gespeicherte/stored/guardado"** = RETRIEVE
+   - "meine gespeicherte email" → RETRIEVE
+   - "my stored password" → RETRIEVE
+   - "mi número guardado" → RETRIEVE
 
-⚠️ BE LESS CONSERVATIVE: If keywords match AND it COULD be a DB command, classify as DB operation!
-Only mark as FALSE POSITIVE if it's clearly NOT a database command.
+3. **Personal data questions** = RETRIEVE
+   - Email, phone, address, password, API key, etc.
+   - If user asks for THEIR data → RETRIEVE
 
-Examples of FALSE POSITIVES (clearly NOT commands):
-- "Ich habe das in der Datenbank gespeichert" (past tense, telling a story)
-- "Kannst du mir was über Datenbanken erklären?" (educational question)
-- "In der lokalen Zeitung stand..." (word 'lokal' in different context)
-- "Zeig mir ein Beispiel für SQL" (wants code example, not data retrieval)
-- "zeige mir wann albert einstein geboren wurde" (general knowledge question, NOT about stored data!)
-- "zeig mir wie das wetter wird" (weather question, NOT database!)
+4. **DB-explicit** = RETRIEVE
+   - "hole aus db" / "get from db" / "saca de db" → RETRIEVE
+   - "was ist in db?" / "what's in db?" → RETRIEVE
 
-CRITICAL: If question is about GENERAL KNOWLEDGE (history, facts, weather, etc.) → FALSE POSITIVE!
-Database is ONLY for user's PERSONAL stored data (email, phone, notes, etc.)
+⛔ FALSE POSITIVES (send to OpenAI):
+- Past tense stories: "Ich hatte gespeichert..." (telling a story)
+- Educational: "Was ist eine Datenbank?" (learning question)
+- General knowledge: "Wann wurde Einstein geboren?" (facts, NOT personal data)
+- Weather/news: "Wie wird das Wetter?" (external info)
+- Different context: "In der lokalen Zeitung..." ('lokal' ≠ database)
 
-Examples of REAL DB OPERATIONS (these are COMMANDS):
-- "Merke dir meine Email ist test@test.com" → SAVE
-- "hole meine Email aus der DB" → RETRIEVE
-- "Zeig mir alles was du gespeichert hast" → LIST
-- "liste alle lokalen daten auf" → LIST
-- "db list" → LIST
-- "was hast du in der db gespeichert?" → LIST
-- "Vergiss meine alte Adresse" → DELETE
-- "vergiss meine email" → DELETE (imperative! not conversation!)
-- "lösche aus lokaler datenbank" → DELETE
+💡 DECISION LOGIC:
+IF (keywords matched) AND (user asks for PERSONAL data) → RETRIEVE
+IF (keywords matched) AND (command to save/delete/list) → SAVE/DELETE/LIST
+IF (general knowledge OR educational OR past tense story) → FALSE POSITIVE
 
-KEY RULE FOR LIST:
-If user asks to "show", "list", "display" what's stored/saved in DB/local → LIST action!
-Don't overthink it - imperative verbs (zeig, liste, hole) = commands, not questions!
+📝 MULTILINGUAL EXAMPLES:
+
+**GERMAN (DE):**
+✅ SAVE: "Merke dir meine Email ist test@test.com" | "speichere meine telefonnummer 123"
+✅ RETRIEVE: "wie ist meine email?" | "meine gespeicherte telefonnummer?" | "hole meine adresse"
+✅ LIST: "was hast du gespeichert?" | "zeig mir alle daten" | "db list"
+✅ DELETE: "vergiss meine email" | "lösche telefonnummer"
+❌ FALSE: "Ich habe gespeichert" (past) | "Was ist eine DB?" (educational) | "Wetter morgen?" (general)
+
+**ENGLISH (EN):**
+✅ SAVE: "remember my email is test@test.com" | "save my phone 123"
+✅ RETRIEVE: "what's my email?" | "my stored phone number?" | "get my address from db"
+✅ LIST: "what did you save?" | "show me all data" | "list db"
+✅ DELETE: "forget my email" | "delete my phone"
+❌ FALSE: "I saved it" (past) | "What is a database?" (educational) | "weather tomorrow?" (general)
+
+**SPANISH (ES):**
+✅ SAVE: "recuerda mi email es test@test.com" | "guarda mi teléfono 123"
+✅ RETRIEVE: "cuál es mi email?" | "mi número guardado?" | "dame mi dirección"
+✅ LIST: "qué has guardado?" | "muéstrame todos los datos" | "lista db"
+✅ DELETE: "olvida mi email" | "borra mi teléfono"
+❌ FALSE: "Lo guardé" (past) | "Qué es una base de datos?" (educational) | "clima mañana?" (general)
+
+🎯 SMART RULES:
+1. Personal data question ("my/meine/mi" + email/phone/etc) → RETRIEVE
+2. Command with data ("save/speichere/guarda" + value) → SAVE
+3. Request to show stored items → LIST
+4. General knowledge / past tense / educational → FALSE POSITIVE
 
 RESPOND IN JSON (NO COMMENTS, PURE JSON ONLY):
 {{
@@ -297,6 +318,46 @@ Keywords: ['meine']
     "type": "phone_number",
     "query": "Telefonnummer",
     "label": "meine Telefonnummer"
+  }}
+}}
+
+User: "wie ist meine email in der db?"
+Keywords: ['db', 'meine']
+{{
+  "action": "RETRIEVE",
+  "confidence": 0.97,
+  "reasoning": "Asking for stored email from database",
+  "false_positive": false,
+  "data": {{
+    "type": "email",
+    "query": "email",
+    "label": "meine email"
+  }}
+}}
+
+User: "wie ist meine gespeicherte email adresse?"
+Keywords: ['meine', 'gespeichert']
+{{
+  "action": "RETRIEVE",
+  "confidence": 0.95,
+  "reasoning": "Asking for stored email - 'gespeicherte' indicates stored data",
+  "false_positive": false,
+  "data": {{
+    "type": "email",
+    "query": "email adresse",
+    "label": "gespeicherte email"
+  }}
+}}
+
+User: "was hast du über mich in der lokalen db gespeichert?"
+Keywords: ['lokal', 'db', 'gespeichert']
+{{
+  "action": "LIST",
+  "confidence": 0.96,
+  "reasoning": "Asking what's stored about them - LIST operation",
+  "false_positive": false,
+  "data": {{
+    "filter": "user_data"
   }}
 }}
 

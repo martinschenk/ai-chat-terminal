@@ -61,3 +61,35 @@ python3 -c "from privacy_classifier_fast import FastPrivacyClassifier; c = FastP
 - No separate private_data table needed
 - Presidio and Phi-3 are optional with fallbacks
 - System works without any optional dependencies
+
+## ⚠️ CRITICAL REQUIREMENT - LOCAL DB VISIBILITY (PFLICHTENHEFT)
+
+**MANDATORY:** User MUST ALWAYS see when data comes from or goes to local DB!
+
+### Requirements:
+1. **SAVE Operations:** MUST show friendly notification that data was saved to local DB
+   - Example: "💾 In lokaler DB gespeichert!"
+   - Example: "🔒 Sicher in DB abgelegt!"
+
+2. **RETRIEVE Operations:** MUST show 🔍 icon + friendly message that data comes from DB
+   - Example: "🔍 Aus DB geholt: mschenk.pda@gmail.com"
+   - Example: "🔍 In lokaler DB gefunden: 669686832"
+
+3. **DELETE Operations:** MUST show confirmation with count
+   - Example: "🗑️ 3 Einträge aus DB gelöscht!"
+
+4. **LIST Operations:** MUST show header that this is DB data
+   - Example: "📊 Hier sind deine lokalen Daten:"
+
+### Implementation:
+- **Phi-3 generates varied, playful responses** (NOT hardcoded!)
+- **Icon MUST be in EVERY response** (🔍 for retrieve, 💾 for save, etc.)
+- **User must NEVER be confused** if data comes from DB or OpenAI
+- **Response format:** `[ICON] [Friendly message]: [Data]`
+
+### Why This Matters:
+- User needs transparency about local vs. cloud data
+- Privacy awareness is core feature
+- Without indicator, user can't trust the system
+
+**THIS IS NON-NEGOTIABLE AND MUST NEVER BE REMOVED OR FORGOTTEN!**
