@@ -41,8 +41,15 @@ class ListHandler:
         all_data = self._get_all_local_storage()
 
         if all_data:
-            # Format as list
-            header = self.lang.get('msg_list_header')
+            # Generate playful header with Phi-3
+            try:
+                from response_generator import ResponseGenerator
+                gen = ResponseGenerator()
+                header = gen.format_list_header(len(all_data), self.lang.language)
+            except Exception:
+                # Fallback header
+                header = self.lang.get('msg_list_header')
+
             formatted_items = []
 
             for i, item in enumerate(all_data, 1):
@@ -54,10 +61,6 @@ class ListHandler:
                 formatted_items.append(f"  {i}. [{data_type}] {content[:80]}...")
 
             response = f"{header}\n" + "\n".join(formatted_items)
-            try:
-                response += f"\n\n{self.lang.format('msg_list_total', count=len(all_data))}"
-            except:
-                response += f"\n\nTotal: {len(all_data)} items"
 
             return response, {
                 "error": False,

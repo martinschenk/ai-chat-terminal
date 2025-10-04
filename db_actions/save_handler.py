@@ -75,9 +75,7 @@ class SaveHandler:
             'privacy_category': 'LOCAL_STORAGE_CONFIRM'
         })
 
-        # Print DB notification
-        notification = self.lang.get('msg_save_notification')
-        print(f"\n{notification}\n", file=sys.stderr)
+        # Phi-3 already includes icon & varied phrasing!
 
         return confirmation, {
             "error": False,

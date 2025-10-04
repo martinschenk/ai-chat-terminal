@@ -434,8 +434,51 @@ if [[ -d "$INSTALL_DIR" ]] && [[ -f "$CONFIG_DIR/config" ]]; then
 
     case "$install_choice" in
         1)
+            # Fresh install - ask about DB and config
+            KEEP_DB=true
+            KEEP_CONFIG=true
+
+            # Check if database exists
+            if [[ -f "$INSTALL_DIR/memory.db" ]]; then
+                echo ""
+                echo -e "${CYAN}📊 Database found (memory.db)${RESET}"
+                echo -n "Keep database? [Y/n, default=Y]: "
+                read -r db_choice < /dev/tty
+
+                if [[ "$db_choice" =~ ^[Nn]$ ]]; then
+                    KEEP_DB=false
+                    # Create backup with timestamp
+                    BACKUP_NAME="$HOME/ai-chat-backup-$(date +%Y-%m-%d-%H%M%S).db"
+                    cp "$INSTALL_DIR/memory.db" "$BACKUP_NAME"
+                    echo -e "  ${GREEN}✓${RESET} Backup created: $BACKUP_NAME"
+                fi
+            fi
+
+            # Check if config exists
+            if [[ -f "$CONFIG_DIR/config" ]]; then
+                echo ""
+                echo -e "${CYAN}⚙️  Config found${RESET}"
+                echo -n "Keep config? [Y/n, default=Y]: "
+                read -r config_choice < /dev/tty
+
+                if [[ "$config_choice" =~ ^[Nn]$ ]]; then
+                    KEEP_CONFIG=false
+                fi
+            fi
+
+            # Backup files if keeping
+            if [[ "$KEEP_DB" == "true" ]] && [[ -f "$INSTALL_DIR/memory.db" ]]; then
+                cp "$INSTALL_DIR/memory.db" /tmp/memory.db.tmp
+            fi
+            if [[ "$KEEP_CONFIG" == "true" ]] && [[ -f "$CONFIG_DIR/config" ]]; then
+                cp "$CONFIG_DIR/config" /tmp/config.tmp
+            fi
+
+            # Remove old installation
             rm -rf "$INSTALL_DIR"
             rm -rf "$CONFIG_DIR"
+
+            # Restore kept files after mkdir
             ;;
         3)
             exit 0
@@ -447,6 +490,16 @@ fi
 mkdir -p "$INSTALL_DIR/modules"
 mkdir -p "$INSTALL_DIR/lang"
 mkdir -p "$CONFIG_DIR"
+
+# Restore kept files if they were backed up
+if [[ -f /tmp/memory.db.tmp ]]; then
+    mv /tmp/memory.db.tmp "$INSTALL_DIR/memory.db"
+    echo -e "${GREEN}✓${RESET} Database restored"
+fi
+if [[ -f /tmp/config.tmp ]]; then
+    mv /tmp/config.tmp "$CONFIG_DIR/config"
+    echo -e "${GREEN}✓${RESET} Config restored"
+fi
 
 # Step 4: Download Core Files
 echo -e "\n${BLUE}${LANG_STRINGS[DOWNLOADING]}${RESET}"

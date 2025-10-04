@@ -51,7 +51,7 @@ class RetrieveHandler:
                 results = filtered
 
         if results:
-            # Format results naturally
+            # Format results naturally (Phi-3 handles icons & varied phrasing!)
             formatted_response = self._format_results(results, query_type, query)
 
             # Save to history
@@ -64,10 +64,6 @@ class RetrieveHandler:
             self.memory.add_message(session_id, 'assistant', formatted_response, {
                 'privacy_category': 'LOCAL_RESULT'
             })
-
-            # Print DB notification
-            notification = self.lang.get('msg_retrieve_notification')
-            print(f"\n{notification}\n", file=sys.stderr)
 
             return formatted_response, {
                 "error": False,

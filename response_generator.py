@@ -288,20 +288,24 @@ class ResponseGenerator:
 
 User said: "{clean_message[:100]}"
 
-RULES (STRICT):
-1. Maximum 4 words total (including emoji)
-2. Must include exactly 1 emoji
-3. Be cool and modern
-4. Vary your response
+RULES:
+1. 2-5 words max (keep it short & punchy!)
+2. Include 1-2 emojis
+3. Be HUMAN, PLAYFUL, VARIED - NOT robotic!
+4. Change your phrasing EVERY time
+5. Use varied verbs: gespeichert/notiert/gemerkt/versteckt/gesichert/verräumt/eingepackt
 
-VALID EXAMPLES:
-✅ Gespeichert! 🔒
-💾 Hab's!
-🔐 Lokal sicher
-✨ Gesichert!
-🎯 Alles da!
+PLAYFUL EXAMPLES:
+💾 Hab's gemerkt!
+🔒 Alles versteckt
+✨ Sicher verräumt!
+🎯 Is drin!
+🔐 Hab ich!
+💼 Eingepackt & safe
+🗄️ Lokal notiert
+📦 Verstaut!
 
-Your response (4 words max):"""
+Your creative response:"""
 
         return self._call_phi3(prompt)
 
@@ -315,16 +319,120 @@ Your response (4 words max):"""
         result = db_results[0]
         content = result.get('content', '')
 
-        prompt = f"""You are a helpful assistant. {lang_instruction}
+        prompt = f"""You are a PLAYFUL, HUMAN assistant. {lang_instruction}
 
 User asked: "{user_query}"
 
 Found in local database: {content}
 
-Provide a brief, natural response. Be conversational and use appropriate emojis.
-Keep it under 30 words.
+RULES:
+1. Be CREATIVE & VARIED - change your phrasing each time!
+2. Use playful verbs: herausgezaubert/gefunden/extrahiert/rausgekramt/ausgegraben/entdeckt
+3. Include 1-2 emojis (🔍/💾/✨/🎯/📦)
+4. Keep it short (max 25 words)
+5. Sound HUMAN, not robotic!
 
-Response:"""
+PLAYFUL EXAMPLES:
+🔍 Hab's rausgekramt: {content[:20]}...
+✨ Aus der DB gezaubert: {content[:20]}...
+💾 Gefunden! {content[:20]}...
+🎯 Extrahiert: {content[:20]}...
+
+Your creative response:"""
+
+        return self._call_phi3(prompt)
+
+    def _generate_with_phi3_deleted(self, target: str, count: int, language: str) -> str:
+        """Generate deletion confirmation using Phi-3 (v9.0.0)"""
+        lang_instruction = self._get_language_instruction(language)
+
+        prompt = f"""TASK: Confirm {count} entries deleted. {lang_instruction}
+
+User deleted: "{target[:50]}"
+Count: {count} entries
+
+RULES:
+1. 2-5 words max (short & punchy!)
+2. Include 1-2 emojis (🗑️/✨/💨/🔥/👋)
+3. Be PLAYFUL & VARIED - NOT robotic!
+4. Change phrasing EVERY time
+5. Varied verbs: gelöscht/entfernt/weggeräumt/verschwunden/weg/erledigt
+
+PLAYFUL EXAMPLES:
+🗑️ Weg damit! ({count}x)
+✨ Erledigt - {count} weg
+💨 Verschwunden! {count}x
+🔥 {count} gelöscht
+👋 Alles weg ({count})
+🎯 {count}x entfernt!
+
+Your creative response:"""
+
+        return self._call_phi3(prompt)
+
+    def format_deleted_data(self, target: str, count: int, language: str = None) -> str:
+        """Format deletion confirmation (v9.0.0)"""
+        if language is None:
+            language = self.language
+
+        base_lang = language.split('-')[0] if '-' in language else language
+        if base_lang not in self.templates:
+            base_lang = 'en'
+
+        templates = self.templates[base_lang]
+
+        if self.phi3_available and self.config.get('PHI3_ENABLED', 'false').lower() == 'true':
+            try:
+                return self._generate_with_phi3_deleted(target, count, language)
+            except Exception as e:
+                print(f"Phi-3 generation failed: {e}", file=sys.stderr)
+
+        return templates['deleted'].format(count=count)
+
+    def format_list_header(self, count: int, language: str = None) -> str:
+        """Format LIST header (v9.0.0)"""
+        if language is None:
+            language = self.language
+
+        base_lang = language.split('-')[0] if '-' in language else language
+        if base_lang not in self.templates:
+            base_lang = 'en'
+
+        if self.phi3_available and self.config.get('PHI3_ENABLED', 'false').lower() == 'true':
+            try:
+                return self._generate_with_phi3_list_header(count, language)
+            except Exception as e:
+                print(f"Phi-3 generation failed: {e}", file=sys.stderr)
+
+        if base_lang == 'de':
+            return f"📦 Deine lokal gespeicherten Daten ({count}):"
+        elif base_lang == 'es':
+            return f"📦 Tus datos guardados ({count}):"
+        else:
+            return f"📦 Your locally stored data ({count}):"
+
+    def _generate_with_phi3_list_header(self, count: int, language: str) -> str:
+        """Generate LIST header using Phi-3 (v9.0.0)"""
+        lang_instruction = self._get_language_instruction(language)
+
+        prompt = f"""TASK: Create header for list of {count} stored items. {lang_instruction}
+
+Count: {count} items
+
+RULES:
+1. 3-7 words max
+2. Include 1 emoji (📦/🗄️/💾/📋/🔍)
+3. Be playful but clear
+4. Vary your phrasing
+
+EXAMPLES:
+📦 Deine {count} Schätze:
+🗄️ {count} Items im Tresor
+💾 Gespeichert ({count}):
+📋 Deine {count} Notizen
+🔍 {count}x lokal dabei
+
+Your creative header:"""
 
         return self._call_phi3(prompt)
 
