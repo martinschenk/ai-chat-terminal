@@ -331,11 +331,18 @@ RESPOND IN JSON (NO COMMENTS, PURE JSON ONLY):
   "false_positive": true|false,
   "data": {{
     "type": "email|phone|name|address|api_key|password|note|...",
-    "value": "the actual data",
+    "value": "ONLY the exact data value (email, phone, address, etc.) - NO extra words!",
     "label": "how user refers to it",
     "context": "additional info"
   }}
 }}
+
+🚨 CRITICAL for "value" field:
+- Extract ONLY the pure data value (email address, phone number, address, etc.)
+- NO surrounding words! "remind my email test@test.com" → value: "test@test.com" (NOT "test@test.comn" or "my email test@test.com")
+- For emails: ONLY email@domain.com
+- For phones: ONLY the number
+- For addresses: ONLY the street/location
 
 IMPORTANT:
 - NO // comments in JSON!

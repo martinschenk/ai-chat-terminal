@@ -855,10 +855,11 @@ class ChatMemorySystem:
         try:
             cursor = self.db.cursor()
 
-            # Find matching private data
+            # Find matching private data - use actual privacy categories
+            # EMAIL_ADDRESS, PHONE_NUMBER, etc. instead of SENSITIVE/PROPRIETARY/PERSONAL
             cursor.execute("""
                 SELECT id FROM chat_history
-                WHERE json_extract(metadata, '$.privacy_category') IN ('SENSITIVE', 'PROPRIETARY', 'PERSONAL')
+                WHERE json_extract(metadata, '$.is_private') = 1
                   AND content LIKE ?
             """, (f"%{pattern}%",))
 
