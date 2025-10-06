@@ -41,14 +41,16 @@ class ListHandler:
         all_data = self._get_all_local_storage()
 
         if all_data:
-            # Generate playful header with Phi-3
-            try:
-                from response_generator import ResponseGenerator
-                gen = ResponseGenerator()
-                header = gen.format_list_header(len(all_data), self.lang.language)
-            except Exception:
-                # Fallback header
-                header = self.lang.get('msg_list_header')
+            # Simple header - NO Phi-3 to avoid hallucinations!
+            count = len(all_data)
+            lang = self.lang.language.split('-')[0] if '-' in self.lang.language else self.lang.language
+
+            if lang == 'de':
+                header = f"📦 Deine Daten ({count}):"
+            elif lang == 'es':
+                header = f"📦 Tus datos ({count}):"
+            else:
+                header = f"📦 Your data ({count}):"
 
             formatted_items = []
 
