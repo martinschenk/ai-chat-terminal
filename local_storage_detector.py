@@ -20,7 +20,7 @@ DB_INTENT_KEYWORDS = {
     'en': [
         'db', 'database', 'local', 'storage', 'save', 'remember', 'get', 'stored',
         'forget', 'delete', 'show', 'list', 'my', 'mine',
-        'data', 'know', 'note', 'keep', 'load', 'retrieve'  # Phi-3 classifies intelligently
+        'data', 'know', 'note', 'keep', 'load', 'retrieve', 'have', 'which'  # Phi-3 classifies intelligently
     ],
     'es': [
         'db', 'base de datos', 'local', 'guarda', 'guardar', 'recuerda', 'muestra', 'guardado',
