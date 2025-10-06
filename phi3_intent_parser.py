@@ -189,339 +189,38 @@ class Phi3IntentParser:
             return self._fallback_response(user_message, matched_keywords)
 
     def _build_prompt(self, user_message: str, matched_keywords: List[str]) -> str:
-        """Build the Phi-3 prompt with false-positive detection"""
+        """Build ULTRA-KISS Phi-3 prompt - simple and fast"""
 
-        keywords_str = ', '.join(matched_keywords) if matched_keywords else 'none'
-
-        # Escape user message for safe inclusion in prompt (avoid @ and other special chars breaking JSON)
+        # Escape user message for safe JSON
         safe_message = user_message.replace('"', '\\"').replace('\n', ' ')
 
-        return f"""You are a MULTILINGUAL local database assistant (German/English/Spanish).
-Keywords detected: [{keywords_str}] in message: "{safe_message}"
+        return f"""Classify database intent.
 
-⚡ YOUR TASK:
-Determine if this is a REAL database operation or FALSE POSITIVE.
+Message: "{safe_message}"
 
-📊 ACTIONS:
-- SAVE: Store NEW data in local DB
-- RETRIEVE: Get STORED data from local DB
-- DELETE: Remove data from local DB
-- LIST: Show ALL stored data
-- UPDATE: Modify existing data
-- NORMAL: FALSE POSITIVE (not a DB command → send to OpenAI)
-
-🚨 CRITICAL RULES FOR SAVE (CHECK FIRST!):
-
-1. **"remind/remember/save" + EMAIL/PHONE/ADDRESS/DATA** = SAVE
-   - "remind my email mschenk@gmail.com" → SAVE ⚠️ VERY IMPORTANT!
-   - "remember my phone 123456" → SAVE
-   - "save my address Main Street 5" → SAVE
-
-2. **User PROVIDES data (email@, phone number, address)** = SAVE
-   - If message contains actual data (email format, number, address) → SAVE
-   - "remind my email test@test.com" → SAVE (contains email!)
-   - "keep my number 555-1234" → SAVE (contains number!)
-
-🚨 CRITICAL RULES FOR RETRIEVE:
-
-1. **"meine/my/mi X"** + keywords = RETRIEVE
-   - "wie ist meine email?" → RETRIEVE
-   - "what's my phone?" → RETRIEVE
-   - "cuál es mi email?" → RETRIEVE
-
-2. **"gespeicherte/stored/guardado"** = RETRIEVE
-   - "meine gespeicherte email" → RETRIEVE
-   - "my stored password" → RETRIEVE
-   - "mi número guardado" → RETRIEVE
-
-3. **Personal data questions** = RETRIEVE (SPECIFIC item, not ALL data!)
-   - Email, phone, address, password, API key, etc.
-   - If user asks for **SPECIFIC** data → RETRIEVE
-   - "wie ist meine email?" → RETRIEVE
-   - "what's my phone?" → RETRIEVE
-   - "show my phone number" → RETRIEVE ⚠️ VERY IMPORTANT!
-   - "give me my email" → RETRIEVE
-   - "cuál es mi dirección?" → RETRIEVE
-   - **KEY**: Specific item = RETRIEVE, ALL items = LIST
-
-4. **DB-explicit** = RETRIEVE
-   - "hole aus db" / "get from db" / "saca de db" → RETRIEVE
-   - "wie ist meine X in db?" / "what's my X in db?" → RETRIEVE
-
-🚨 CRITICAL RULES FOR LIST (ALL DATA, NOT SPECIFIC):
-
-1. **"was ist gespeichert"** = LIST
-   - "was ist in der db gespeichert?" → LIST
-   - "what's stored in db?" → LIST
-   - "qué está guardado en db?" → LIST
-
-2. **"show all / zeig alles"** = LIST
-   - "zeig mir alle daten" → LIST
-   - "show me all data" → LIST
-   - "muéstrame todos los datos" → LIST
-
-3. **"was hast du / was weißt du / was kennst du / which data / about me"** = LIST (about ME, not specific item)
-   - "was hast du gespeichert?" → LIST
-   - "was weißt du über mich?" → LIST ⚠️ VERY IMPORTANT!
-   - "welche daten kennst du?" → LIST
-   - "which data have you?" → LIST ⚠️ VERY IMPORTANT!
-   - "which infos do you have about me?" → LIST ⚠️ VERY IMPORTANT!
-   - "what do you know about me?" → LIST ⚠️ VERY IMPORTANT!
-   - "qué sabes de mí?" → LIST ⚠️ VERY IMPORTANT!
-
-4. **PLURAL (numbers, entries, items) = LIST, not RETRIEVE!**
-   - "show me my phone numbers" → LIST (plural "numbers"!)
-   - "my stored passwords" → LIST (plural "passwords"!)
-   - "all my emails" → LIST (plural "emails"!)
-   - "zeig meine telefonnummern" → LIST (plural!)
-   - ⚠️ SINGULAR = RETRIEVE: "my phone number" → RETRIEVE
-
-⛔ FALSE POSITIVES (send to OpenAI):
-- Past tense stories: "Ich hatte gespeichert..." (telling a story)
-- Educational: "Was ist eine Datenbank?" (learning question)
-- General knowledge: "Wann wurde Einstein geboren?" (facts, NOT personal data)
-- Weather/news: "Wie wird das Wetter?" (external info)
-- Different context: "In der lokalen Zeitung..." ('lokal' ≠ database)
-
-💡 DECISION LOGIC (Priority Order):
-
-1. IF "which data" OR "what data" OR "welche daten" → LIST (asking for overview!)
-2. IF "was weißt du über mich?" OR "what do you know about me?" → LIST (NOT RETRIEVE!)
-3. IF "was ist gespeichert" OR "show all" OR "list" → LIST
-4. IF PLURAL ("numbers", "entries", "passwords") → LIST (NOT RETRIEVE!)
-5. IF (keywords matched) AND (user asks for SPECIFIC SINGULAR data like "meine email") → RETRIEVE
-6. IF (keywords matched) AND (command to save/delete) → SAVE/DELETE
-7. IF (general knowledge OR educational OR past tense story) → FALSE POSITIVE
-
-🔑 KEY DISTINCTIONS:
-- "which DATA have you?" = LIST (asking which/what data exists)
-- "show me my phone NUMBERS" = LIST (plural!)
-- "what's my phone NUMBER?" = RETRIEVE (singular, specific)
-- "wie ist MEINE EMAIL?" = RETRIEVE (singular, specific)
-
-📝 MULTILINGUAL EXAMPLES:
-
-**GERMAN (DE):**
-✅ SAVE: "Merke dir meine Email ist test@test.com" | "speichere meine telefonnummer 123" | "merke dir das lokal" | "speicher lokal meine adresse ist..." | "ich wohne in X, merke dir das lokal" | "notiere meine nummer" | "behalte meine email"
-✅ RETRIEVE: "wie ist meine email?" | "meine gespeicherte telefonnummer?" | "hole meine adresse"
-✅ LIST: "was hast du gespeichert?" | "zeig mir alle daten" | "welche daten kennst du?" | "was weißt du über mich?" | "db list"
-✅ DELETE: "vergiss meine email" | "lösche telefonnummer"
-❌ FALSE: "Ich habe gespeichert" (past) | "Was ist eine DB?" (educational) | "Wetter morgen?" (general)
-
-**ENGLISH (EN):**
-✅ SAVE: "remember my email is test@test.com" | "remind my email mschenk@gmail.com" | "save my phone 123" | "remember this locally" | "save locally my address is..." | "I live in X, remember that locally" | "note my number" | "keep my email"
-✅ RETRIEVE: "what's my email?" | "my stored phone number?" | "get my address from db"
-✅ LIST: "what did you save?" | "show me all data" | "what data do you know?" | "what do you know about me?" | "which infos do you have about me?" | "list db"
-✅ DELETE: "forget my email" | "delete my phone"
-❌ FALSE: "I saved it" (past) | "What is a database?" (educational) | "weather tomorrow?" (general)
-
-**SPANISH (ES):**
-✅ SAVE: "recuerda mi email es test@test.com" | "guarda mi teléfono 123" | "recuerda esto localmente" | "guarda local mi dirección es..." | "vivo en X, recuerda eso localmente"
-✅ RETRIEVE: "cuál es mi email?" | "mi número guardado?" | "dame mi dirección"
-✅ LIST: "qué has guardado?" | "muéstrame todos los datos" | "lista db"
-✅ DELETE: "olvida mi email" | "borra mi teléfono"
-❌ FALSE: "Lo guardé" (past) | "Qué es una base de datos?" (educational) | "clima mañana?" (general)
-
-🎯 SMART RULES:
-1. Personal data question ("my/meine/mi" + email/phone/etc) → RETRIEVE
-2. Command with data ("save/speichere/guarda" + value) → SAVE
-3. Request to show stored items → LIST
-4. General knowledge / past tense / educational → FALSE POSITIVE
-
-RESPOND IN JSON (NO COMMENTS, PURE JSON ONLY):
-{{
-  "action": "SAVE|RETRIEVE|DELETE|LIST|UPDATE|NORMAL",
-  "confidence": 0.0-1.0,
-  "reasoning": "short reason (max 50 chars)",
-  "false_positive": true|false,
-  "data": {{
-    "type": "email|phone|name|address|api_key|password|note|...",
-    "value": "ONLY the exact data value (email, phone, address, etc.) - NO extra words!",
-    "label": "how user refers to it",
-    "context": "additional info"
-  }}
-}}
-
-🚨 CRITICAL for "value" field:
-- Extract ONLY the pure data value (email address, phone number, address, etc.)
-- NO surrounding words! "remind my email test@test.com" → value: "test@test.com" (NOT "test@test.comn" or "my email test@test.com")
-- For emails: ONLY email@domain.com
-- For phones: ONLY the number
-- For addresses: ONLY the street/location
-
-IMPORTANT:
-- NO // comments in JSON!
-- Keep reasoning SHORT (max 50 characters)
-- PURE JSON ONLY!
+Rules:
+- "save/remember/remind X" with data (email@, phone number, address) → SAVE
+- "show/what/which is my X" (specific item) → RETRIEVE
+- "delete/forget X" → DELETE
+- "list/all/show all" → LIST
+- Otherwise → NORMAL
 
 EXAMPLES:
+"save my phone 123456" → SAVE
+"show my phone" → RETRIEVE
+"what's my email?" → RETRIEVE
+"list all data" → LIST
+"delete my email" → DELETE
+"hello there" → NORMAL
 
-User: "merke dir meine Email ist max@test.com"
-Keywords: ['merke', 'speicher']
+JSON response:
 {{
-  "action": "SAVE",
-  "confidence": 0.98,
-  "reasoning": "Save email command",
-  "false_positive": false,
+  "action": "SAVE|RETRIEVE|DELETE|LIST|NORMAL",
   "data": {{
-    "type": "email",
-    "value": "max@test.com",
-    "label": "meine Email",
-    "context": "user's personal email address"
+    "type": "email|phone|address|note",
+    "value": "extracted data if SAVE"
   }}
-}}
-
-User: "ich wohne in der Hauptstrasse 5, merke dir das lokal"
-Keywords: ['lokal', 'merke']
-{{
-  "action": "SAVE",
-  "confidence": 0.96,
-  "reasoning": "Save address with 'merke dir lokal' command",
-  "false_positive": false,
-  "data": {{
-    "type": "address",
-    "value": "Hauptstrasse 5",
-    "label": "Wohnadresse",
-    "context": "user's home address"
-  }}
-}}
-
-User: "wie war nochmal meine Telefonnummer?"
-Keywords: ['meine']
-{{
-  "action": "RETRIEVE",
-  "confidence": 0.95,
-  "reasoning": "User asking for their stored phone number",
-  "false_positive": false,
-  "data": {{
-    "type": "phone_number",
-    "query": "Telefonnummer",
-    "label": "meine Telefonnummer"
-  }}
-}}
-
-User: "wie ist meine email in der db?"
-Keywords: ['db', 'meine']
-{{
-  "action": "RETRIEVE",
-  "confidence": 0.97,
-  "reasoning": "Asking for stored email from database",
-  "false_positive": false,
-  "data": {{
-    "type": "email",
-    "query": "email",
-    "label": "meine email"
-  }}
-}}
-
-User: "wie ist meine gespeicherte email adresse?"
-Keywords: ['meine', 'gespeichert']
-{{
-  "action": "RETRIEVE",
-  "confidence": 0.95,
-  "reasoning": "Asking for stored email - 'gespeicherte' indicates stored data",
-  "false_positive": false,
-  "data": {{
-    "type": "email",
-    "query": "email adresse",
-    "label": "gespeicherte email"
-  }}
-}}
-
-User: "was ist in der lokalen db gespeichert?"
-Keywords: ['lokal', 'db', 'gespeichert']
-{{
-  "action": "LIST",
-  "confidence": 0.98,
-  "reasoning": "Asking what's stored - LIST all data",
-  "false_positive": false,
-  "data": {{
-    "filter": null
-  }}
-}}
-
-User: "welche daten kennst du von mir?"
-Keywords: ['daten', 'kennst']
-{{
-  "action": "LIST",
-  "confidence": 0.94,
-  "reasoning": "Asking what data is known - LIST operation",
-  "false_positive": false,
-  "data": {{
-    "filter": null
-  }}
-}}
-
-User: "was hast du über mich in der lokalen db gespeichert?"
-Keywords: ['lokal', 'db', 'gespeichert']
-{{
-  "action": "LIST",
-  "confidence": 0.96,
-  "reasoning": "Asking what's stored about them - LIST operation",
-  "false_positive": false,
-  "data": {{
-    "filter": "user_data"
-  }}
-}}
-
-User: "liste alle lokalen daten auf"
-Keywords: ['lokal']
-{{
-  "action": "LIST",
-  "confidence": 0.97,
-  "reasoning": "Clear command to list all stored data - imperative verb 'liste' indicates command",
-  "false_positive": false,
-  "data": {{
-    "filter": null
-  }}
-}}
-
-User: "db list"
-Keywords: ['db']
-{{
-  "action": "LIST",
-  "confidence": 0.99,
-  "reasoning": "Direct database command to list data - 'db list' is a clear technical command",
-  "false_positive": false,
-  "data": {{
-    "filter": null
-  }}
-}}
-
-User: "Ich habe die Daten in der Datenbank gespeichert"
-Keywords: ['datenbank', 'gespeichert']
-{{
-  "action": "NORMAL",
-  "confidence": 0.92,
-  "reasoning": "User talking ABOUT saving to a database (past tense), not commanding me to save. This is a false positive.",
-  "false_positive": true,
-  "data": null
-}}
-
-User: "Was ist eine lokale Datenbank?"
-Keywords: ['lokal', 'datenbank']
-{{
-  "action": "NORMAL",
-  "confidence": 0.96,
-  "reasoning": "Educational question",
-  "false_positive": true,
-  "data": null
-}}
-
-User: "zeige mir wann albert einstein geboren wurde"
-Keywords: ['zeig']
-{{
-  "action": "NORMAL",
-  "confidence": 0.99,
-  "reasoning": "General knowledge, not personal data",
-  "false_positive": true,
-  "data": null
-}}
-
-NOW ANALYZE THIS REQUEST AND RESPOND WITH JSON ONLY:
-User: "{safe_message}"
-Keywords detected: [{keywords_str}]
-"""
+}}"""
 
     def _fallback_response(self, user_message: str = "", matched_keywords: List[str] = None) -> Dict[str, Any]:
         """Intelligent fallback response if Phi-3 fails - tries to guess intent from keywords"""
