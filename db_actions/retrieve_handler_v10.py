@@ -31,11 +31,13 @@ class RetrieveHandler:
         Returns:
             (response_message, metadata)
         """
-        # Extract search term with Phi-3
-        search_term = self.phi3.extract_for_retrieve(user_input)
+        # Extract search term with Llama - returns tuple!
+        search_term, method = self.phi3.extract_for_retrieve(user_input)
 
-        if not search_term:
-            search_term = user_input
+        # Check if Llama failed
+        if search_term is None or method == 'error':
+            error_msg = f"❌ Llama extraction failed for: {user_input}\nPlease report this case!"
+            return error_msg, {"error": True, "llama_failed": True}
 
         # Search in DB (simple LIKE search)
         try:
@@ -54,13 +56,15 @@ class RetrieveHandler:
             conn.close()
 
             if result:
-                # Found - show with icon
+                # Found - show with icon and method
                 content = result[0]
-                return f"🔍 {content}", {
+                method_info = f" [via {method}]" if method == 'regex' else ""
+                return f"🔍 {content}{method_info}", {
                     "error": False,
                     "model": "local-retrieve",
                     "tokens": 0,
-                    "source": "local"
+                    "source": "local",
+                    "method": method
                 }
             else:
                 # Not found

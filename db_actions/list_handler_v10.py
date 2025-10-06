@@ -31,8 +31,13 @@ class ListHandler:
         Returns:
             (response_message, metadata)
         """
-        # Extract filter with Phi-3
+        # Extract filter with Llama
         filter_term, method = self.phi3.extract_for_list(user_input)
+
+        # Check if Llama failed
+        if filter_term is None or method == 'error':
+            error_msg = f"❌ Llama extraction failed for: {user_input}\nPlease report this case!"
+            return error_msg, {"error": True, "llama_failed": True}
 
         try:
             conn = sqlite3.connect(self.db_path)

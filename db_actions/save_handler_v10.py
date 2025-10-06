@@ -35,10 +35,10 @@ class SaveHandler:
         # Extract data with Llama - returns tuple!
         content, method = self.phi3.extract_for_save(user_input)
 
-        if not content or content == user_input:
-            # Llama failed - fallback to user_input
-            content = user_input
-            method = 'fallback'
+        # Check if Llama failed
+        if content is None or method == 'error':
+            error_msg = f"❌ Llama extraction failed for: {user_input}\nPlease report this case!"
+            return error_msg, {"error": True, "llama_failed": True}
 
         # Save to DB
         try:

@@ -34,9 +34,10 @@ class DeleteHandler:
         # Extract search term with Llama - returns tuple!
         search_term, method = self.phi3.extract_for_delete(user_input)
 
-        if not search_term:
-            search_term = user_input
-            method = 'fallback'
+        # Check if Llama failed
+        if search_term is None or method == 'error':
+            error_msg = f"❌ Llama extraction failed for: {user_input}\nPlease report this case!"
+            return error_msg, {"error": True, "llama_failed": True}
 
         # Delete from DB
         try:

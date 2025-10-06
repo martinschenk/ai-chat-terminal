@@ -91,11 +91,9 @@ Extract: """
         result = re.sub(r'\[.*?\]', '', result)       # Remove any [tags]
         result = result.strip()
 
-        # Fallback: If Llama fails, do simple regex extraction
-        if not result or len(result) > 100:
-            # Extract everything after keywords
-            cleaned = re.sub(r'^(save|remember|store|keep|merke|speicher|guarda)\s+(my|meine?|mi)\s+', '', user_input, flags=re.IGNORECASE)
-            return (cleaned, 'regex')
+        # NO FALLBACK! If Llama fails, return error
+        if not result:
+            return (None, 'error')
 
         return (result, 'llama')
 
@@ -154,12 +152,9 @@ Extract: """
 
         result = self._call_llama(prompt).strip()
 
-        # Fallback: Simple keyword extraction
+        # NO FALLBACK! If Llama fails, return error
         if not result or len(result) > 30:
-            # Remove common words
-            cleaned = re.sub(r'\b(show|get|what|what\'s|my|mein|meine|mi|zeig|muestra)\b', '', user_input, flags=re.IGNORECASE)
-            cleaned = cleaned.strip(' ?.,!')
-            return (cleaned if cleaned else user_input, 'regex')
+            return (None, 'error')
 
         return (result, 'llama')
 
@@ -218,12 +213,9 @@ Extract: """
 
         result = self._call_llama(prompt).strip()
 
-        # Fallback: Simple keyword extraction
+        # NO FALLBACK! If Llama fails, return error
         if not result or len(result) > 30:
-            # Remove common words
-            cleaned = re.sub(r'\b(delete|forget|remove|erase|lösche|vergiss|borra|my|mein|meine|mi)\b', '', user_input, flags=re.IGNORECASE)
-            cleaned = cleaned.strip(' ?.,!')
-            return (cleaned if cleaned else user_input, 'regex')
+            return (None, 'error')
 
         return (result, 'llama')
 
@@ -282,14 +274,9 @@ Extract: """
 
         result = self._call_llama(prompt).strip()
 
-        # Fallback: Check for "all" keywords
-        if not result or len(result) > 30:
-            if re.search(r'\b(all|everything|alle|todo|tous|alles)\b', user_input, re.IGNORECASE):
-                return ('*', 'regex')
-            # Try to extract specific type
-            cleaned = re.sub(r'\b(show|list|display|get|all|my|mein|meine|mi|zeig|liste|muestra)\b', '', user_input, flags=re.IGNORECASE)
-            cleaned = cleaned.strip(' ?.,!')
-            return (cleaned if cleaned else '*', 'regex')
+        # NO FALLBACK! If Llama fails, return error
+        if not result:
+            return (None, 'error')
 
         return (result, 'llama')
 
