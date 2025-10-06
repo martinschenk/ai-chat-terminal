@@ -278,18 +278,23 @@ class ResponseGenerator:
         User explicitly said "speichere lokal" or similar
         """
         lang_instruction = self._get_language_instruction(language)
+        base_lang = language.split('-')[0] if '-' in language else language
 
-        # Extract key info from message (remove "speichere lokal" keywords)
-        clean_message = user_message
-        for keyword in ['speichere lokal', 'save locally', 'guarda localmente', 'speicher lokal', 'store locally']:
-            clean_message = clean_message.replace(keyword, '').strip(':, ')
+        # Language-specific examples
+        examples = {
+            'de': "💾 Hab's!\n🔒 Gesichert!\n✨ Notiert!",
+            'en': "💾 Saved!\n🔒 Stored!\n✨ Got it!",
+            'es': "💾 Guardado!\n🔒 Almacenado!\n✨ Listo!",
+            'fr': "💾 Sauvegardé!\n🔒 Stocké!\n✨ Noté!",
+            'it': "💾 Salvato!\n🔒 Memorizzato!\n✨ Fatto!"
+        }
+
+        lang_examples = examples.get(base_lang, examples['en'])
 
         prompt = f"""{lang_instruction} Confirm data stored in 2-3 words + ONE emoji.
 
 EXAMPLES:
-💾 Hab's!
-🔒 Gesichert!
-✨ Notiert!
+{lang_examples}
 
 Your 2-3 word response:"""
 
@@ -408,18 +413,31 @@ Your creative response:"""
         """Generate LIST header using Phi-3 (v9.0.0)"""
         lang_instruction = self._get_language_instruction(language)
 
-        prompt = f"""{lang_instruction} Create ONE short header for {count} stored items.
+        prompt = f"""{lang_instruction} ONE line header for {count} items.
 
-STRICT FORMAT: [EMOJI] [2-4 words]:
+Format: [emoji] [2 words]:
 
-EXAMPLES:
-📦 Deine Daten ({count}):
-🗄️ Lokal gespeichert:
-💾 {count} Einträge:
+Examples:
+📦 Deine Daten:
+🗄️ Gespeichert ({count}):
+💾 Einträge:
 
-OUTPUT (ONE line only):"""
+OUTPUT ONE LINE:"""
 
-        return self._call_phi3(prompt)
+        try:
+            response = self._call_phi3(prompt)
+            # Take ONLY first line if Phi-3 generates multiple
+            lines = response.strip().split('\n')
+            return lines[0].strip()
+        except Exception as e:
+            # Fallback to simple header
+            base_lang = language.split('-')[0] if '-' in language else language
+            if base_lang == 'de':
+                return f"📦 Gespeicherte Daten ({count}):"
+            elif base_lang == 'es':
+                return f"📦 Datos guardados ({count}):"
+            else:
+                return f"📦 Stored data ({count}):"
 
     def _generate_with_phi3_storage(self, pii_types: List[str], language: str) -> str:
         """
