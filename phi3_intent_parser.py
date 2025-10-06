@@ -224,11 +224,31 @@ Determine if this is a REAL database operation or FALSE POSITIVE.
 
 3. **Personal data questions** = RETRIEVE
    - Email, phone, address, password, API key, etc.
-   - If user asks for THEIR data → RETRIEVE
+   - If user asks for **SPECIFIC** data → RETRIEVE
+   - Examples: "wie ist meine email?" / "what's my phone?" / "cuál es mi dirección?"
 
 4. **DB-explicit** = RETRIEVE
    - "hole aus db" / "get from db" / "saca de db" → RETRIEVE
-   - "was ist in db?" / "what's in db?" → RETRIEVE
+   - "wie ist meine X in db?" / "what's my X in db?" → RETRIEVE
+
+🚨 CRITICAL RULES FOR LIST (ALL DATA, NOT SPECIFIC):
+
+1. **"was ist gespeichert"** = LIST
+   - "was ist in der db gespeichert?" → LIST
+   - "what's stored in db?" → LIST
+   - "qué está guardado en db?" → LIST
+
+2. **"show all / zeig alles"** = LIST
+   - "zeig mir alle daten" → LIST
+   - "show me all data" → LIST
+   - "muéstrame todos los datos" → LIST
+
+3. **"was hast du / was weißt du / was kennst du"** = LIST (about ME, not specific item)
+   - "was hast du gespeichert?" → LIST
+   - "was weißt du über mich?" → LIST ⚠️ VERY IMPORTANT!
+   - "welche daten kennst du?" → LIST
+   - "what do you know about me?" → LIST ⚠️ VERY IMPORTANT!
+   - "qué sabes de mí?" → LIST ⚠️ VERY IMPORTANT!
 
 ⛔ FALSE POSITIVES (send to OpenAI):
 - Past tense stories: "Ich hatte gespeichert..." (telling a story)
@@ -237,29 +257,36 @@ Determine if this is a REAL database operation or FALSE POSITIVE.
 - Weather/news: "Wie wird das Wetter?" (external info)
 - Different context: "In der lokalen Zeitung..." ('lokal' ≠ database)
 
-💡 DECISION LOGIC:
-IF (keywords matched) AND (user asks for PERSONAL data) → RETRIEVE
-IF (keywords matched) AND (command to save/delete/list) → SAVE/DELETE/LIST
-IF (general knowledge OR educational OR past tense story) → FALSE POSITIVE
+💡 DECISION LOGIC (Priority Order):
+
+1. IF "was weißt du über mich?" OR "what do you know about me?" → LIST (NOT RETRIEVE!)
+2. IF "was ist gespeichert" OR "show all" OR "list" → LIST
+3. IF (keywords matched) AND (user asks for SPECIFIC data like "meine email") → RETRIEVE
+4. IF (keywords matched) AND (command to save/delete) → SAVE/DELETE
+5. IF (general knowledge OR educational OR past tense story) → FALSE POSITIVE
+
+🔑 KEY DISTINCTION:
+- "was weißt du über MICH?" = LIST (asking for ALL data about me)
+- "wie ist MEINE EMAIL?" = RETRIEVE (asking for SPECIFIC data)
 
 📝 MULTILINGUAL EXAMPLES:
 
 **GERMAN (DE):**
-✅ SAVE: "Merke dir meine Email ist test@test.com" | "speichere meine telefonnummer 123"
+✅ SAVE: "Merke dir meine Email ist test@test.com" | "speichere meine telefonnummer 123" | "merke dir das lokal" | "speicher lokal meine adresse ist..." | "ich wohne in X, merke dir das lokal" | "notiere meine nummer" | "behalte meine email"
 ✅ RETRIEVE: "wie ist meine email?" | "meine gespeicherte telefonnummer?" | "hole meine adresse"
-✅ LIST: "was hast du gespeichert?" | "zeig mir alle daten" | "db list"
+✅ LIST: "was hast du gespeichert?" | "zeig mir alle daten" | "welche daten kennst du?" | "was weißt du über mich?" | "db list"
 ✅ DELETE: "vergiss meine email" | "lösche telefonnummer"
 ❌ FALSE: "Ich habe gespeichert" (past) | "Was ist eine DB?" (educational) | "Wetter morgen?" (general)
 
 **ENGLISH (EN):**
-✅ SAVE: "remember my email is test@test.com" | "save my phone 123"
+✅ SAVE: "remember my email is test@test.com" | "save my phone 123" | "remember this locally" | "save locally my address is..." | "I live in X, remember that locally" | "note my number" | "keep my email"
 ✅ RETRIEVE: "what's my email?" | "my stored phone number?" | "get my address from db"
-✅ LIST: "what did you save?" | "show me all data" | "list db"
+✅ LIST: "what did you save?" | "show me all data" | "what data do you know?" | "what do you know about me?" | "list db"
 ✅ DELETE: "forget my email" | "delete my phone"
 ❌ FALSE: "I saved it" (past) | "What is a database?" (educational) | "weather tomorrow?" (general)
 
 **SPANISH (ES):**
-✅ SAVE: "recuerda mi email es test@test.com" | "guarda mi teléfono 123"
+✅ SAVE: "recuerda mi email es test@test.com" | "guarda mi teléfono 123" | "recuerda esto localmente" | "guarda local mi dirección es..." | "vivo en X, recuerda eso localmente"
 ✅ RETRIEVE: "cuál es mi email?" | "mi número guardado?" | "dame mi dirección"
 ✅ LIST: "qué has guardado?" | "muéstrame todos los datos" | "lista db"
 ✅ DELETE: "olvida mi email" | "borra mi teléfono"
@@ -307,6 +334,21 @@ Keywords: ['merke', 'speicher']
   }}
 }}
 
+User: "ich wohne in der Hauptstrasse 5, merke dir das lokal"
+Keywords: ['lokal', 'merke']
+{{
+  "action": "SAVE",
+  "confidence": 0.96,
+  "reasoning": "Save address with 'merke dir lokal' command",
+  "false_positive": false,
+  "data": {{
+    "type": "address",
+    "value": "Hauptstrasse 5",
+    "label": "Wohnadresse",
+    "context": "user's home address"
+  }}
+}}
+
 User: "wie war nochmal meine Telefonnummer?"
 Keywords: ['meine']
 {{
@@ -346,6 +388,30 @@ Keywords: ['meine', 'gespeichert']
     "type": "email",
     "query": "email adresse",
     "label": "gespeicherte email"
+  }}
+}}
+
+User: "was ist in der lokalen db gespeichert?"
+Keywords: ['lokal', 'db', 'gespeichert']
+{{
+  "action": "LIST",
+  "confidence": 0.98,
+  "reasoning": "Asking what's stored - LIST all data",
+  "false_positive": false,
+  "data": {{
+    "filter": null
+  }}
+}}
+
+User: "welche daten kennst du von mir?"
+Keywords: ['daten', 'kennst']
+{{
+  "action": "LIST",
+  "confidence": 0.94,
+  "reasoning": "Asking what data is known - LIST operation",
+  "false_positive": false,
+  "data": {{
+    "filter": null
   }}
 }}
 

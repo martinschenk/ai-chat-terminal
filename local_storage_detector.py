@@ -14,27 +14,33 @@ from typing import Tuple, List
 DB_INTENT_KEYWORDS = {
     'de': [
         'db', 'datenbank', 'lokal', 'speicher', 'speichern', 'merke', 'hole', 'gespeichert',
-        'vergiss', 'lösche', 'zeig', 'zeige', 'liste', 'meine', 'mein'
+        'vergiss', 'lösche', 'zeig', 'zeige', 'liste', 'meine', 'mein',
+        'daten', 'kennst', 'weißt', 'notiere', 'behalte'  # Phi-3 klassifiziert intelligent
     ],
     'en': [
         'db', 'database', 'local', 'storage', 'save', 'remember', 'get', 'stored',
-        'forget', 'delete', 'show', 'list', 'my', 'mine'
+        'forget', 'delete', 'show', 'list', 'my', 'mine',
+        'data', 'know', 'note', 'keep'  # Phi-3 classifies intelligently
     ],
     'es': [
         'db', 'base de datos', 'local', 'guarda', 'guardar', 'recuerda', 'muestra', 'guardado',
-        'olvida', 'elimina', 'lista', 'actualiza'
+        'olvida', 'elimina', 'lista', 'actualiza',
+        'datos', 'sabes', 'conoces', 'anota', 'mantén'  # Phi-3 clasifica inteligentemente
     ],
     'fr': [
         'db', 'base de données', 'local', 'stockage', 'sauvegarde', 'souviens', 'récupère', 'enregistré',
-        'oublie', 'supprime', 'affiche', 'liste'
+        'oublie', 'supprime', 'affiche', 'liste',
+        'données', 'sais', 'connais', 'note', 'garde'  # Phi-3 classifie intelligemment
     ],
     'it': [
         'db', 'database', 'locale', 'archivio', 'salva', 'ricorda', 'mostra', 'salvato',
-        'dimentica', 'elimina', 'lista', 'aggiorna'
+        'dimentica', 'elimina', 'lista', 'aggiorna',
+        'dati', 'sai', 'conosci', 'annota', 'mantieni'  # Phi-3 classifica intelligentemente
     ],
     'pt': [
         'db', 'base de dados', 'local', 'armazenamento', 'salvar', 'lembrar', 'mostrar', 'salvo',
-        'esquecer', 'apagar', 'listar', 'atualizar'
+        'esquecer', 'apagar', 'listar', 'atualizar',
+        'dados', 'sabe', 'conhece', 'anota', 'guarda'  # Phi-3 classifica inteligentemente
     ],
     'nl': [
         'db', 'database', 'lokaal', 'opslag', 'opslaan', 'onthoud', 'haal', 'opgeslagen',

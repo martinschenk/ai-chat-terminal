@@ -2,7 +2,7 @@
 
 **User-controlled local storage with military-grade encryption for your terminal.**
 
-[![Version](https://img.shields.io/badge/version-9.0.0-blue.svg)](https://github.com/martinschenk/ai-chat-terminal)
+[![Version](https://img.shields.io/badge/version-9.2.0-blue.svg)](https://github.com/martinschenk/ai-chat-terminal)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](https://github.com/martinschenk/ai-chat-terminal)
 [![Encryption](https://img.shields.io/badge/encryption-AES--256-green.svg)](https://github.com/martinschenk/ai-chat-terminal#database-security-)
@@ -12,11 +12,71 @@
 
 A terminal-based chat system where **YOU decide** what stays local and what goes to OpenAI. Your local data is **automatically encrypted** with AES-256. Full transparency and control.
 
+## 🚀 Quick Start Examples
+
+### 💾 Save Data Locally (NEVER goes to OpenAI)
+```bash
+chat "remember my email is john@example.com locally"
+→ 💾 Saved! ✅
+
+chat "keep my API key sk-abc123 locally"
+→ 🔒 Stored securely!
+```
+
+### 🔍 Retrieve Your Data (From encrypted local DB)
+```bash
+chat "what's my email?"
+→ 🔍 Found in DB: john@example.com
+
+chat "what's my API key?"
+→ 🔍 Got it: sk-abc123
+```
+
+### 📦 List All Stored Data
+```bash
+chat "what data do you have about me?"
+→ 📦 Your data (2):
+  1. [email] john@example.com
+  2. [api_key] sk-abc123
+```
+
+### 🗑️ Delete Data
+```bash
+chat "forget my API key"
+→ 🗑️ Deleted! (1 entry)
+```
+
+### 🌐 Normal OpenAI Queries (No local DB)
+```bash
+chat "what's the capital of France?"
+→ Paris is the capital of France.
+```
+
+**Notice:** Local DB queries show **🔍 icon** - OpenAI queries don't!
+
+---
+
 **How it works:**
-- Say "speichere lokal" (save locally) → **Encrypted** on your Mac, NEVER to OpenAI
-- Say "aus meiner db" (from my database) → Retrieves your **encrypted** local data
-- Normal questions → Go to OpenAI (as usual)
-- **NEW in v9.0.0:** Phi-3 Smart Intent System (MANDATORY) 🤖
+- Say "remember X locally" → **Encrypted** on your Mac, NEVER to OpenAI (shows 💾)
+- Ask "what's my X?" → Retrieves from **encrypted** local DB (shows 🔍)
+- Normal questions → Go to OpenAI as usual (no icon)
+- **NEW in v9.2.0:** Multilingual Phi-3 Intelligence 🧠
+
+### v9.2.0: Multilingual Intelligence & DB Visibility 🧠
+
+**NEW Features:**
+- ✅ **DB Icon Visibility:** Every DB operation now shows clear icons (💾/🔍/🗑️/📦)
+- ✅ **Multilingual Phi-3 Prompts:** Improved DE/EN/ES/FR/IT/PT support
+- ✅ **Smarter Intent Detection:** "what do you know about me?" → LIST, "note my number" → SAVE
+- ✅ **Extended Keywords:** Added `data/daten`, `know/kennst`, `note/notiere` (Phi-3 classifies intelligently)
+- ✅ **Better LIST Detection:** Handles "what data do you know?" and variations
+- ✅ **Markdown Rendering:** Beautiful code blocks with syntax highlighting (using `rich`)
+
+**Bug Fixes:**
+- 🐛 Fixed: "merke dir das lokal" now correctly detected as SAVE
+- 🐛 Fixed: "was ist gespeichert?" now correctly detected as LIST (not RETRIEVE)
+- 🐛 Fixed: LIST header shortened (no more 4x duplicate headers)
+- 🐛 Fixed: Parameter mismatch in retrieve_handler.py
 
 ### v9.0.0: Phi-3 Smart Intent System 🤖
 
