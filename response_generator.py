@@ -45,6 +45,28 @@ class ResponseGenerator:
 
         return config
 
+    def _load_lang_file(self, language: str) -> Dict[str, str]:
+        """Load language-specific strings from lang/*.conf"""
+        lang_strings = {}
+        base_lang = language.split('-')[0] if '-' in language else language
+
+        lang_file = self.config_dir / 'lang' / f'{base_lang}.conf'
+        if not lang_file.exists():
+            lang_file = self.config_dir / 'lang' / 'en.conf'  # Fallback to English
+
+        if lang_file.exists():
+            try:
+                with open(lang_file, 'r', encoding='utf-8') as f:
+                    for line in f:
+                        line = line.strip()
+                        if '=' in line and not line.startswith('#'):
+                            key, value = line.split('=', 1)
+                            lang_strings[key] = value.strip().strip('"\'')
+            except Exception as e:
+                print(f"Warning: Could not load lang file: {e}", file=sys.stderr)
+
+        return lang_strings
+
     def _check_phi3(self) -> bool:
         """Check if Ollama with Phi-3 is available"""
         try:
@@ -276,20 +298,22 @@ class ResponseGenerator:
         """
         Generate storage confirmation using Phi-3 (v8.0.0)
         User explicitly said "speichere lokal" or similar
+
+        Examples loaded from lang/*.conf files (source of truth: en.conf)
         """
         lang_instruction = self._get_language_instruction(language)
-        base_lang = language.split('-')[0] if '-' in language else language
 
-        # Language-specific examples
-        examples = {
-            'de': "💾 Hab's!\n🔒 Gesichert!\n✨ Notiert!",
-            'en': "💾 Saved!\n🔒 Stored!\n✨ Got it!",
-            'es': "💾 Guardado!\n🔒 Almacenado!\n✨ Listo!",
-            'fr': "💾 Sauvegardé!\n🔒 Stocké!\n✨ Noté!",
-            'it': "💾 Salvato!\n🔒 Memorizzato!\n✨ Fatto!"
-        }
+        # Load language-specific examples from lang file
+        lang_strings = self._load_lang_file(language)
 
-        lang_examples = examples.get(base_lang, examples['en'])
+        # Get examples from lang file
+        examples_list = [
+            lang_strings.get('phi3_example_save_1', '💾 Saved!'),
+            lang_strings.get('phi3_example_save_2', '🔒 Stored!'),
+            lang_strings.get('phi3_example_save_3', '✨ Got it!')
+        ]
+
+        lang_examples = '\n'.join(examples_list)
 
         prompt = f"""{lang_instruction} Confirm data stored in 2-3 words + ONE emoji.
 
@@ -306,36 +330,39 @@ Your 2-3 word response:"""
         User explicitly said "aus meiner db" or similar
 
         CRITICAL: MUST include 🔍 icon to show data comes from DB!
+        Examples loaded from lang/*.conf files (source of truth: en.conf)
         """
         lang_instruction = self._get_language_instruction(language)
 
         result = db_results[0]
         content = result.get('content', '')
 
+        # Load language-specific examples from lang file
+        lang_strings = self._load_lang_file(language)
+
+        # Get examples from lang file
+        examples_list = [
+            lang_strings.get('phi3_example_retrieve_1', 'Found in DB'),
+            lang_strings.get('phi3_example_retrieve_2', 'Got it'),
+            lang_strings.get('phi3_example_retrieve_3', 'Here you go')
+        ]
+
+        lang_examples = '\n- '.join(examples_list)
+
         # Generate playful phrase with Phi-3
         prompt = f"""{lang_instruction} Create a SHORT (2-4 words) playful phrase for retrieving data from database.
 
-EXAMPLES (German):
-- Aus DB geholt
-- Gefunden
-- Hier ist's
-- DB sagt
-
-EXAMPLES (English):
-- Found in DB
-- Got it
-- Here you go
+EXAMPLES:
+- {lang_examples}
 
 Your SHORT phrase (2-4 words max):"""
 
         try:
             phrase = self._call_phi3(prompt).strip(':!.,')
         except:
-            # Fallback phrases
-            phrases_de = ["Aus DB geholt", "Gefunden", "Hier ist's"]
-            phrases_en = ["Found in DB", "Got it", "Here you go"]
+            # Fallback to first example from lang file
             import random
-            phrase = random.choice(phrases_de if 'deutsch' in lang_instruction.lower() else phrases_en)
+            phrase = random.choice(examples_list)
 
         # ALWAYS add icon prefix (NON-NEGOTIABLE!)
         return f"🔍 {phrase}: {content}"
@@ -476,36 +503,39 @@ Your response (4 words max):"""
         Generate query response using Phi-3
 
         CRITICAL: MUST include 🔍 icon to show data comes from DB!
+        Examples loaded from lang/*.conf files (source of truth: en.conf)
         """
         lang_instruction = self._get_language_instruction(language)
 
         result = db_results[0]
         content = result.get('content', '')
 
+        # Load language-specific examples from lang file
+        lang_strings = self._load_lang_file(language)
+
+        # Get examples from lang file
+        examples_list = [
+            lang_strings.get('phi3_example_retrieve_1', 'Found in DB'),
+            lang_strings.get('phi3_example_retrieve_2', 'Got it'),
+            lang_strings.get('phi3_example_retrieve_3', 'Here you go')
+        ]
+
+        lang_examples = '\n- '.join(examples_list)
+
         # Generate playful phrase with Phi-3
         prompt = f"""{lang_instruction} Create a SHORT (2-4 words) playful phrase for retrieving data from database.
 
-EXAMPLES (German):
-- Aus DB geholt
-- Gefunden
-- Hier ist's
-- DB sagt
-
-EXAMPLES (English):
-- Found in DB
-- Got it
-- Here you go
+EXAMPLES:
+- {lang_examples}
 
 Your SHORT phrase (2-4 words max):"""
 
         try:
             phrase = self._call_phi3(prompt).strip(':!.,')
         except:
-            # Fallback phrases
-            phrases_de = ["Aus DB geholt", "Gefunden", "Hier ist's"]
-            phrases_en = ["Found in DB", "Got it", "Here you go"]
+            # Fallback to first example from lang file
             import random
-            phrase = random.choice(phrases_de if 'deutsch' in lang_instruction.lower() else phrases_en)
+            phrase = random.choice(examples_list)
 
         # ALWAYS add icon prefix (NON-NEGOTIABLE!)
         return f"🔍 {phrase}: {content}"
