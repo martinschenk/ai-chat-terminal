@@ -243,12 +243,20 @@ Determine if this is a REAL database operation or FALSE POSITIVE.
    - "show me all data" → LIST
    - "muéstrame todos los datos" → LIST
 
-3. **"was hast du / was weißt du / was kennst du"** = LIST (about ME, not specific item)
+3. **"was hast du / was weißt du / was kennst du / which data"** = LIST (about ME, not specific item)
    - "was hast du gespeichert?" → LIST
    - "was weißt du über mich?" → LIST ⚠️ VERY IMPORTANT!
    - "welche daten kennst du?" → LIST
+   - "which data have you?" → LIST ⚠️ VERY IMPORTANT!
    - "what do you know about me?" → LIST ⚠️ VERY IMPORTANT!
    - "qué sabes de mí?" → LIST ⚠️ VERY IMPORTANT!
+
+4. **PLURAL (numbers, entries, items) = LIST, not RETRIEVE!**
+   - "show me my phone numbers" → LIST (plural "numbers"!)
+   - "my stored passwords" → LIST (plural "passwords"!)
+   - "all my emails" → LIST (plural "emails"!)
+   - "zeig meine telefonnummern" → LIST (plural!)
+   - ⚠️ SINGULAR = RETRIEVE: "my phone number" → RETRIEVE
 
 ⛔ FALSE POSITIVES (send to OpenAI):
 - Past tense stories: "Ich hatte gespeichert..." (telling a story)
@@ -259,15 +267,19 @@ Determine if this is a REAL database operation or FALSE POSITIVE.
 
 💡 DECISION LOGIC (Priority Order):
 
-1. IF "was weißt du über mich?" OR "what do you know about me?" → LIST (NOT RETRIEVE!)
-2. IF "was ist gespeichert" OR "show all" OR "list" → LIST
-3. IF (keywords matched) AND (user asks for SPECIFIC data like "meine email") → RETRIEVE
-4. IF (keywords matched) AND (command to save/delete) → SAVE/DELETE
-5. IF (general knowledge OR educational OR past tense story) → FALSE POSITIVE
+1. IF "which data" OR "what data" OR "welche daten" → LIST (asking for overview!)
+2. IF "was weißt du über mich?" OR "what do you know about me?" → LIST (NOT RETRIEVE!)
+3. IF "was ist gespeichert" OR "show all" OR "list" → LIST
+4. IF PLURAL ("numbers", "entries", "passwords") → LIST (NOT RETRIEVE!)
+5. IF (keywords matched) AND (user asks for SPECIFIC SINGULAR data like "meine email") → RETRIEVE
+6. IF (keywords matched) AND (command to save/delete) → SAVE/DELETE
+7. IF (general knowledge OR educational OR past tense story) → FALSE POSITIVE
 
-🔑 KEY DISTINCTION:
-- "was weißt du über MICH?" = LIST (asking for ALL data about me)
-- "wie ist MEINE EMAIL?" = RETRIEVE (asking for SPECIFIC data)
+🔑 KEY DISTINCTIONS:
+- "which DATA have you?" = LIST (asking which/what data exists)
+- "show me my phone NUMBERS" = LIST (plural!)
+- "what's my phone NUMBER?" = RETRIEVE (singular, specific)
+- "wie ist MEINE EMAIL?" = RETRIEVE (singular, specific)
 
 📝 MULTILINGUAL EXAMPLES:
 
