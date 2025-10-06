@@ -87,7 +87,7 @@ class RetrieveHandler:
 
     def _format_results(self, results: list, query_type: str, query: str) -> str:
         """
-        Format search results naturally
+        Format search results - KISS: Just show the data with 🔍 icon
 
         Args:
             results: List of search results from database
@@ -97,29 +97,9 @@ class RetrieveHandler:
         Returns:
             Formatted response string
         """
-        try:
-            # Try to use response_generator for natural formatting
-            from response_generator import ResponseGenerator
-            gen = ResponseGenerator()
-            return gen.format_retrieved_data(user_input=query, results=results, language=self.lang.language)
-        except Exception:
-            # Fallback to simple formatting
-            if len(results) == 1:
-                return results[0]['content']
-            else:
-                # Multiple results - show all unique values
-                unique_contents = []
-                seen = set()
-                for r in results:
-                    content = r.get('content', '').strip()
-                    if content and content not in seen:
-                        unique_contents.append(content)
-                        seen.add(content)
+        # KISS: Show first result with icon
+        if results:
+            content = results[0].get('content', '').strip()
+            return f"🔍 {content}"
 
-                if len(unique_contents) == 1:
-                    return unique_contents[0]
-                else:
-                    # Show all unique results
-                    formatted = '\n'.join(f"• {c}" for c in unique_contents)
-                    count = len(unique_contents)
-                    return f"{formatted}\n\n({count} {self.lang.get('msg_results_found')})"
+        return self.lang.get('msg_no_results', 'Not found')

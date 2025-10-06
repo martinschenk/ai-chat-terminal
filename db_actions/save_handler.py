@@ -59,16 +59,8 @@ class SaveHandler:
             'label': label
         })
 
-        # Generate natural confirmation response
-        try:
-            from response_generator import ResponseGenerator
-            gen = ResponseGenerator()
-            confirmation = gen.format_stored_data(user_input, self.lang.language)
-        except Exception as e:
-            # Fallback if response generator fails
-            confirmation = self.lang.format('msg_save_confirmation',
-                label=label if label else data_type
-            )
+        # KISS: Simple confirmation from lang file
+        confirmation = self.lang.get('msg_stored', '✅ Stored 🔒')
 
         # Save confirmation to DB
         self.memory.add_message(session_id, 'assistant', confirmation, {

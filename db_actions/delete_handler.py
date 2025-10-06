@@ -41,20 +41,8 @@ class DeleteHandler:
         deleted_count = self.memory.delete_private_data(target)
 
         if deleted_count > 0:
-            # Generate natural confirmation with Phi-3
-            try:
-                from response_generator import ResponseGenerator
-                gen = ResponseGenerator()
-                confirmation = gen.format_deleted_data(target, deleted_count, self.lang.language)
-            except Exception as e:
-                # Fallback if Phi-3 fails
-                confirmation = self.lang.format('msg_delete_confirmation',
-                    count=deleted_count,
-                    target=target,
-                    type=''
-                )
-
-            # Phi-3 already includes icon & varied phrasing!
+            # KISS: Simple confirmation from lang file
+            confirmation = self.lang.get('msg_deleted', f'🗑️ Deleted ({deleted_count})')
 
             return confirmation, {
                 "error": False,
