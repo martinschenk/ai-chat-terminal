@@ -13,34 +13,100 @@ from typing import Tuple, List
 # Phi-3 will do the intelligent classification and false-positive detection
 DB_INTENT_KEYWORDS = {
     'de': [
-        'db', 'datenbank', 'lokal', 'speicher', 'speichern', 'merke', 'hole', 'gespeichert',
-        'vergiss', 'lösche', 'zeig', 'zeige', 'liste', 'meine', 'mein',
-        'daten', 'kennst', 'weißt', 'notiere', 'behalte'  # Phi-3 klassifiziert intelligent
+        # DB/Storage
+        'db', 'datenbank', 'lokal', 'speicher', 'speichern', 'speichere',
+        # Save/Remember
+        'merke', 'merk', 'merken', 'behalte', 'behalten', 'notiere', 'notieren',
+        # Retrieve/Get
+        'hole', 'hol', 'holen', 'gib', 'gibst', 'abrufen', 'laden',
+        # Show/List
+        'zeig', 'zeige', 'zeigen', 'liste', 'auflistung', 'anzeigen',
+        # Delete/Forget
+        'vergiss', 'vergessen', 'lösche', 'löschen', 'entferne', 'entfernen',
+        # Data/Info
+        'daten', 'infos', 'informationen', 'gespeichert', 'gespeicherte',
+        # Question words
+        'meine', 'mein', 'welche', 'was', 'hast', 'kennst', 'weißt'
     ],
     'en': [
-        'db', 'database', 'local', 'storage', 'save', 'remember', 'get', 'stored',
-        'forget', 'delete', 'show', 'list', 'my', 'mine',
-        'data', 'know', 'note', 'keep', 'load', 'retrieve', 'have', 'which'  # Phi-3 classifies intelligently
+        # DB/Storage
+        'db', 'database', 'local', 'locally', 'storage', 'store', 'stored',
+        # Save/Remember
+        'save', 'saving', 'remember', 'keep', 'keeping', 'note', 'noting',
+        # Retrieve/Get
+        'get', 'getting', 'retrieve', 'load', 'loading', 'fetch',
+        # Show/List
+        'show', 'showing', 'list', 'listing', 'display',
+        # Delete/Forget
+        'forget', 'delete', 'deleting', 'remove', 'removing', 'clear',
+        # Data/Info
+        'data', 'info', 'information', 'entries', 'records',
+        # Question words
+        'my', 'mine', 'which', 'what', 'have', 'has', 'know', 'knows'
     ],
     'es': [
-        'db', 'base de datos', 'local', 'guarda', 'guardar', 'recuerda', 'muestra', 'guardado',
-        'olvida', 'elimina', 'lista', 'actualiza',
-        'datos', 'sabes', 'conoces', 'anota', 'mantén'  # Phi-3 clasifica inteligentemente
+        # DB/Storage
+        'db', 'base de datos', 'local', 'localmente', 'almacenamiento', 'almacenar',
+        # Save/Remember
+        'guarda', 'guardar', 'guardado', 'recuerda', 'recordar', 'anota', 'anotar', 'mantén', 'mantener',
+        # Retrieve/Get
+        'obtén', 'obtener', 'muestra', 'mostrar', 'dame', 'dar', 'recupera', 'recuperar',
+        # Show/List
+        'lista', 'listar', 'enséñame', 'enseñar', 'muéstrame',
+        # Delete/Forget
+        'olvida', 'olvidar', 'elimina', 'eliminar', 'borra', 'borrar', 'quita', 'quitar',
+        # Data/Info
+        'datos', 'info', 'información', 'entradas', 'registros', 'guardados',
+        # Question words
+        'mi', 'mis', 'qué', 'cuál', 'cuáles', 'tienes', 'tiene', 'sabes', 'conoces'
     ],
     'fr': [
-        'db', 'base de données', 'local', 'stockage', 'sauvegarde', 'souviens', 'récupère', 'enregistré',
-        'oublie', 'supprime', 'affiche', 'liste',
-        'données', 'sais', 'connais', 'note', 'garde'  # Phi-3 classifie intelligemment
+        # DB/Storage
+        'db', 'base de données', 'local', 'localement', 'stockage', 'stocker',
+        # Save/Remember
+        'sauvegarde', 'sauvegarder', 'enregistre', 'enregistrer', 'souviens', 'garde', 'garder', 'note', 'noter',
+        # Retrieve/Get
+        'récupère', 'récupérer', 'obtiens', 'obtenir', 'affiche', 'afficher', 'montre', 'montrer',
+        # Show/List
+        'liste', 'lister', 'affiche-moi', 'montre-moi',
+        # Delete/Forget
+        'oublie', 'oublier', 'supprime', 'supprimer', 'efface', 'effacer', 'enlève', 'enlever',
+        # Data/Info
+        'données', 'infos', 'informations', 'entrées', 'enregistré', 'enregistrés',
+        # Question words
+        'mon', 'ma', 'mes', 'quel', 'quelle', 'quels', 'quelles', 'as', 'sais', 'connais'
     ],
     'it': [
-        'db', 'database', 'locale', 'archivio', 'salva', 'ricorda', 'mostra', 'salvato',
-        'dimentica', 'elimina', 'lista', 'aggiorna',
-        'dati', 'sai', 'conosci', 'annota', 'mantieni'  # Phi-3 classifica intelligentemente
+        # DB/Storage
+        'db', 'database', 'locale', 'localmente', 'archivio', 'memorizzazione', 'memorizza',
+        # Save/Remember
+        'salva', 'salvare', 'salvato', 'ricorda', 'ricordare', 'annota', 'annotare', 'mantieni', 'mantenere',
+        # Retrieve/Get
+        'prendi', 'prendere', 'recupera', 'recuperare', 'mostra', 'mostrare', 'dammi',
+        # Show/List
+        'lista', 'elenco', 'elenca', 'elencare', 'mostrami',
+        # Delete/Forget
+        'dimentica', 'dimenticare', 'elimina', 'eliminare', 'cancella', 'cancellare', 'rimuovi', 'rimuovere',
+        # Data/Info
+        'dati', 'info', 'informazioni', 'voci', 'salvati', 'memorizzati',
+        # Question words
+        'mio', 'mia', 'miei', 'mie', 'quale', 'quali', 'che', 'hai', 'sai', 'conosci'
     ],
     'pt': [
-        'db', 'base de dados', 'local', 'armazenamento', 'salvar', 'lembrar', 'mostrar', 'salvo',
-        'esquecer', 'apagar', 'listar', 'atualizar',
-        'dados', 'sabe', 'conhece', 'anota', 'guarda'  # Phi-3 classifica inteligentemente
+        # DB/Storage
+        'db', 'base de dados', 'local', 'localmente', 'armazenamento', 'armazenar', 'armazenado',
+        # Save/Remember
+        'salvar', 'salvo', 'salvos', 'lembrar', 'lembra', 'anota', 'anotar', 'guarda', 'guardar',
+        # Retrieve/Get
+        'pegar', 'buscar', 'recuperar', 'mostrar', 'mostra', 'me dá', 'obter',
+        # Show/List
+        'listar', 'lista', 'exibir', 'mostra-me', 'me mostre',
+        # Delete/Forget
+        'esquecer', 'esquece', 'apagar', 'apaga', 'deletar', 'deleta', 'remover', 'remove',
+        # Data/Info
+        'dados', 'info', 'informação', 'informações', 'entradas', 'registros', 'salvos',
+        # Question words
+        'meu', 'minha', 'meus', 'minhas', 'qual', 'quais', 'que', 'tem', 'tens', 'sabe', 'conhece'
     ],
     'nl': [
         'db', 'database', 'lokaal', 'opslag', 'opslaan', 'onthoud', 'haal', 'opgeslagen',
