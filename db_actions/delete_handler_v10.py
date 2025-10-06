@@ -31,11 +31,12 @@ class DeleteHandler:
         Returns:
             (response_message, metadata)
         """
-        # Extract search term with Phi-3
-        search_term = self.phi3.extract_for_delete(user_input)
+        # Extract search term with Llama - returns tuple!
+        search_term, method = self.phi3.extract_for_delete(user_input)
 
         if not search_term:
             search_term = user_input
+            method = 'fallback'
 
         # Delete from DB
         try:
@@ -53,14 +54,16 @@ class DeleteHandler:
             conn.close()
 
             if deleted_count > 0:
-                # Success
+                # Success with method info
                 confirmation = self.lang.get('msg_deleted', '🗑️ Deleted')
-                return confirmation, {
+                method_info = f" [via {method}]" if method == 'regex' else ""
+                return f"{confirmation} ({deleted_count}){method_info}", {
                     "error": False,
                     "model": "local-delete",
                     "tokens": 0,
                     "source": "local",
-                    "deleted_count": deleted_count
+                    "deleted_count": deleted_count,
+                    "method": method
                 }
             else:
                 # Nothing found

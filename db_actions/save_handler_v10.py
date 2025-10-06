@@ -32,12 +32,13 @@ class SaveHandler:
         Returns:
             (response_message, metadata)
         """
-        # Extract data with Phi-3
-        content = self.phi3.extract_for_save(user_input)
+        # Extract data with Llama - returns tuple!
+        content, method = self.phi3.extract_for_save(user_input)
 
         if not content or content == user_input:
-            # Phi-3 failed - fallback to user_input
+            # Llama failed - fallback to user_input
             content = user_input
+            method = 'fallback'
 
         # Save to DB
         try:
@@ -52,14 +53,16 @@ class SaveHandler:
             conn.commit()
             conn.close()
 
-            # Success message
+            # Success message with extraction method
             confirmation = self.lang.get('msg_stored', '✅ Stored 🔒')
+            method_info = f" [via {method}]" if method == 'regex' else ""
 
-            return confirmation, {
+            return f"{confirmation}{method_info}", {
                 "error": False,
                 "model": "local-save",
                 "tokens": 0,
-                "source": "local"
+                "source": "local",
+                "method": method
             }
 
         except Exception as e:
