@@ -199,19 +199,19 @@ class Phi3IntentParser:
 Message: "{safe_message}"
 
 Rules:
-- "save/remember/remind X" with data (email@, phone number, address) → SAVE
-- "show/what/which is my X" (specific item) → RETRIEVE
+- "what data/all data/show all" → LIST
+- "save/remember X" with data (email@, phone, address) → SAVE
+- "show/what is my X" (specific item) → RETRIEVE
 - "delete/forget X" → DELETE
-- "list/all/show all" → LIST
 - Otherwise → NORMAL
 
 EXAMPLES:
+"what data do you have?" → LIST
 "save my phone 123456" → SAVE
 "show my phone" → RETRIEVE
 "what's my email?" → RETRIEVE
-"list all data" → LIST
 "delete my email" → DELETE
-"hello there" → NORMAL
+"hello" → NORMAL
 
 JSON response:
 {{
