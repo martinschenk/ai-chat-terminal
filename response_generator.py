@@ -160,15 +160,8 @@ class ResponseGenerator:
 
         templates = self.templates[base_lang]
 
-        # Prefer Phi-3 for dynamic, natural responses
-        if self.phi3_available and self.config.get('PHI3_ENABLED', 'false').lower() == 'true':
-            try:
-                return self._generate_with_phi3_stored(user_message, language)
-            except Exception as e:
-                print(f"Phi-3 generation failed: {e}", file=sys.stderr)
-                # Fall through to simple fallback
-
-        # Simple fallback when Phi-3 unavailable
+        # ALWAYS use simple template - Phi-3 generates too much text!
+        # Simple, short, clear confirmation
         return templates['generic_sensitive']
 
     def confirm_storage(self, pii_types: List[str], language: str = None) -> str:
