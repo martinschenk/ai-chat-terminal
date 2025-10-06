@@ -34,15 +34,10 @@ echo "3️⃣ Deleting ~/.aichat (including .env, config, db)..."
 rm -rf ~/.aichat
 echo "   ✅ Deleted"
 
-# 4. Pull latest from GitHub (keep Development directory!)
-echo "4️⃣ Pulling latest code from GitHub..."
-cd ~/Development/ai-chat-terminal
-git pull origin main
-echo "   ✅ Updated"
-
-# 5. Run fresh install from local Development directory
-echo "5️⃣ Running fresh installation..."
-zsh install.sh
+# 4. Install fresh from GitHub via curl (like a NORMAL USER!)
+echo "4️⃣ Installing from GitHub via curl (user installation)..."
+curl -fsSL https://raw.githubusercontent.com/martinschenk/ai-chat-terminal/main/install.sh | zsh
+echo "   ✅ Installed"
 
 echo ""
 echo "✅ Fresh installation complete!"
