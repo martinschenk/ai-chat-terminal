@@ -72,13 +72,13 @@ chat
 ```bash
 chat
 👤 You ▶ save my email address test@example.com
-🤖 AI    ✅ Gespeichert 🔒
+🤖 AI    ✅ Stored 🔒
 
 👤 You ▶ save my sisters birthday 02 July 1998
-🤖 AI    ✅ Gespeichert 🔒
+🤖 AI    ✅ Stored 🔒
 
 👤 You ▶ save my phone 1234244332
-🤖 AI    ✅ Gespeichert 🔒
+🤖 AI    ✅ Stored 🔒
 ```
 
 **Notice:** All save operations processed by **local Llama 3.2**, stored in **encrypted SQLite**. Zero network calls.
@@ -107,7 +107,7 @@ chat
 
 ```bash
 👤 You ▶ delete my phone
-🤖 AI    🗑️ Gelöscht (1)
+🤖 AI    🗑️ Deleted (1)
 ```
 
 ### OpenAI Queries with Context (Cloud)
@@ -375,7 +375,7 @@ Data must be saved first:
 ```bash
 # Step 1: Save
 👤 You ▶ save my email test@example.com
-🤖 AI    ✅ Gespeichert 🔒
+🤖 AI    ✅ Stored 🔒
 
 # Step 2: Retrieve
 👤 You ▶ show my email
