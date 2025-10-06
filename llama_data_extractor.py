@@ -311,11 +311,14 @@ Extract: """
                         clean_lines.append(line)
                 output = '\n'.join(clean_lines).strip()
 
+            # Clean "Extract: " prefix first if Llama added it
+            output = re.sub(r'^Extract:\s*', '', output, flags=re.IGNORECASE).strip()
+
             # Remove Llama's explanatory text (e.g., "Here is the extracted data...")
             # Keep only the last line if multiple lines
             if '\n' in output:
                 lines = [l.strip() for l in output.split('\n') if l.strip()]
-                # Find the line that looks like extracted data (contains ":" usually)
+                # Find the line that looks like extracted data (contains ":" or is "*")
                 for line in reversed(lines):
                     if ':' in line or line == '*':
                         output = line
