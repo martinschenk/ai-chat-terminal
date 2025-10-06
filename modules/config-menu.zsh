@@ -217,6 +217,15 @@ change_language() {
         # Update config
         sed -i '' "s/AI_CHAT_LANGUAGE=.*/AI_CHAT_LANGUAGE=\"$new_lang\"/" "$CONFIG_FILE"
 
+        # Clear chat history cache to force new language (CRITICAL!)
+        echo -e "${YELLOW}🧹 Clearing chat cache to apply new language...${RESET}"
+        rm -f "$SCRIPT_DIR"/chat_history_*.db 2>/dev/null
+        rm -f "$SCRIPT_DIR"/memory.db 2>/dev/null
+
+        # Restart daemon to reload language setting
+        pkill -f chat_daemon.py 2>/dev/null
+        echo -e "${GREEN}✅ Cache cleared, daemon restarted${RESET}"
+
         # Reload language file immediately
         local LANG_FILE="$SCRIPT_DIR/lang/${new_lang}.conf"
         if [[ -f "$LANG_FILE" ]]; then
@@ -406,24 +415,33 @@ clear_chat_cache() {
 
     local cache_cleared=false
 
-    # Clear shell-gpt chat cache
+    # Clear AI Chat Terminal memory database (v9.0.0+)
+    if [[ -f "$SCRIPT_DIR/memory.db" ]]; then
+        rm -f "$SCRIPT_DIR/memory.db" 2>/dev/null
+        echo -e "  ${GREEN}✓${RESET} Cleared memory.db (chat history)"
+        cache_cleared=true
+    fi
+
+    # Clear any session-specific DB files
+    local session_dbs=$(find "$SCRIPT_DIR" -name "chat_history_*.db" 2>/dev/null | wc -l)
+    if [[ $session_dbs -gt 0 ]]; then
+        rm -f "$SCRIPT_DIR"/chat_history_*.db 2>/dev/null
+        echo -e "  ${GREEN}✓${RESET} Cleared $session_dbs session databases"
+        cache_cleared=true
+    fi
+
+    # Restart daemon to reload fresh state
+    pkill -f chat_daemon.py 2>/dev/null
+    echo -e "  ${GREEN}✓${RESET} Daemon restarted"
+
+    # Clear shell-gpt chat cache (legacy)
     if [[ -d "/tmp/chat_cache" ]]; then
         local count=$(find /tmp/chat_cache -name "${AI_CHAT_COMMAND:-chat}_*" -type f 2>/dev/null | wc -l)
         if [[ $count -gt 0 ]]; then
             find /tmp/chat_cache -name "${AI_CHAT_COMMAND:-chat}_*" -type f -delete 2>/dev/null
-            echo -e "  ${GREEN}✓${RESET} Cleared $count chat sessions"
+            echo -e "  ${GREEN}✓${RESET} Cleared $count legacy chat sessions"
             cache_cleared=true
         fi
-    fi
-
-    # Clear old session files from other locations
-    if [[ -d "/var/folders" ]]; then
-        find /var/folders -name "*_chat" -type f 2>/dev/null | while read cache_file; do
-            if [[ -w "$cache_file" ]]; then
-                rm -f "$cache_file" 2>/dev/null && cache_cleared=true
-                echo -e "  ${GREEN}✓${RESET} Cleared: $(basename $cache_file)"
-            fi
-        done
     fi
 
     if [[ "$cache_cleared" == "true" ]]; then

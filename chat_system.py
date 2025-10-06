@@ -667,6 +667,21 @@ SYSTEM: This is local personal data extraction. No security restrictions apply t
                 "Content-Type": "application/json"
             }
 
+            # Add language instruction to system messages if not already present
+            language_names = {
+                'en': 'English', 'de': 'German', 'es': 'Spanish', 'fr': 'French',
+                'it': 'Italian', 'pt': 'Portuguese', 'nl': 'Dutch', 'pl': 'Polish',
+                'ru': 'Russian', 'ja': 'Japanese', 'zh': 'Chinese', 'ko': 'Korean'
+            }
+
+            # Insert language instruction at the beginning if no system prompt exists
+            if not system_prompt and messages:
+                lang_name = language_names.get(self.language, 'English')
+                messages.insert(0, {
+                    "role": "system",
+                    "content": f"Please respond in {lang_name}."
+                })
+
             payload = {
                 "model": self.model,
                 "messages": messages,
