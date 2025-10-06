@@ -16,25 +16,25 @@ A terminal-based chat system where **YOU decide** what stays local and what goes
 
 ### 💾 Save Data Locally (NEVER goes to OpenAI)
 ```bash
-chat "remember my email is john@example.com locally"
+chat remember my email is john@example.com locally
 → 💾 Saved! ✅
 
-chat "keep my API key sk-abc123 locally"
+chat keep my API key sk-abc123 locally
 → 🔒 Stored securely!
 ```
 
 ### 🔍 Retrieve Your Data (From encrypted local DB)
 ```bash
-chat "what's my email?"
+chat whats my email?
 → 🔍 Found in DB: john@example.com
 
-chat "what's my API key?"
+chat whats my API key?
 → 🔍 Got it: sk-abc123
 ```
 
 ### 📦 List All Stored Data
 ```bash
-chat "what data do you have about me?"
+chat what data do you have about me?
 → 📦 Your data (2):
   1. [email] john@example.com
   2. [api_key] sk-abc123
@@ -42,13 +42,13 @@ chat "what data do you have about me?"
 
 ### 🗑️ Delete Data
 ```bash
-chat "forget my API key"
+chat forget my API key
 → 🗑️ Deleted! (1 entry)
 ```
 
 ### 🌐 Normal OpenAI Queries (No local DB)
 ```bash
-chat "what's the capital of France?"
+chat whats the capital of France?
 → Paris is the capital of France.
 ```
 
