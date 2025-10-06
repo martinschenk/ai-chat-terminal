@@ -691,7 +691,8 @@ class ChatMemorySystem:
                                vec_distance_L2(e.message_embedding, ?) as distance
                         FROM chat_history h
                         JOIN chat_embeddings e ON h.id = e.rowid
-                        WHERE json_extract(h.metadata, '$.privacy_category') IN ({placeholders})
+                        WHERE json_extract(h.metadata, '$.is_private') = 1
+                          AND json_extract(h.metadata, '$.privacy_category') IN ({placeholders})
                     )
                     WHERE distance < 0.7
                     ORDER BY created_at DESC, distance ASC
@@ -752,7 +753,8 @@ class ChatMemorySystem:
                     cursor.execute(f"""
                         SELECT content, metadata, created_at
                         FROM chat_history
-                        WHERE json_extract(metadata, '$.privacy_category') IN ({category_placeholders})
+                        WHERE json_extract(metadata, '$.is_private') = 1
+                          AND json_extract(metadata, '$.privacy_category') IN ({category_placeholders})
                         ORDER BY created_at DESC
                         LIMIT ?
                     """, (*detected_types, limit))
@@ -762,7 +764,8 @@ class ChatMemorySystem:
                     cursor.execute(f"""
                         SELECT content, metadata, created_at
                         FROM chat_history
-                        WHERE json_extract(metadata, '$.privacy_category') IN ({placeholders})
+                        WHERE json_extract(metadata, '$.is_private') = 1
+                          AND json_extract(metadata, '$.privacy_category') IN ({placeholders})
                           AND content LIKE ?
                         ORDER BY created_at DESC
                         LIMIT ?
