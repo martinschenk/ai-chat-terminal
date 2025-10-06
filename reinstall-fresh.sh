@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/zsh
 # AI Chat Terminal - Complete Fresh Reinstall
 # Backs up DB (keeps last 5), deletes everything, installs clean from GitHub
 
@@ -40,9 +40,9 @@ cd ~/Development/ai-chat-terminal
 git pull origin main
 echo "   ✅ Updated"
 
-# 5. Run fresh install
-echo "5️⃣ Running fresh installation..."
-bash install.sh
+# 5. Run fresh install with ZSH
+echo "5️⃣ Running fresh installation with ZSH..."
+zsh install.sh
 
 echo ""
 echo "✅ Fresh installation complete!"
