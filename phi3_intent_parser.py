@@ -234,10 +234,15 @@ Determine if this is a REAL database operation or FALSE POSITIVE.
    - "my stored password" → RETRIEVE
    - "mi número guardado" → RETRIEVE
 
-3. **Personal data questions** = RETRIEVE
+3. **Personal data questions** = RETRIEVE (SPECIFIC item, not ALL data!)
    - Email, phone, address, password, API key, etc.
    - If user asks for **SPECIFIC** data → RETRIEVE
-   - Examples: "wie ist meine email?" / "what's my phone?" / "cuál es mi dirección?"
+   - "wie ist meine email?" → RETRIEVE
+   - "what's my phone?" → RETRIEVE
+   - "show my phone number" → RETRIEVE ⚠️ VERY IMPORTANT!
+   - "give me my email" → RETRIEVE
+   - "cuál es mi dirección?" → RETRIEVE
+   - **KEY**: Specific item = RETRIEVE, ALL items = LIST
 
 4. **DB-explicit** = RETRIEVE
    - "hole aus db" / "get from db" / "saca de db" → RETRIEVE

@@ -218,18 +218,11 @@ class ResponseGenerator:
         if not db_results:
             return templates['not_found'].format(query=user_query)
 
-        # Prefer Phi-3 for natural responses
-        if self.phi3_available and self.config.get('PHI3_ENABLED', 'false').lower() == 'true':
-            try:
-                return self._generate_with_phi3_retrieved(user_query, db_results, language)
-            except Exception as e:
-                print(f"Phi-3 generation failed: {e}", file=sys.stderr)
-                # Fall through to template
-
-        # Simple template fallback - just show the data
+        # ALWAYS use simple template - Phi-3 generates too much text!
+        # Show data with 🔍 icon to indicate it's from local DB
         result = db_results[0]  # Best match
         content = result.get('content', '')
-        return templates['found_generic'].format(value=content)
+        return f"🔍 {content}"
 
     def generate_response(self, query: str, db_results: List[Dict], intent: str = 'QUERY', language: str = None) -> str:
         """
