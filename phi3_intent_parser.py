@@ -210,6 +210,18 @@ Determine if this is a REAL database operation or FALSE POSITIVE.
 - UPDATE: Modify existing data
 - NORMAL: FALSE POSITIVE (not a DB command → send to OpenAI)
 
+🚨 CRITICAL RULES FOR SAVE (CHECK FIRST!):
+
+1. **"remind/remember/save" + EMAIL/PHONE/ADDRESS/DATA** = SAVE
+   - "remind my email mschenk@gmail.com" → SAVE ⚠️ VERY IMPORTANT!
+   - "remember my phone 123456" → SAVE
+   - "save my address Main Street 5" → SAVE
+
+2. **User PROVIDES data (email@, phone number, address)** = SAVE
+   - If message contains actual data (email format, number, address) → SAVE
+   - "remind my email test@test.com" → SAVE (contains email!)
+   - "keep my number 555-1234" → SAVE (contains number!)
+
 🚨 CRITICAL RULES FOR RETRIEVE:
 
 1. **"meine/my/mi X"** + keywords = RETRIEVE
@@ -243,11 +255,12 @@ Determine if this is a REAL database operation or FALSE POSITIVE.
    - "show me all data" → LIST
    - "muéstrame todos los datos" → LIST
 
-3. **"was hast du / was weißt du / was kennst du / which data"** = LIST (about ME, not specific item)
+3. **"was hast du / was weißt du / was kennst du / which data / about me"** = LIST (about ME, not specific item)
    - "was hast du gespeichert?" → LIST
    - "was weißt du über mich?" → LIST ⚠️ VERY IMPORTANT!
    - "welche daten kennst du?" → LIST
    - "which data have you?" → LIST ⚠️ VERY IMPORTANT!
+   - "which infos do you have about me?" → LIST ⚠️ VERY IMPORTANT!
    - "what do you know about me?" → LIST ⚠️ VERY IMPORTANT!
    - "qué sabes de mí?" → LIST ⚠️ VERY IMPORTANT!
 
@@ -291,9 +304,9 @@ Determine if this is a REAL database operation or FALSE POSITIVE.
 ❌ FALSE: "Ich habe gespeichert" (past) | "Was ist eine DB?" (educational) | "Wetter morgen?" (general)
 
 **ENGLISH (EN):**
-✅ SAVE: "remember my email is test@test.com" | "save my phone 123" | "remember this locally" | "save locally my address is..." | "I live in X, remember that locally" | "note my number" | "keep my email"
+✅ SAVE: "remember my email is test@test.com" | "remind my email mschenk@gmail.com" | "save my phone 123" | "remember this locally" | "save locally my address is..." | "I live in X, remember that locally" | "note my number" | "keep my email"
 ✅ RETRIEVE: "what's my email?" | "my stored phone number?" | "get my address from db"
-✅ LIST: "what did you save?" | "show me all data" | "what data do you know?" | "what do you know about me?" | "list db"
+✅ LIST: "what did you save?" | "show me all data" | "what data do you know?" | "what do you know about me?" | "which infos do you have about me?" | "list db"
 ✅ DELETE: "forget my email" | "delete my phone"
 ❌ FALSE: "I saved it" (past) | "What is a database?" (educational) | "weather tomorrow?" (general)
 

@@ -32,7 +32,7 @@ DB_INTENT_KEYWORDS = {
         # DB/Storage
         'db', 'database', 'local', 'locally', 'storage', 'store', 'stored',
         # Save/Remember
-        'save', 'saving', 'remember', 'keep', 'keeping', 'note', 'noting',
+        'save', 'saving', 'remember', 'remind', 'keep', 'keeping', 'note', 'noting',
         # Retrieve/Get
         'get', 'getting', 'retrieve', 'load', 'loading', 'fetch',
         # Show/List
@@ -40,9 +40,9 @@ DB_INTENT_KEYWORDS = {
         # Delete/Forget
         'forget', 'delete', 'deleting', 'remove', 'removing', 'clear',
         # Data/Info
-        'data', 'info', 'information', 'entries', 'records',
+        'data', 'info', 'infos', 'information', 'entries', 'records',
         # Question words
-        'my', 'mine', 'which', 'what', 'have', 'has', 'know', 'knows'
+        'my', 'mine', 'which', 'what', 'have', 'has', 'know', 'knows', 'about'
     ],
     'es': [
         # DB/Storage
