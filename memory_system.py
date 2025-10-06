@@ -685,9 +685,9 @@ class ChatMemorySystem:
                 # Use subquery to filter by distance (can't use alias in WHERE)
                 # Sort by created_at DESC first (newest first), then by distance (most similar)
                 cursor.execute(f"""
-                    SELECT content, metadata, created_at, distance
+                    SELECT id, content, metadata, created_at, distance
                     FROM (
-                        SELECT h.content, h.metadata, h.created_at,
+                        SELECT h.id, h.content, h.metadata, h.created_at,
                                vec_distance_L2(e.message_embedding, ?) as distance
                         FROM chat_history h
                         JOIN chat_embeddings e ON h.id = e.rowid
@@ -751,7 +751,7 @@ class ChatMemorySystem:
                 if detected_types:
                     category_placeholders = ','.join('?' * len(detected_types))
                     cursor.execute(f"""
-                        SELECT content, metadata, created_at
+                        SELECT id, content, metadata, created_at
                         FROM chat_history
                         WHERE json_extract(metadata, '$.is_private') = 1
                           AND json_extract(metadata, '$.privacy_category') IN ({category_placeholders})
@@ -762,7 +762,7 @@ class ChatMemorySystem:
                     # No keywords detected - search all sensitive data with content match
                     placeholders = ','.join('?' * len(TRULY_SENSITIVE))
                     cursor.execute(f"""
-                        SELECT content, metadata, created_at
+                        SELECT id, content, metadata, created_at
                         FROM chat_history
                         WHERE json_extract(metadata, '$.is_private') = 1
                           AND json_extract(metadata, '$.privacy_category') IN ({placeholders})
@@ -773,13 +773,14 @@ class ChatMemorySystem:
 
             results = []
             for row in cursor.fetchall():
-                metadata = json.loads(row[1]) if row[1] else {}
+                metadata = json.loads(row[2]) if row[2] else {}
                 results.append({
-                    'content': row[0],
+                    'id': row[0],
+                    'content': row[1],
                     'data_type': metadata.get('privacy_category', 'UNKNOWN'),
                     'metadata': metadata,
-                    'created_at': row[2],
-                    'similarity': 1 - row[3] if len(row) > 3 else 1.0
+                    'created_at': row[3],
+                    'similarity': 1 - row[4] if len(row) > 4 else 1.0
                 })
 
             return results
@@ -882,6 +883,28 @@ class ChatMemorySystem:
 
         except Exception as e:
             print(f"Error deleting private data: {e}", file=sys.stderr)
+            return 0
+
+    def delete_by_ids(self, ids: list) -> int:
+        """Delete items by their IDs"""
+        try:
+            if not ids:
+                return 0
+
+            cursor = self.db.cursor()
+            placeholders = ','.join('?' * len(ids))
+
+            # Delete from both tables
+            cursor.execute(f"DELETE FROM chat_history WHERE id IN ({placeholders})", ids)
+
+            if self.vector_support:
+                cursor.execute(f"DELETE FROM chat_embeddings WHERE rowid IN ({placeholders})", ids)
+
+            self.db.commit()
+            return len(ids)
+
+        except Exception as e:
+            print(f"Error deleting by IDs: {e}", file=sys.stderr)
             return 0
 
     def close(self):

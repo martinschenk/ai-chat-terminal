@@ -33,12 +33,35 @@ class DeleteHandler:
         Returns:
             (response_message, metadata)
         """
-        # Extract what to delete
-        data = phi3_result.get('data', {})
-        target = data.get('target', user_input)
+        # KISS: Extract type from user_input (same as retrieve!)
+        query_type = ''
+        if 'email' in user_input.lower() or 'e-mail' in user_input.lower():
+            query_type = 'email'
+        elif 'phone' in user_input.lower() or 'telefon' in user_input.lower() or 'number' in user_input.lower():
+            query_type = 'phone'
+        elif 'address' in user_input.lower() or 'adresse' in user_input.lower():
+            query_type = 'address'
+        elif 'password' in user_input.lower() or 'passwort' in user_input.lower():
+            query_type = 'password'
 
-        # Delete matching items - returns actual count deleted!
-        deleted_count = self.memory.delete_private_data(target)
+        # Search for items to delete
+        results = self.memory.search_private_data(user_input, limit=10, silent=True)
+
+        # ALWAYS filter by type if we detected one!
+        if query_type and results:
+            filtered = [r for r in results
+                       if r.get('metadata', {}).get('data_type', '').lower() == query_type.lower()]
+            if filtered:
+                results = filtered
+            else:
+                results = []
+
+        # Delete found items
+        if results:
+            deleted_ids = [r['id'] for r in results]
+            deleted_count = self.memory.delete_by_ids(deleted_ids)
+        else:
+            deleted_count = 0
 
         if deleted_count > 0:
             # KISS: Simple confirmation from lang file

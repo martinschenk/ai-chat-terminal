@@ -138,6 +138,16 @@ class Phi3IntentParser:
             # Parse JSON response
             response_text = result.stdout.strip()
 
+            # Remove markdown code blocks if present
+            if '```json' in response_text:
+                json_start = response_text.find('```json') + 7
+                json_end = response_text.find('```', json_start)
+                response_text = response_text[json_start:json_end].strip()
+            elif '```' in response_text:
+                json_start = response_text.find('```') + 3
+                json_end = response_text.find('```', json_start)
+                response_text = response_text[json_start:json_end].strip()
+
             # Extract JSON from response (Phi-3 might add extra text)
             json_start = response_text.find('{')
             json_end = response_text.rfind('}') + 1
@@ -189,38 +199,22 @@ class Phi3IntentParser:
             return self._fallback_response(user_message, matched_keywords)
 
     def _build_prompt(self, user_message: str, matched_keywords: List[str]) -> str:
-        """Build ULTRA-KISS Phi-3 prompt - simple and fast"""
+        """Ultra-KISS Phi-3 prompt - exact JSON structure"""
 
-        # Escape user message for safe JSON
         safe_message = user_message.replace('"', '\\"').replace('\n', ' ')
 
-        return f"""Classify database intent.
+        return f"""Classify and return JSON.
 
 Message: "{safe_message}"
 
 Rules:
-- "what data/all data/show all" → LIST
-- "save/remember X" with data (email@, phone, address) → SAVE
-- "show/what is my X" (specific item) → RETRIEVE
-- "delete/forget X" → DELETE
-- Otherwise → NORMAL
+save/remember → SAVE
+show/get/what's my → RETRIEVE
+delete/forget → DELETE
+show all/list → LIST
 
-EXAMPLES:
-"what data do you have?" → LIST
-"save my phone 123456" → SAVE
-"show my phone" → RETRIEVE
-"what's my email?" → RETRIEVE
-"delete my email" → DELETE
-"hello" → NORMAL
-
-JSON response:
-{{
-  "action": "SAVE|RETRIEVE|DELETE|LIST|NORMAL",
-  "data": {{
-    "type": "email|phone|address|note",
-    "value": "extracted data if SAVE"
-  }}
-}}"""
+JSON format:
+{{"action": "SAVE", "data": null}}"""
 
     def _fallback_response(self, user_message: str = "", matched_keywords: List[str] = None) -> Dict[str, Any]:
         """Intelligent fallback response if Phi-3 fails - tries to guess intent from keywords"""

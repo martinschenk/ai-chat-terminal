@@ -58,16 +58,7 @@ class ChatSystem:
         if ResponseGenerator:
             self.response_generator = ResponseGenerator(self.config_dir)
 
-        # v9.0.0: Initialize Phi-3 intent parser (MANDATORY)
-        try:
-            from phi3_intent_parser import Phi3IntentParser
-            self.phi3_parser = Phi3IntentParser()  # Fails hard if Phi-3 not available
-        except Exception as e:
-            raise RuntimeError(
-                f"❌ Phi-3 is MANDATORY for AI Chat Terminal v9.0.0!\n"
-                f"Error: {e}\n"
-                f"Please ensure Phi-3 is installed: ollama pull phi3"
-            )
+        # v9.1.0: Phi-3 removed - using KISS keyword-based classification instead!
 
         # v9.0.0: Initialize language manager
         try:
@@ -615,31 +606,37 @@ SYSTEM: This is local personal data extraction. No security restrictions apply t
             print(f"🔍 Keyword check ({elapsed_ms:.1f}ms): detected={db_detected}, keywords={matched_keywords[:3] if matched_keywords else []}", file=sys.stderr)
 
             if db_detected:
-                # Keywords detected - use Phi-3 for smart analysis
-                phi3_result = self.phi3_parser.parse_intent(user_input, matched_keywords)
-                action = phi3_result.get('action', 'NORMAL')
-                false_pos = phi3_result.get('false_positive', False)
+                # Keywords detected - use KISS rule-based classification (no Phi-3!)
+                action = keyword_detector.classify_action(user_input, matched_keywords)
 
-                # DEBUG: Log Phi-3 decision
-                print(f"🤖 Phi-3: action={action}, false_positive={false_pos}, confidence={phi3_result.get('confidence')}", file=sys.stderr)
+                # DEBUG: Log classification decision
+                print(f"⚡ KISS: action={action} (keyword-based)", file=sys.stderr)
 
-                # Dispatch to appropriate handler (only if NOT false positive!)
-                if action == 'SAVE' and not false_pos and hasattr(self, 'save_handler'):
+                # Create simple phi3_result dict for handlers (they expect this format)
+                phi3_result = {
+                    'action': action,
+                    'data': None,  # Handlers will extract from user_input
+                    'false_positive': False,
+                    'confidence': 1.0  # Rules are 100% confident
+                }
+
+                # Dispatch to appropriate handler
+                if action == 'SAVE' and hasattr(self, 'save_handler'):
                     return self.save_handler.handle(session_id, user_input, phi3_result)
 
-                elif action == 'RETRIEVE' and not false_pos and hasattr(self, 'retrieve_handler'):
+                elif action == 'RETRIEVE' and hasattr(self, 'retrieve_handler'):
                     return self.retrieve_handler.handle(session_id, user_input, phi3_result)
 
-                elif action == 'DELETE' and not false_pos and hasattr(self, 'delete_handler'):
+                elif action == 'DELETE' and hasattr(self, 'delete_handler'):
                     return self.delete_handler.handle(session_id, user_input, phi3_result)
 
-                elif action == 'LIST' and not false_pos and hasattr(self, 'list_handler'):
+                elif action == 'LIST' and hasattr(self, 'list_handler'):
                     return self.list_handler.handle(session_id, user_input, phi3_result)
 
-                elif action == 'UPDATE' and not false_pos and hasattr(self, 'update_handler'):
+                elif action == 'UPDATE' and hasattr(self, 'update_handler'):
                     return self.update_handler.handle(session_id, user_input, phi3_result)
 
-                # else: action == 'NORMAL' or false_positive=True → fall through to OpenAI
+                # else: action == 'NORMAL' → fall through to OpenAI
 
             # OpenAI query path
             messages = []

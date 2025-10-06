@@ -33,12 +33,57 @@ class SaveHandler:
         Returns:
             (response_message, metadata)
         """
-        # Extract Phi-3 parsed data
-        data = phi3_result.get('data', {})
-        data_type = data.get('type', 'note')
-        value = data.get('value', user_input)
-        label = data.get('label', '')
-        context = data.get('context', '')
+        # Extract data from user_input (KISS - regex based!)
+        import re
+
+        # Detect type from keywords FIRST!
+        data_type = 'note'  # default
+        value = user_input  # default
+
+        user_lower = user_input.lower()
+
+        # Check keywords to determine type
+        if 'email' in user_lower or 'e-mail' in user_lower:
+            # EMAIL: extract email@domain
+            email_match = re.search(r'[\w\.-]+@[\w\.-]+\.\w+', user_input)
+            if email_match:
+                data_type = 'email'
+                value = email_match.group()
+        elif 'phone' in user_lower or 'telefon' in user_lower or 'number' in user_lower or 'handy' in user_lower:
+            # PHONE: extract phone number (digits/spaces/dashes)
+            phone_match = re.search(r'[\d\s\-\(\)]{7,}', user_input)
+            if phone_match:
+                data_type = 'phone'
+                value = phone_match.group().strip()
+        elif 'address' in user_lower or 'adresse' in user_lower or 'calle' in user_lower or 'street' in user_lower:
+            # ADDRESS: take everything after keyword
+            data_type = 'address'
+            value = re.sub(r'^(save|remember|store|merke|speicher)\s+(my|meine?)\s+(address|adresse)\s+', '', user_input, flags=re.IGNORECASE)
+        elif 'password' in user_lower or 'passwort' in user_lower:
+            # PASSWORD: take everything after keyword
+            data_type = 'password'
+            value = re.sub(r'^(save|remember|store|merke|speicher)\s+(my|meine?)\s+(password|passwort)\s+', '', user_input, flags=re.IGNORECASE)
+        else:
+            # No keyword found - try auto-detect
+            # EMAIL: anything with @
+            email_match = re.search(r'[\w\.-]+@[\w\.-]+\.\w+', user_input)
+            if email_match:
+                data_type = 'email'
+                value = email_match.group()
+            # PHONE: ONLY if it looks like a phone (no letters mixed in)
+            else:
+                phone_match = re.search(r'\b[\d\s\-\(\)]{9,}\b', user_input)
+                if phone_match and not any(c.isalpha() for c in phone_match.group()):
+                    data_type = 'phone'
+                    value = phone_match.group().strip()
+
+        # If still no value extracted, take everything after "save/remember"
+        if value == user_input:
+            # Remove keywords from the beginning
+            value = re.sub(r'^(save|remember|store|merke|speicher)\s+(my|meine?)\s+', '', user_input, flags=re.IGNORECASE)
+
+        label = ''
+        context = ''
 
         # Store private data using store_private_data method
         self.memory.store_private_data(

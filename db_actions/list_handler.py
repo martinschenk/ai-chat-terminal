@@ -34,7 +34,7 @@ class ListHandler:
             (response_message, metadata)
         """
         # Extract any filters from Phi-3
-        data = phi3_result.get('data', {})
+        data = phi3_result.get('data') or {}
         filter_type = data.get('filter', None)
 
         # Get all stored data (LOCAL_STORAGE entries)

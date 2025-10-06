@@ -193,6 +193,47 @@ class LocalStorageDetector:
 
         return (len(matched) > 0, matched)
 
+    def classify_action(self, text: str, matched_keywords: List[str]) -> str:
+        """
+        KISS: Simple rule-based action classification
+        More reliable than Phi-3!
+
+        Returns: SAVE|RETRIEVE|DELETE|LIST|UPDATE|NORMAL
+        """
+        text_lower = text.lower()
+
+        # Priority order matters! DELETE before RETRIEVE to avoid conflicts
+
+        # DELETE: delete/forget/remove
+        if any(kw in text_lower for kw in ['delete', 'forget', 'remove', 'lösche', 'vergiss', 'entferne',
+                                             'elimina', 'olvida', 'supprime', 'oublie']):
+            return 'DELETE'
+
+        # LIST: show all/list
+        if any(phrase in text_lower for phrase in ['show all', 'list all', 'what data', 'all data', 'zeig alle',
+                                                     'liste alle', 'qué datos', 'todos los datos']):
+            return 'LIST'
+
+        # SAVE: save/remember/store + has data (contains @ or digits)
+        if any(kw in text_lower for kw in ['save', 'remember', 'store', 'merke', 'speicher', 'behalte',
+                                             'guarda', 'recuerda', 'sauvegarde', 'salva', 'ricorda']):
+            # Check if message contains actual data (email@ or phone# or text after keyword)
+            if '@' in text or any(char.isdigit() for char in text):
+                return 'SAVE'
+
+        # RETRIEVE: show/get/what + my
+        if ('my' in text_lower or 'mein' in text_lower or 'mi' in text_lower or 'mon' in text_lower or 'mio' in text_lower):
+            if any(kw in text_lower for kw in ['show', 'get', 'what', 'hole', 'gib', 'zeig', 'muestra', 'dame',
+                                                 'affiche', 'montre', 'mostra', 'dammi']):
+                return 'RETRIEVE'
+
+        # UPDATE: change/update + to
+        if any(kw in text_lower for kw in ['change', 'update', 'ändere', 'aktualisiere', 'cambia', 'actualiza']):
+            if ' to ' in text_lower or ' zu ' in text_lower or ' a ' in text_lower or ' à ' in text_lower:
+                return 'UPDATE'
+
+        return 'NORMAL'
+
 
 # For testing
 if __name__ == '__main__':

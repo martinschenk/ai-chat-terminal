@@ -33,32 +33,38 @@ class RetrieveHandler:
         Returns:
             (response_message, metadata)
         """
-        # Extract what user is looking for
-        data = phi3_result.get('data', {})
-        query_type = data.get('type', '')
-        query = data.get('query', user_input)
-        label = data.get('label', '')
+        # KISS: Extract type from user_input with keywords
+        query_type = ''
+        if 'email' in user_input.lower() or 'e-mail' in user_input.lower():
+            query_type = 'email'
+        elif 'phone' in user_input.lower() or 'telefon' in user_input.lower() or 'number' in user_input.lower():
+            query_type = 'phone'
+        elif 'address' in user_input.lower() or 'adresse' in user_input.lower():
+            query_type = 'address'
+        elif 'password' in user_input.lower() or 'passwort' in user_input.lower():
+            query_type = 'password'
 
         # Search in database using search_private_data
-        results = self.memory.search_private_data(query, limit=10, silent=True)
+        results = self.memory.search_private_data(user_input, limit=10, silent=True)
 
-        # Filter by type if Phi-3 identified a specific type
+        # ALWAYS filter by type if we detected one!
         if query_type and results:
-            # Map query_type to expected metadata.data_type
             filtered = [r for r in results
                        if r.get('metadata', {}).get('data_type', '').lower() == query_type.lower()]
             if filtered:
                 results = filtered
+            else:
+                results = []  # No matches of this type!
 
         if results:
             # Format results naturally (Phi-3 handles icons & varied phrasing!)
-            formatted_response = self._format_results(results, query_type, query)
+            formatted_response = self._format_results(results, query_type, user_input)
 
             # Save to history
             self.memory.add_message(session_id, 'user', user_input, {
                 'privacy_category': 'LOCAL_RETRIEVAL',
                 'query_type': query_type,
-                'query': query
+                'query': user_input
             })
 
             self.memory.add_message(session_id, 'assistant', formatted_response, {

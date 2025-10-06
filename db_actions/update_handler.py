@@ -34,7 +34,7 @@ class UpdateHandler:
             (response_message, metadata)
         """
         # Extract update information
-        data = phi3_result.get('data', {})
+        data = phi3_result.get('data') or {}
         target = data.get('target', '')
         new_value = data.get('value', '')
         data_type = data.get('type', '')
