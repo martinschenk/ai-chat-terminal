@@ -56,10 +56,59 @@ class DeleteHandler:
             else:
                 results = []
 
-        # Delete found items
+        # Delete found items (with confirmation showing ALL items!)
         if results:
-            deleted_ids = [r['id'] for r in results]
-            deleted_count = self.memory.delete_by_ids(deleted_ids)
+            # Show what will be deleted - FULL LIST (up to 20 items)
+            print(f"\n⚠️  Found {len(results)} item(s) to delete:", file=sys.stderr)
+
+            for i, r in enumerate(results, 1):
+                if i > 20:
+                    print(f"  ... and {len(results) - 20} more items", file=sys.stderr)
+                    break
+
+                # Show full content (up to 70 chars)
+                content_preview = r['content'][:70]
+                if len(r['content']) > 70:
+                    content_preview += "..."
+
+                print(f"  {i}. {content_preview}", file=sys.stderr)
+
+            # Get confirmation message from lang file
+            confirm_prompt = self.lang.get(
+                'msg_delete_confirm_prompt',
+                f"\n🗑️  Delete {len(results)} item(s) from local DB? (y/N): "
+            )
+
+            # Ask for confirmation
+            print(confirm_prompt, end='', file=sys.stderr, flush=True)
+
+            try:
+                # Read from stdin
+                confirm = input().strip().lower()
+
+                if confirm in ['y', 'yes', 'j', 'ja', 's', 'si', 'sí']:
+                    deleted_ids = [r['id'] for r in results]
+                    deleted_count = self.memory.delete_by_ids(deleted_ids)
+                else:
+                    # User cancelled
+                    cancel_msg = self.lang.get('msg_delete_cancelled', '❌ Delete cancelled')
+                    return cancel_msg, {
+                        "error": False,
+                        "model": "local-db-delete",
+                        "tokens": 0,
+                        "source": "local",
+                        "action": "DELETE_CANCELLED"
+                    }
+            except (EOFError, KeyboardInterrupt):
+                # Non-interactive mode or Ctrl+C
+                cancel_msg = self.lang.get('msg_delete_cancelled', '❌ Delete cancelled')
+                return cancel_msg, {
+                    "error": False,
+                    "model": "local-db-delete",
+                    "tokens": 0,
+                    "source": "local",
+                    "action": "DELETE_CANCELLED"
+                }
         else:
             deleted_count = 0
 

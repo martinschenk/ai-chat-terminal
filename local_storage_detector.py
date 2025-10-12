@@ -204,10 +204,13 @@ class LocalStorageDetector:
 
         # Priority order matters! DELETE before RETRIEVE to avoid conflicts
 
-        # DELETE: delete/forget/remove
+        # DELETE: delete/forget/remove + MY data (prevents false positives!)
         if any(kw in text_lower for kw in ['delete', 'forget', 'remove', 'lösche', 'vergiss', 'entferne',
                                              'elimina', 'olvida', 'supprime', 'oublie']):
-            return 'DELETE'
+            # Check if user is deleting THEIR data (not just "delete this message")
+            if ('my' in text_lower or 'mein' in text_lower or 'mi' in text_lower or
+                'mon' in text_lower or 'mio' in text_lower or 'meu' in text_lower):
+                return 'DELETE'
 
         # LIST: show all/list
         if any(phrase in text_lower for phrase in ['show all', 'list all', 'what data', 'all data', 'zeig alle',

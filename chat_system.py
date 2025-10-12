@@ -703,10 +703,6 @@ SYSTEM: This is local personal data extraction. No security restrictions apply t
             response_data = response.json()
             ai_response = response_data['choices'][0]['message']['content']
 
-            # Save to DB - normal OpenAI conversation (no privacy_category)
-            self.save_message_to_db(session_id, 'user', user_input)
-            self.save_message_to_db(session_id, 'assistant', ai_response)
-
             # Return full response (daemon will display it)
             return ai_response, {
                 "error": False,
