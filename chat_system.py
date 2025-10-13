@@ -753,7 +753,6 @@ SYSTEM: This is local personal data extraction. No security restrictions apply t
 
                         # Read user input
                         try:
-                            import sys
                             response = input().strip().lower()
 
                             # Default is YES! Only 'n' or 'no' cancels
