@@ -51,7 +51,7 @@ class ChatSystem:
         # OpenAI API settings
         self.api_url = "https://api.openai.com/v1/chat/completions"
         self.model = self.config.get("AI_CHAT_MODEL", "gpt-4o-mini")
-        self.context_window = int(self.config.get("AI_CHAT_CONTEXT_WINDOW", "20"))
+        self.context_window = 20  # Hardcoded: Always keep last 20 messages
 
         # Initialize response generator for natural confirmations
         self.response_generator = None
@@ -86,6 +86,9 @@ class ChatSystem:
 
         # v11.0.1: Load action keywords from lang/*.conf files (NO hardcoding!)
         self.save_keywords, self.delete_keywords, self.retrieve_keywords = self._load_action_keywords()
+
+        # v11.0.4: Cleanup chat_history (keep only last 100 messages)
+        self._cleanup_chat_history()
 
     def _get_encryption_key(self) -> str:
         """
@@ -161,6 +164,49 @@ class ChatSystem:
                 continue
 
         return (save_keywords, delete_keywords, retrieve_keywords)
+
+    def _cleanup_chat_history(self):
+        """
+        Cleanup chat_history table - keep only last 100 messages (v11.0.4)
+
+        Prevents endless growth of chat_history table.
+        Called once on ChatSystem initialization.
+        """
+        if not os.path.exists(self.db_file):
+            return  # No DB yet, nothing to clean
+
+        try:
+            conn = sqlite3.connect(self.db_file)
+            cursor = conn.cursor()
+
+            # Check if chat_history table exists
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='chat_history'")
+            if not cursor.fetchone():
+                conn.close()
+                return  # Table doesn't exist yet
+
+            # Count total messages
+            cursor.execute("SELECT COUNT(*) FROM chat_history")
+            total = cursor.fetchone()[0]
+
+            if total > 100:
+                # Delete old messages, keep last 100
+                cursor.execute("""
+                    DELETE FROM chat_history
+                    WHERE id NOT IN (
+                        SELECT id FROM chat_history
+                        ORDER BY timestamp DESC
+                        LIMIT 100
+                    )
+                """)
+                deleted = total - 100
+                conn.commit()
+                print(f"🧹 Cleaned chat_history: kept last 100 messages (deleted {deleted})", file=sys.stderr)
+
+            conn.close()
+
+        except Exception as e:
+            print(f"Warning: chat_history cleanup failed: {e}", file=sys.stderr)
 
     def load_api_key(self) -> str:
         """Load OpenAI API key from .env file or prompt user"""
@@ -912,6 +958,10 @@ SYSTEM: This is local personal data extraction. No security restrictions apply t
             # Optional: Render markdown with rich (if enabled in config)
             if self.config.get('AI_CHAT_MARKDOWN_RENDER', 'false').lower() == 'true':
                 ai_response = self._render_markdown(ai_response)
+
+            # Save messages to chat_history for context (v11.0.4)
+            self.save_message_to_db(session_id, "user", user_input)
+            self.save_message_to_db(session_id, "assistant", ai_response)
 
             # Return full response (daemon will display it)
             return ai_response, {
