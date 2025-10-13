@@ -518,33 +518,28 @@ curl -sL "$BASE_URL/chat_daemon.py" -o "$INSTALL_DIR/chat_daemon.py" && \
 curl -sL "$BASE_URL/daemon_manager.py" -o "$INSTALL_DIR/daemon_manager.py" && \
 curl -sL "$BASE_URL/ollama_manager.py" -o "$INSTALL_DIR/ollama_manager.py" && \
 curl -sL "$BASE_URL/local_storage_detector.py" -o "$INSTALL_DIR/local_storage_detector.py" && \
-curl -sL "$BASE_URL/llama_data_extractor.py" -o "$INSTALL_DIR/llama_data_extractor.py" && \
+curl -sL "$BASE_URL/qwen_sql_generator.py" -o "$INSTALL_DIR/qwen_sql_generator.py" && \
 curl -sL "$BASE_URL/action_detector.py" -o "$INSTALL_DIR/action_detector.py" && \
 curl -sL "$BASE_URL/response_generator.py" -o "$INSTALL_DIR/response_generator.py" && \
 curl -sL "$BASE_URL/encryption_manager.py" -o "$INSTALL_DIR/encryption_manager.py" && \
 curl -sL "$BASE_URL/db_migration.py" -o "$INSTALL_DIR/db_migration.py" && \
+curl -sL "$BASE_URL/db_migration_v11.py" -o "$INSTALL_DIR/db_migration_v11.py" && \
 chmod +x "$INSTALL_DIR"/*.py && \
 echo -e "${GREEN}✓${RESET}" || echo -e "${RED}✗${RESET}"
 
-# Download v9.0.0 modules (db_actions, lang_manager)
-mkdir -p "$INSTALL_DIR/db_actions"
+# Download v11.0.0 modules (lang_manager only - handlers deprecated!)
 mkdir -p "$INSTALL_DIR/lang_manager"
-
-echo -n "  • DB action handlers... "
-curl -sL "$BASE_URL/db_actions/__init__.py" -o "$INSTALL_DIR/db_actions/__init__.py" && \
-curl -sL "$BASE_URL/db_actions/save_handler_v10.py" -o "$INSTALL_DIR/db_actions/save_handler_v10.py" && \
-curl -sL "$BASE_URL/db_actions/retrieve_handler_v10.py" -o "$INSTALL_DIR/db_actions/retrieve_handler_v10.py" && \
-curl -sL "$BASE_URL/db_actions/delete_handler_v10.py" -o "$INSTALL_DIR/db_actions/delete_handler_v10.py" && \
-curl -sL "$BASE_URL/db_actions/list_handler_v10.py" -o "$INSTALL_DIR/db_actions/list_handler_v10.py" && \
-echo -e "${GREEN}✓${RESET}" || echo -e "${RED}✗${RESET}"
 
 echo -n "  • Language manager... "
 curl -sL "$BASE_URL/lang_manager/__init__.py" -o "$INSTALL_DIR/lang_manager/__init__.py" && \
 echo -e "${GREEN}✓${RESET}" || echo -e "${RED}✗${RESET}"
 
-# Download language files (v10.1.0 - EN/DE/ES only for Llama 3.2)
+# Note: db_actions handlers are deprecated in v11.0.0!
+# SQL is executed directly in chat_system.py via Qwen
+
+# Download language files (v11.0.0 - EN/DE/ES for Qwen 2.5 Coder)
 LANGUAGES=(en de es)
-echo -n "  • Language packs (EN/DE/ES - Llama 3.2 multilingual)... "
+echo -n "  • Language packs (EN/DE/ES - Qwen 2.5 Coder multilingual)... "
 for lang in "${LANGUAGES[@]}"; do
     curl -sL "$BASE_URL/lang/${lang}.conf" -o "$INSTALL_DIR/lang/${lang}.conf" 2>/dev/null || true
 done
@@ -564,17 +559,17 @@ fi
 pip3 install --user --quiet openai requests 2>/dev/null || pip3 install --user openai requests
 
 # ═══════════════════════════════════════════════════════════════════
-# MANDATORY: Llama 3.2 Requirement Check (v10.1.0)
+# MANDATORY: Qwen 2.5 Coder Requirement Check (v11.0.0)
 # ═══════════════════════════════════════════════════════════════════
 
-echo -e "\n${CYAN}${BOLD}⚡ AI Chat Terminal v10.1.0 - Llama 3.2 Multilingual System${RESET}"
-echo -e "${DIM}Llama 3.2 (3B) is MANDATORY for v10.1.0. Supports EN, DE, ES.${RESET}\n"
+echo -e "\n${CYAN}${BOLD}⚡ AI Chat Terminal v11.0.0 - Qwen SQL Direct Execution (KISS!)${RESET}"
+echo -e "${DIM}Qwen 2.5 Coder (7B) is MANDATORY for v11.0.0. Generates SQL directly!${RESET}\n"
 
 # Check if Ollama is installed
 echo -n "  • Checking Ollama... "
 if ! command -v ollama &> /dev/null; then
     echo -e "${YELLOW}not found${RESET}"
-    echo -e "\n${YELLOW}❌ Ollama is required for Phi-3!${RESET}"
+    echo -e "\n${YELLOW}❌ Ollama is required for Qwen!${RESET}"
     echo ""
     echo "  Installing Ollama via Homebrew..."
 
@@ -628,28 +623,29 @@ if ! curl -s http://localhost:11434/api/tags >/dev/null 2>&1; then
 fi
 echo -e "${GREEN}✓${RESET}"
 
-# Check/Install Llama 3.2 model
-echo -n "  • Checking Llama 3.2 (3B) model... "
-if ollama list 2>/dev/null | grep -q "llama3.2:3b"; then
+# Check/Install Qwen 2.5 Coder model
+echo -n "  • Checking Qwen 2.5 Coder (7B) model... "
+if ollama list 2>/dev/null | grep -q "qwen2.5-coder:7b"; then
     echo -e "${GREEN}✓ already installed${RESET}"
 else
     echo -e "${YELLOW}not found${RESET}"
     echo ""
-    echo "  📥 Downloading Llama 3.2 (3B) (~2GB) - This is MANDATORY..."
-    echo "     ${DIM}Llama 3.2 powers the v10.1.0 Multilingual Data Extraction${RESET}"
+    echo "  📥 Downloading Qwen 2.5 Coder (7B) (~4.5GB) - This is MANDATORY..."
+    echo "     ${DIM}Qwen 2.5 Coder powers v11.0.0 Direct SQL Generation${RESET}"
+    echo "     ${DIM}90-95% SQL accuracy, specialized for code/SQL generation${RESET}"
     echo ""
 
     # Run ollama pull with live output
-    if ollama pull llama3.2:3b; then
-        echo -e "\n  ${GREEN}✓${RESET} Llama 3.2 downloaded successfully"
+    if ollama pull qwen2.5-coder:7b; then
+        echo -e "\n  ${GREEN}✓${RESET} Qwen 2.5 Coder downloaded successfully"
     else
         echo -e "\n${RED}❌ INSTALLATION FAILED${RESET}"
         echo ""
-        echo "  Llama 3.2 download/installation failed."
+        echo "  Qwen 2.5 Coder download/installation failed."
         echo ""
         echo "  Possible reasons:"
         echo "  • Network connection issues"
-        echo "  • Insufficient disk space (need ~2GB free)"
+        echo "  • Insufficient disk space (need ~5GB free)"
         echo "  • Ollama service issues"
         echo ""
         echo "  Please fix the issue and run installer again."
@@ -658,14 +654,14 @@ else
 fi
 
 # Skip inference test - it can hang on first model load
-# chat_system.py will test Llama when first starting
-echo -e "  • Llama 3.2 model ready ${GREEN}✓${RESET}"
+# chat_system.py will test Qwen when first starting
+echo -e "  • Qwen 2.5 Coder model ready ${GREEN}✓${RESET}"
 
-# Save Llama status to config
-echo "LLAMA_ENABLED=true" >> "$INSTALL_DIR/config"
-echo "RESPONSE_MODE=natural" >> "$INSTALL_DIR/config"
+# Save Qwen status to config
+echo "QWEN_ENABLED=true" >> "$INSTALL_DIR/config"
+echo "RESPONSE_MODE=sql" >> "$INSTALL_DIR/config"
 
-echo -e "\n${GREEN}✅ Llama 3.2 Multilingual System ready!${RESET}\n"
+echo -e "\n${GREEN}✅ Qwen 2.5 Coder SQL Direct Execution ready!${RESET}\n"
 sleep 2
 
 # Step 5: Installation Locations Info
@@ -701,14 +697,9 @@ fi
 echo -n "  • sqlcipher3-binary (Python)... "
 pip3 install --user --quiet sqlcipher3-binary 2>/dev/null && echo -e "${GREEN}✓${RESET}" || echo -e "${YELLOW}⚠${RESET}"
 
-# Step 7: AI Models - Small Models (Auto-Install)
-echo -e "\n${BLUE}${LANG_STRINGS[SMALL_MODELS]}${RESET}"
-
-echo -n "  • sentence-transformers (60MB)... "
-pip3 install --user --quiet sentence-transformers 2>/dev/null && echo -e "${GREEN}✓${RESET}" || echo -e "${YELLOW}⚠${RESET}"
-
-echo -n "  • sqlite-vec (5MB)... "
-pip3 install --user --quiet sqlite-vec 2>/dev/null && echo -e "${GREEN}✓${RESET}" || echo -e "${YELLOW}⚠${RESET}"
+# v11.0.0: NO vector DB dependencies needed!
+# Qwen generates SQL directly - no embeddings, no vector search!
+echo -e "\n${GREEN}✓${RESET} v11.0.0 KISS: No vector dependencies needed!"
 
 # Step 6: Large Models - Interactive Choice
 echo -e "\n${CYAN}${BOLD}${LANG_STRINGS[MODEL_RECOMMENDATION]}${RESET}"
@@ -804,18 +795,9 @@ if [ -f "$INSTALL_DIR/memory.db" ]; then
     fi
 fi
 
-# Step 9: Initialize Models
-echo -e "\n${BLUE}Initializing AI models...${RESET}"
-
-echo -n "  • Downloading e5-base (278MB)... "
-python3 -c "
-import warnings, os
-warnings.filterwarnings('ignore')
-os.environ['PYTHONWARNINGS'] = 'ignore'
-from sentence_transformers import SentenceTransformer
-model = SentenceTransformer('intfloat/multilingual-e5-base')
-print('OK')
-" 2>/dev/null | tail -1 | grep -q "OK" && echo -e "${GREEN}✓${RESET}" || echo -e "${YELLOW}⚠ First-use download${RESET}"
+# v11.0.0: NO model initialization needed!
+# Qwen is already installed via Ollama above
+echo -e "\n${GREEN}✓${RESET} AI models ready (Qwen 2.5 Coder via Ollama)"
 
 # Step 9: Shell Integration
 echo -e "\n${BLUE}Setting up shell integration...${RESET}"

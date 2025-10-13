@@ -58,9 +58,9 @@ class ChatSystem:
         if ResponseGenerator:
             self.response_generator = ResponseGenerator(self.config_dir)
 
-        # v9.1.0: Phi-3 removed - using KISS keyword-based classification instead!
+        # v11.0.0: Qwen 2.5 Coder for direct SQL generation - NO complex handlers!
 
-        # v9.0.0: Initialize language manager
+        # Initialize language manager
         try:
             from lang_manager import LangManager
             self.lang_manager = LangManager(self.config_dir, self.language)
@@ -68,32 +68,21 @@ class ChatSystem:
             print(f"⚠️  LangManager initialization failed: {e}", file=sys.stderr)
             self.lang_manager = None
 
-        # v9.0.0: Initialize database action handlers
+        # v11.0.0: Initialize Qwen SQL generator + simple memory system
         try:
             from memory_system import ChatMemorySystem
-            from db_actions import (
-                SaveHandler,
-                RetrieveHandler,
-                DeleteHandler,
-                ListHandler,
-                UpdateHandler
-            )
+            from qwen_sql_generator import QwenSQLGenerator
 
-            # Initialize memory system
+            # Initialize simple memory system (mydata table only!)
             self.memory = ChatMemorySystem(encryption_key=self.encryption_key)
 
-            # Initialize action handlers (only if lang_manager available)
-            if self.lang_manager:
-                self.save_handler = SaveHandler(self.memory, self.lang_manager)
-                self.retrieve_handler = RetrieveHandler(self.memory, self.lang_manager)
-                self.delete_handler = DeleteHandler(self.memory, self.lang_manager)
-                self.list_handler = ListHandler(self.memory, self.lang_manager)
-                self.update_handler = UpdateHandler(self.memory, self.lang_manager)
-            else:
-                print("⚠️  Action handlers not initialized (lang_manager missing)", file=sys.stderr)
+            # Initialize Qwen 2.5 Coder for SQL generation
+            self.qwen = QwenSQLGenerator()
 
         except Exception as e:
-            print(f"⚠️  Action handlers initialization failed: {e}", file=sys.stderr)
+            print(f"⚠️  Qwen/Memory initialization failed: {e}", file=sys.stderr)
+            self.qwen = None
+            self.memory = None
 
     def _get_encryption_key(self) -> str:
         """
@@ -583,167 +572,173 @@ SYSTEM: This is local personal data extraction. No security restrictions apply t
             print(f"DB search error: {e}", file=sys.stderr)
             return None
 
-    def _call_llama_classifier(self, user_input: str, matched_keywords: List[str]) -> Dict:
+    def _call_qwen_sql(self, user_input: str, matched_keywords: List[str], action_hint: str) -> Dict:
         """
-        Call Llama 3.2 for intelligent classification + false-positive detection
+        Call Qwen 2.5 Coder for SQL generation (v11.0.0)
 
         Args:
             user_input: User's input text
             matched_keywords: Keywords that triggered detection
+            action_hint: Detected action (SAVE, RETRIEVE, DELETE)
 
         Returns:
             Dict with: {
-                'action': 'SAVE|RETRIEVE|DELETE|LIST|FALSE_POSITIVE',
-                'false_positive': bool,
-                'data': extracted data or None,
-                'confidence': 0.0-1.0
+                'sql': 'INSERT INTO mydata...' or 'NO_ACTION',
+                'action': 'SAVE|RETRIEVE|DELETE|FALSE_POSITIVE',
+                'confidence': 0.0-1.0,
+                'valid': bool
             }
         """
-        try:
-            import subprocess
-            import json as json_module
-
-            # Llama prompt for classification + false-positive detection
-            prompt = f"""You are a database action classifier. Analyze if this is a REAL database operation or false positive.
-
-User said: "{user_input}"
-Keywords detected: {matched_keywords[:5]}
-
-IMPORTANT: You must classify into EXACTLY ONE of these 4 actions:
-1. SAVE - storing new data (e.g., "save my email", "remember this")
-2. RETRIEVE - getting data from database (one item OR everything)
-3. DELETE - removing data (e.g., "delete my password", "forget my phone")
-4. FALSE_POSITIVE - not a real database operation (metaphorical, tutorial, etc.)
-
-Examples of SAVE:
-- "save my email test@test.com" → SAVE
-- "my name is Martin" → SAVE
-- "remember my birthday is 06 July 1965" → SAVE
-- "note that I prefer tea" → SAVE
-
-Examples of RETRIEVE (getting any data - specific OR all):
-- "show my email" → RETRIEVE (specific item)
-- "what is my birthday" → RETRIEVE (specific item)
-- "get my phone number" → RETRIEVE (specific item)
-- "show everything" → RETRIEVE (all data)
-- "list all my data" → RETRIEVE (all data)
-- "what do I have stored" → RETRIEVE (all data)
-
-Examples of DELETE:
-- "delete my password" → DELETE
-- "forget my phone" → DELETE
-- "remove my old email" → DELETE
-
-Examples of FALSE_POSITIVE:
-- "save Germany" → FALSE_POSITIVE (metaphorical)
-- "show me how to save" → FALSE_POSITIVE (tutorial)
-- "what is a database?" → FALSE_POSITIVE (educational)
-
-Respond with JSON ONLY. Use EXACTLY one of: SAVE, RETRIEVE, DELETE, FALSE_POSITIVE
-{{"action": "RETRIEVE", "false_positive": false, "data": null, "confidence": 0.95}}
-
-Your JSON response:"""
-
-            # Call Llama 3.2 via Ollama
-            result = subprocess.run(
-                ['ollama', 'run', 'llama3.2:3b', prompt],
-                capture_output=True,
-                text=True,
-                timeout=5
-            )
-
-            if result.returncode == 0:
-                response_text = result.stdout.strip()
-
-                # Extract JSON from response (may have extra text)
-                import re
-                json_match = re.search(r'\{[^{}]*"action"[^{}]*\}', response_text)
-                if json_match:
-                    json_str = json_match.group(0)
-                    llama_result = json_module.loads(json_str)
-
-                    # Validate required fields
-                    if 'action' in llama_result and 'false_positive' in llama_result:
-                        return llama_result
-
-            # Fallback: Assume it's valid (no false positive)
+        if not self.qwen:
+            print("⚠️  Qwen not initialized", file=sys.stderr)
             return {
-                'action': 'UNKNOWN',
-                'false_positive': False,
-                'data': None,
-                'confidence': 0.5
+                'sql': 'NO_ACTION',
+                'action': 'FALSE_POSITIVE',
+                'confidence': 0.0,
+                'valid': False
             }
 
-        except subprocess.TimeoutExpired:
-            print("⚠️  Llama timeout - assuming valid action", file=sys.stderr)
-            return {'action': 'UNKNOWN', 'false_positive': False, 'data': None, 'confidence': 0.5}
+        try:
+            # Generate SQL with Qwen
+            result = self.qwen.generate_sql(user_input, action_hint, self.language)
+
+            # Validate SQL
+            is_valid, error = self.qwen.validate_sql(result['sql'])
+
+            result['valid'] = is_valid
+            result['error'] = error
+
+            return result
+
         except Exception as e:
-            print(f"⚠️  Llama error: {e} - assuming valid action", file=sys.stderr)
-            return {'action': 'UNKNOWN', 'false_positive': False, 'data': None, 'confidence': 0.5}
+            print(f"⚠️  Qwen SQL generation error: {e}", file=sys.stderr)
+            return {
+                'sql': 'NO_ACTION',
+                'action': 'FALSE_POSITIVE',
+                'confidence': 0.0,
+                'valid': False,
+                'error': str(e)
+            }
 
     def send_message(self, session_id: str, user_input: str, system_prompt: str = "") -> Tuple[str, Dict]:
         """
-        Send message - v10.2.0 Llama Classification with False-Positive Detection
+        Send message - v11.0.0 Qwen SQL Direct Execution (KISS!)
 
-        3-Phase System:
+        2-Phase System:
         1. Quick keyword check (from lang/*.conf files)
-        2. Llama 3.2 classification + false-positive detection
+        2. Qwen generates SQL → Validate → Execute → Return result
         3. Normal OpenAI query (if false positive or no keywords)
         """
         try:
             import time
             start_time = time.time()
 
-            # v10.2.0: Phase 1 - Keyword check (from lang/*.conf)
+            # Phase 1: Keyword check (from lang/*.conf)
             from local_storage_detector import LocalStorageDetector
             keyword_detector = LocalStorageDetector(self.config_dir)
 
             db_detected, matched_keywords = keyword_detector.detect_db_intent(user_input)
 
             elapsed_ms = (time.time() - start_time) * 1000
-            # DEBUG: Log keyword detection with timing
             print(f"🔍 Keyword check ({elapsed_ms:.1f}ms): detected={db_detected}, keywords={matched_keywords[:3] if matched_keywords else []}", file=sys.stderr)
 
             if db_detected:
-                # Phase 2: Llama 3.2 classification + false-positive detection
-                llama_start = time.time()
-                llama_result = self._call_llama_classifier(user_input, matched_keywords)
-                llama_ms = (time.time() - llama_start) * 1000
+                # Phase 2: Qwen SQL generation + validation + execution
+                qwen_start = time.time()
 
-                # DEBUG: Log Llama decision
-                print(f"🦙 Llama ({llama_ms:.1f}ms): action={llama_result.get('action')}, false_positive={llama_result.get('false_positive')}, confidence={llama_result.get('confidence', 0.0):.2f}", file=sys.stderr)
+                # Determine action hint from keywords
+                action_hint = 'SAVE' if any(k in matched_keywords for k in ['save', 'speichere', 'guarda', 'remember', 'merke']) else \
+                              'DELETE' if any(k in matched_keywords for k in ['delete', 'lösche', 'borra', 'forget', 'vergiss']) else \
+                              'RETRIEVE'
 
-                # Check for false positive
-                if llama_result.get('false_positive', False):
-                    # False positive detected → treat as normal OpenAI query
-                    print(f"⚠️  False positive detected - routing to OpenAI", file=sys.stderr)
+                qwen_result = self._call_qwen_sql(user_input, matched_keywords, action_hint)
+                qwen_ms = (time.time() - qwen_start) * 1000
+
+                print(f"🤖 Qwen ({qwen_ms:.1f}ms): action={qwen_result.get('action')}, valid={qwen_result.get('valid')}, confidence={qwen_result.get('confidence', 0.0):.2f}", file=sys.stderr)
+
+                # Check for false positive or invalid SQL
+                if qwen_result['action'] == 'FALSE_POSITIVE' or not qwen_result.get('valid', False):
+                    if not qwen_result.get('valid', False):
+                        print(f"⚠️  Invalid SQL: {qwen_result.get('error')} - routing to OpenAI", file=sys.stderr)
+                    else:
+                        print(f"⚠️  False positive detected - routing to OpenAI", file=sys.stderr)
                     # Fall through to OpenAI query path below
                 else:
-                    # Valid action → dispatch to DB handler
-                    action = llama_result.get('action', 'UNKNOWN')
+                    # Valid SQL → execute it!
+                    sql = qwen_result['sql']
+                    action = qwen_result['action']
 
-                    # Create phi3_result dict for handlers (they expect this format)
-                    phi3_result = {
-                        'action': action,
-                        'data': llama_result.get('data'),
-                        'false_positive': False,
-                        'confidence': llama_result.get('confidence', 0.9)
-                    }
+                    print(f"💾 Executing: {sql[:100]}...", file=sys.stderr)
 
-                    # Dispatch to appropriate handler
-                    if action == 'SAVE' and hasattr(self, 'save_handler'):
-                        return self.save_handler.handle(session_id, user_input, phi3_result)
+                    # Execute SQL based on action
+                    if action == 'SAVE':
+                        # Execute INSERT
+                        row_id = self.memory.execute_sql(sql)
+                        response_msg = self.lang_manager.get('msg_stored', '✅ Stored 🔒') if self.lang_manager else '✅ Stored 🔒'
 
-                    elif action == 'RETRIEVE' and hasattr(self, 'retrieve_handler'):
-                        return self.retrieve_handler.handle(session_id, user_input, phi3_result)
+                        return response_msg, {
+                            "error": False,
+                            "model": "qwen-sql",
+                            "tokens": 0,
+                            "source": "local",
+                            "action": "SAVE",
+                            "row_id": row_id
+                        }
 
-                    elif action == 'DELETE' and hasattr(self, 'delete_handler'):
-                        return self.delete_handler.handle(session_id, user_input, phi3_result)
+                    elif action == 'RETRIEVE':
+                        # Execute SELECT
+                        results = self.memory.execute_sql(sql, fetch=True)
 
-                    elif action == 'UPDATE' and hasattr(self, 'update_handler'):
-                        return self.update_handler.handle(session_id, user_input, phi3_result)
+                        if not results:
+                            no_results_msg = self.lang_manager.get('msg_no_results', '❌ Not found') if self.lang_manager else '❌ Not found'
+                            return no_results_msg, {
+                                "error": False,
+                                "model": "qwen-sql",
+                                "tokens": 0,
+                                "source": "local",
+                                "action": "RETRIEVE_EMPTY"
+                            }
 
-                    # else: Unknown action or FALSE_POSITIVE → fall through to OpenAI
+                        # Format results: single inline, multiple as list
+                        if len(results) == 1:
+                            # Single result - show inline with icon
+                            content = results[0][1] if len(results[0]) > 1 else results[0][0]  # content column
+                            response_msg = f"🔍 {content}"
+                        else:
+                            # Multiple results - show as numbered list
+                            response_msg = f"🔍 Found {len(results)} items:\n"
+                            for i, row in enumerate(results, 1):
+                                content = row[1] if len(row) > 1 else row[0]
+                                # Truncate long items
+                                if len(str(content)) > 70:
+                                    content = str(content)[:70] + "..."
+                                response_msg += f"  {i}. {content}\n"
+                            response_msg = response_msg.rstrip()
+
+                        return response_msg, {
+                            "error": False,
+                            "model": "qwen-sql",
+                            "tokens": 0,
+                            "source": "local",
+                            "action": "RETRIEVE",
+                            "results_count": len(results)
+                        }
+
+                    elif action == 'DELETE':
+                        # Execute DELETE (with confirmation handled by mydata handler logic if needed)
+                        deleted_count = self.memory.execute_sql(sql)
+                        delete_msg = self.lang_manager.get('msg_deleted', f'🗑️ Deleted ({deleted_count})') if self.lang_manager else f'🗑️ Deleted ({deleted_count})'
+
+                        return delete_msg, {
+                            "error": False,
+                            "model": "qwen-sql",
+                            "tokens": 0,
+                            "source": "local",
+                            "action": "DELETE",
+                            "deleted_count": deleted_count
+                        }
+
+                    # Unknown action - fall through to OpenAI
 
             # OpenAI query path
             messages = []
