@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# AI Chat Terminal - Smart Interactive Installer v10.1.0
+# AI Chat Terminal - Smart Interactive Installer v11.0.0
 # Licensed under MIT License - https://opensource.org/licenses/MIT
 # Requires: Bash 4+ or ZSH (for associative arrays)
 
@@ -290,8 +290,7 @@ load_language() {
             LANG_STRINGS[CONFIG_LATER]="Puedes cambiar todo con '/config' más tarde"
             ;;
         *)
-            # Default to English for all other languages (ar, da, fi, fr, hi, it, ja, ko, nl, no, pl, pt, ru, sv, tr, zh)
-            # Chat will use proper translations from lang/*.conf files
+            # Default to English (v11.0.0 - only EN/DE/ES supported!)
             LANG_STRINGS[TITLE]="🤖 AI Chat Terminal Installation"
             LANG_STRINGS[SYSTEM_ANALYSIS]="System Analysis..."
             LANG_STRINGS[RAM_DETECTED]="RAM detected"
@@ -328,55 +327,23 @@ load_language() {
 
 clear
 
-# Step 1: Language Selection
+# Step 1: Language Selection (v11.0.0 - EN/DE/ES only!)
 echo -e "${CYAN}${BOLD}"
 echo "╔═══════════════════════════════════════╗"
 echo "║   🌍 Language / Sprache / Idioma     ║"
 echo "╚═══════════════════════════════════════╝"
 echo -e "${RESET}\n"
-echo "  [1]  🇦🇪 Arabic (العربية)"
-echo "  [2]  🇩🇰 Danish (Dansk)"
-echo "  [3]  🇩🇪 Deutsch (German)"
-echo "  [4]  🇬🇧 English (default)"
-echo "  [5]  🇪🇸 Español (Spanish)"
-echo "  [6]  🇫🇮 Finnish (Suomi)"
-echo "  [7]  🇫🇷 Français (French)"
-echo "  [8]  🇮🇳 हिन्दी (Hindi)"
-echo "  [9]  🇮🇹 Italiano (Italian)"
-echo "  [10] 🇯🇵 日本語 (Japanese)"
-echo "  [11] 🇰🇷 한국어 (Korean)"
-echo "  [12] 🇳🇱 Nederlands (Dutch)"
-echo "  [13] 🇳🇴 Norsk (Norwegian)"
-echo "  [14] 🇵🇱 Polski (Polish)"
-echo "  [15] 🇵🇹 Português (Portuguese)"
-echo "  [16] 🇷🇺 Русский (Russian)"
-echo "  [17] 🇸🇪 Svenska (Swedish)"
-echo "  [18] 🇹🇷 Türkçe (Turkish)"
-echo "  [19] 🇨🇳 中文 (Chinese)"
+echo -e "${DIM}v11.0.0 supports 3 languages optimized for Qwen 2.5 Coder:${RESET}\n"
+echo "  [1]  🇬🇧 English (default)"
+echo "  [2]  🇩🇪 Deutsch (German)"
+echo "  [3]  🇪🇸 Español (Spanish)"
 echo ""
-echo -n "Select language [1-19, default=4]: "
+echo -n "Select language [1-3, default=1]: "
 read -r lang_choice < /dev/tty
 
 case "$lang_choice" in
-    1)  SELECTED_LANG="ar" ;;
-    2)  SELECTED_LANG="da" ;;
-    3)  SELECTED_LANG="de" ;;
-    4)  SELECTED_LANG="en" ;;
-    5)  SELECTED_LANG="es" ;;
-    6)  SELECTED_LANG="fi" ;;
-    7)  SELECTED_LANG="fr" ;;
-    8)  SELECTED_LANG="hi" ;;
-    9)  SELECTED_LANG="it" ;;
-    10) SELECTED_LANG="ja" ;;
-    11) SELECTED_LANG="ko" ;;
-    12) SELECTED_LANG="nl" ;;
-    13) SELECTED_LANG="no" ;;
-    14) SELECTED_LANG="pl" ;;
-    15) SELECTED_LANG="pt" ;;
-    16) SELECTED_LANG="ru" ;;
-    17) SELECTED_LANG="sv" ;;
-    18) SELECTED_LANG="tr" ;;
-    19) SELECTED_LANG="zh" ;;
+    2)  SELECTED_LANG="de" ;;
+    3)  SELECTED_LANG="es" ;;
     *)  SELECTED_LANG="en" ;;
 esac
 
