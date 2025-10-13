@@ -684,6 +684,7 @@ class ChatMemorySystem:
 
                 # Use subquery to filter by distance (can't use alias in WHERE)
                 # Sort by created_at DESC first (newest first), then by distance (most similar)
+                # Distance threshold 1.2 is more lenient - helps with "email address" vs "email"
                 cursor.execute(f"""
                     SELECT id, content, metadata, created_at, distance
                     FROM (
@@ -694,7 +695,7 @@ class ChatMemorySystem:
                         WHERE json_extract(h.metadata, '$.is_private') = 1
                           AND json_extract(h.metadata, '$.privacy_category') IN ({placeholders})
                     )
-                    WHERE distance < 0.7
+                    WHERE distance < 1.2
                     ORDER BY created_at DESC, distance ASC
                     LIMIT ?
                 """, (query_bytes, *TRULY_SENSITIVE, limit))

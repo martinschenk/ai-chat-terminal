@@ -2,7 +2,7 @@
 
 **Privacy-first terminal chat: OpenAI for general queries, local Llama 3.2 for private data.**
 
-[![Version](https://img.shields.io/badge/version-10.1.0-blue.svg)](https://github.com/martinschenk/ai-chat-terminal)
+[![Version](https://img.shields.io/badge/version-10.3.0-blue.svg)](https://github.com/martinschenk/ai-chat-terminal)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](https://github.com/martinschenk/ai-chat-terminal)
 [![Encryption](https://img.shields.io/badge/encryption-AES--256-green.svg)](https://github.com/martinschenk/ai-chat-terminal#encryption)
@@ -26,7 +26,7 @@ Your sensitive data **NEVER** leaves your Mac.
              ↓
    ┌─────────────────────┐
    │ Keyword Detection   │  ← Fast (<1ms)
-   │ save/show/list/     │
+   │ save/show/retrieve/ │
    │ delete keywords     │
    └─────────┬───────────┘
              ↓
@@ -35,18 +35,40 @@ Your sensitive data **NEVER** leaves your Mac.
       └──┬────────┬──┘
          │        │
     YES  │        │  NO
-         ↓        ↓
-  ┌──────────┐  ┌──────────────┐
-  │ Llama 3.2│  │   OpenAI     │
-  │ (LOCAL)  │  │  (CLOUD)     │
-  └─────┬────┘  └──────┬───────┘
-        ↓               ↓
-  ┌─────────────┐  ┌──────────────┐
-  │ Encrypted   │  │  Response    │
-  │ SQLite DB   │  │ with Context │
-  │ (AES-256)   │  │              │
-  └─────────────┘  └──────────────┘
+         ↓        └──────────────┐
+  ┌──────────┐                   │
+  │ Llama 3.2│                   │
+  │ (LOCAL)  │                   │
+  │ ~1000ms  │                   │
+  └─────┬────┘                   │
+        ↓                        │
+  ┌─────────────────┐            │
+  │ FALSE_POSITIVE? │            │
+  └──┬──────────┬───┘            │
+     │          │                │
+   YES│          │NO              │
+     │          ↓                ↓
+     │    ┌─────────────┐  ┌──────────────┐
+     │    │ Encrypted   │  │   OpenAI     │
+     │    │ SQLite DB   │  │  (CLOUD)     │
+     │    │ (AES-256)   │  │   5-7s       │
+     │    └─────────────┘  └──────┬───────┘
+     │                             │
+     └─────────────────────────────┤
+                                   ↓
+                          ┌──────────────┐
+                          │  Response    │
+                          │ with Context │
+                          └──────────────┘
 ```
+
+**3-Phase System:**
+1. **Keyword Check** (<1ms) - Detects SAVE/RETRIEVE/DELETE from lang/*.conf
+2. **Llama Classification** (~1000ms) - Validates action + detects false positives
+3. **Routing:**
+   - Valid action → **Encrypted SQLite** (local)
+   - False positive → **OpenAI** (cloud)
+   - No keywords → **OpenAI** (cloud)
 
 ## Quick Start
 
@@ -431,7 +453,19 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 ## Version
 
-**Current:** v10.1.0 - ULTRA KISS with Llama 3.2
+**Current:** v10.3.0 - KISS Architecture Simplification
+
+**Changes in v10.3.0:**
+- ✅ **Merged LIST into RETRIEVE** - One handler for all retrieval (1 item or all items)
+- ✅ **Removed hardcoded limit=10** - Shows ALL matching results
+- ✅ **4 Actions instead of 5** - SAVE, RETRIEVE, DELETE, FALSE_POSITIVE
+- ✅ **Extended keywords** - 3x more keyword variations per language
+  - EN: Added `record`, `memorize`, `log`, `track`, `add`, `put`, `tell me`, `give me`, `search`, `fetch`, etc.
+  - DE: Added `protokolliere`, `füge hinzu`, `sag mir`, `gib mir`, `such`, etc.
+  - ES: Added `registra`, `memoriza`, `añade`, `dime`, `busca`, etc.
+- ✅ **FALSE_POSITIVE routing** - Llama validates actions, routes false positives to OpenAI
+- ✅ **Smart result formatting** - Single result inline, multiple results as numbered list
+- ✅ **Updated architecture diagram** - Shows complete flow with false-positive feedback loop
 
 **Changes in v10.1.0:**
 - ✅ Migrated from Phi-3 to **Llama 3.2 (3B)**

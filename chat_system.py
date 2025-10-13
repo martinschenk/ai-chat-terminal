@@ -583,21 +583,120 @@ SYSTEM: This is local personal data extraction. No security restrictions apply t
             print(f"DB search error: {e}", file=sys.stderr)
             return None
 
+    def _call_llama_classifier(self, user_input: str, matched_keywords: List[str]) -> Dict:
+        """
+        Call Llama 3.2 for intelligent classification + false-positive detection
+
+        Args:
+            user_input: User's input text
+            matched_keywords: Keywords that triggered detection
+
+        Returns:
+            Dict with: {
+                'action': 'SAVE|RETRIEVE|DELETE|LIST|FALSE_POSITIVE',
+                'false_positive': bool,
+                'data': extracted data or None,
+                'confidence': 0.0-1.0
+            }
+        """
+        try:
+            import subprocess
+            import json as json_module
+
+            # Llama prompt for classification + false-positive detection
+            prompt = f"""You are a database action classifier. Analyze if this is a REAL database operation or false positive.
+
+User said: "{user_input}"
+Keywords detected: {matched_keywords[:5]}
+
+IMPORTANT: You must classify into EXACTLY ONE of these 4 actions:
+1. SAVE - storing new data (e.g., "save my email", "remember this")
+2. RETRIEVE - getting data from database (one item OR everything)
+3. DELETE - removing data (e.g., "delete my password", "forget my phone")
+4. FALSE_POSITIVE - not a real database operation (metaphorical, tutorial, etc.)
+
+Examples of SAVE:
+- "save my email test@test.com" → SAVE
+- "my name is Martin" → SAVE
+- "remember my birthday is 06 July 1965" → SAVE
+- "note that I prefer tea" → SAVE
+
+Examples of RETRIEVE (getting any data - specific OR all):
+- "show my email" → RETRIEVE (specific item)
+- "what is my birthday" → RETRIEVE (specific item)
+- "get my phone number" → RETRIEVE (specific item)
+- "show everything" → RETRIEVE (all data)
+- "list all my data" → RETRIEVE (all data)
+- "what do I have stored" → RETRIEVE (all data)
+
+Examples of DELETE:
+- "delete my password" → DELETE
+- "forget my phone" → DELETE
+- "remove my old email" → DELETE
+
+Examples of FALSE_POSITIVE:
+- "save Germany" → FALSE_POSITIVE (metaphorical)
+- "show me how to save" → FALSE_POSITIVE (tutorial)
+- "what is a database?" → FALSE_POSITIVE (educational)
+
+Respond with JSON ONLY. Use EXACTLY one of: SAVE, RETRIEVE, DELETE, FALSE_POSITIVE
+{{"action": "RETRIEVE", "false_positive": false, "data": null, "confidence": 0.95}}
+
+Your JSON response:"""
+
+            # Call Llama 3.2 via Ollama
+            result = subprocess.run(
+                ['ollama', 'run', 'llama3.2:3b', prompt],
+                capture_output=True,
+                text=True,
+                timeout=5
+            )
+
+            if result.returncode == 0:
+                response_text = result.stdout.strip()
+
+                # Extract JSON from response (may have extra text)
+                import re
+                json_match = re.search(r'\{[^{}]*"action"[^{}]*\}', response_text)
+                if json_match:
+                    json_str = json_match.group(0)
+                    llama_result = json_module.loads(json_str)
+
+                    # Validate required fields
+                    if 'action' in llama_result and 'false_positive' in llama_result:
+                        return llama_result
+
+            # Fallback: Assume it's valid (no false positive)
+            return {
+                'action': 'UNKNOWN',
+                'false_positive': False,
+                'data': None,
+                'confidence': 0.5
+            }
+
+        except subprocess.TimeoutExpired:
+            print("⚠️  Llama timeout - assuming valid action", file=sys.stderr)
+            return {'action': 'UNKNOWN', 'false_positive': False, 'data': None, 'confidence': 0.5}
+        except Exception as e:
+            print(f"⚠️  Llama error: {e} - assuming valid action", file=sys.stderr)
+            return {'action': 'UNKNOWN', 'false_positive': False, 'data': None, 'confidence': 0.5}
+
     def send_message(self, session_id: str, user_input: str, system_prompt: str = "") -> Tuple[str, Dict]:
         """
-        Send message - v9.0.0 Phi-3 Smart Intent Flow
+        Send message - v10.2.0 Llama Classification with False-Positive Detection
 
-        2-Phase System:
-        1. Quick keyword check → if DB intent, use Phi-3 for smart classification
-        2. Normal OpenAI query (streaming)
+        3-Phase System:
+        1. Quick keyword check (from lang/*.conf files)
+        2. Llama 3.2 classification + false-positive detection
+        3. Normal OpenAI query (if false positive or no keywords)
         """
         try:
             import time
             start_time = time.time()
 
-            # v9.0.0: Quick keyword check
+            # v10.2.0: Phase 1 - Keyword check (from lang/*.conf)
             from local_storage_detector import LocalStorageDetector
-            keyword_detector = LocalStorageDetector()
+            keyword_detector = LocalStorageDetector(self.config_dir)
 
             db_detected, matched_keywords = keyword_detector.detect_db_intent(user_input)
 
@@ -606,37 +705,45 @@ SYSTEM: This is local personal data extraction. No security restrictions apply t
             print(f"🔍 Keyword check ({elapsed_ms:.1f}ms): detected={db_detected}, keywords={matched_keywords[:3] if matched_keywords else []}", file=sys.stderr)
 
             if db_detected:
-                # Keywords detected - use KISS rule-based classification (no Phi-3!)
-                action = keyword_detector.classify_action(user_input, matched_keywords)
+                # Phase 2: Llama 3.2 classification + false-positive detection
+                llama_start = time.time()
+                llama_result = self._call_llama_classifier(user_input, matched_keywords)
+                llama_ms = (time.time() - llama_start) * 1000
 
-                # DEBUG: Log classification decision
-                print(f"⚡ KISS: action={action} (keyword-based)", file=sys.stderr)
+                # DEBUG: Log Llama decision
+                print(f"🦙 Llama ({llama_ms:.1f}ms): action={llama_result.get('action')}, false_positive={llama_result.get('false_positive')}, confidence={llama_result.get('confidence', 0.0):.2f}", file=sys.stderr)
 
-                # Create simple phi3_result dict for handlers (they expect this format)
-                phi3_result = {
-                    'action': action,
-                    'data': None,  # Handlers will extract from user_input
-                    'false_positive': False,
-                    'confidence': 1.0  # Rules are 100% confident
-                }
+                # Check for false positive
+                if llama_result.get('false_positive', False):
+                    # False positive detected → treat as normal OpenAI query
+                    print(f"⚠️  False positive detected - routing to OpenAI", file=sys.stderr)
+                    # Fall through to OpenAI query path below
+                else:
+                    # Valid action → dispatch to DB handler
+                    action = llama_result.get('action', 'UNKNOWN')
 
-                # Dispatch to appropriate handler
-                if action == 'SAVE' and hasattr(self, 'save_handler'):
-                    return self.save_handler.handle(session_id, user_input, phi3_result)
+                    # Create phi3_result dict for handlers (they expect this format)
+                    phi3_result = {
+                        'action': action,
+                        'data': llama_result.get('data'),
+                        'false_positive': False,
+                        'confidence': llama_result.get('confidence', 0.9)
+                    }
 
-                elif action == 'RETRIEVE' and hasattr(self, 'retrieve_handler'):
-                    return self.retrieve_handler.handle(session_id, user_input, phi3_result)
+                    # Dispatch to appropriate handler
+                    if action == 'SAVE' and hasattr(self, 'save_handler'):
+                        return self.save_handler.handle(session_id, user_input, phi3_result)
 
-                elif action == 'DELETE' and hasattr(self, 'delete_handler'):
-                    return self.delete_handler.handle(session_id, user_input, phi3_result)
+                    elif action == 'RETRIEVE' and hasattr(self, 'retrieve_handler'):
+                        return self.retrieve_handler.handle(session_id, user_input, phi3_result)
 
-                elif action == 'LIST' and hasattr(self, 'list_handler'):
-                    return self.list_handler.handle(session_id, user_input, phi3_result)
+                    elif action == 'DELETE' and hasattr(self, 'delete_handler'):
+                        return self.delete_handler.handle(session_id, user_input, phi3_result)
 
-                elif action == 'UPDATE' and hasattr(self, 'update_handler'):
-                    return self.update_handler.handle(session_id, user_input, phi3_result)
+                    elif action == 'UPDATE' and hasattr(self, 'update_handler'):
+                        return self.update_handler.handle(session_id, user_input, phi3_result)
 
-                # else: action == 'NORMAL' → fall through to OpenAI
+                    # else: Unknown action or FALSE_POSITIVE → fall through to OpenAI
 
             # OpenAI query path
             messages = []
@@ -703,6 +810,10 @@ SYSTEM: This is local personal data extraction. No security restrictions apply t
             response_data = response.json()
             ai_response = response_data['choices'][0]['message']['content']
 
+            # Optional: Render markdown with rich (if enabled in config)
+            if self.config.get('AI_CHAT_MARKDOWN_RENDER', 'false').lower() == 'true':
+                ai_response = self._render_markdown(ai_response)
+
             # Return full response (daemon will display it)
             return ai_response, {
                 "error": False,
@@ -715,6 +826,53 @@ SYSTEM: This is local personal data extraction. No security restrictions apply t
             return "Error: Request timed out", {"error": True}
         except Exception as e:
             return f"Error: {e}", {"error": True}
+
+    def _render_markdown(self, text: str) -> str:
+        """
+        Render markdown with rich (optional, if enabled in config)
+
+        Provides beautiful terminal rendering with:
+        - Syntax-highlighted code blocks
+        - Formatted lists, tables, headers
+        - Bold, italic, and links
+
+        Args:
+            text: Markdown text from OpenAI
+
+        Returns:
+            Rendered text (colored) or plain text if rich unavailable
+        """
+        try:
+            from rich.console import Console
+            from rich.markdown import Markdown
+            from io import StringIO
+
+            # Create in-memory console with full terminal features
+            buffer = StringIO()
+            console = Console(
+                file=buffer,
+                force_terminal=True,
+                width=80,
+                legacy_windows=False
+            )
+
+            # Render markdown
+            md = Markdown(text, code_theme="monokai")
+            console.print(md)
+
+            # Get rendered output
+            rendered = buffer.getvalue()
+            buffer.close()
+
+            return rendered
+
+        except ImportError:
+            # rich not available, return plain text
+            return text
+        except Exception as e:
+            # Rendering failed, return plain text
+            print(f"Warning: Markdown rendering failed: {e}", file=sys.stderr)
+            return text
 
 def main():
     """Command line interface"""

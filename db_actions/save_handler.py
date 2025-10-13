@@ -2,10 +2,25 @@
 # -*- coding: utf-8 -*-
 """
 SAVE Action Handler
-Handles saving data to local database with Phi-3 extracted information
+Handles saving data to local database
+
+⚠️ ARCHITECTURE NOTE:
+   This handler receives pre-classified actions from Llama 3.2.
+
+   NO string matching for types (email/phone/etc) allowed here!
+   - Llama already classified the action (SAVE)
+   - Llama already extracted the data
+   - Llama already detected false positives
+
+   String matching ONLY happens in:
+   - local_storage_detector.py (initial keyword trigger from lang/*.conf)
+
+   We only detect type from CONTENT pattern (@ = email, digits = phone),
+   NOT from keywords like "email", "phone" etc!
 """
 
 import sys
+import re
 
 class SaveHandler:
     """Handler for SAVE database operations"""
@@ -28,59 +43,32 @@ class SaveHandler:
         Args:
             session_id: Current session ID
             user_input: Original user message
-            phi3_result: Parsed Phi-3 result with extracted data
+            phi3_result: Parsed Llama result with extracted data
 
         Returns:
             (response_message, metadata)
         """
-        # Extract data from user_input (KISS - regex based!)
-        import re
+        # Get data from Llama (already extracted!) or fallback to full input
+        value = phi3_result.get('data') or user_input
 
-        # Detect type from keywords FIRST!
-        data_type = 'note'  # default
-        value = user_input  # default
+        # Default type
+        data_type = 'note'
 
-        user_lower = user_input.lower()
-
-        # Check keywords to determine type
-        if 'email' in user_lower or 'e-mail' in user_lower:
-            # EMAIL: extract email@domain
-            email_match = re.search(r'[\w\.-]+@[\w\.-]+\.\w+', user_input)
-            if email_match:
-                data_type = 'email'
-                value = email_match.group()
-        elif 'phone' in user_lower or 'telefon' in user_lower or 'number' in user_lower or 'handy' in user_lower:
-            # PHONE: extract phone number (digits/spaces/dashes)
-            phone_match = re.search(r'[\d\s\-\(\)]{7,}', user_input)
-            if phone_match:
-                data_type = 'phone'
-                value = phone_match.group().strip()
-        elif 'address' in user_lower or 'adresse' in user_lower or 'calle' in user_lower or 'street' in user_lower:
-            # ADDRESS: take everything after keyword
-            data_type = 'address'
-            value = re.sub(r'^(save|remember|store|merke|speicher)\s+(my|meine?)\s+(address|adresse)\s+', '', user_input, flags=re.IGNORECASE)
-        elif 'password' in user_lower or 'passwort' in user_lower:
-            # PASSWORD: take everything after keyword
-            data_type = 'password'
-            value = re.sub(r'^(save|remember|store|merke|speicher)\s+(my|meine?)\s+(password|passwort)\s+', '', user_input, flags=re.IGNORECASE)
+        # Auto-detect type from CONTENT pattern (NOT from keywords!)
+        # EMAIL: has @ and .
+        email_match = re.search(r'[\w\.-]+@[\w\.-]+\.\w+', value)
+        if email_match:
+            data_type = 'email'
+            value = email_match.group()
+        # PHONE: mostly digits with optional spaces/dashes
         else:
-            # No keyword found - try auto-detect
-            # EMAIL: anything with @
-            email_match = re.search(r'[\w\.-]+@[\w\.-]+\.\w+', user_input)
-            if email_match:
-                data_type = 'email'
-                value = email_match.group()
-            # PHONE: ONLY if it looks like a phone (no letters mixed in)
-            else:
-                phone_match = re.search(r'\b[\d\s\-\(\)]{9,}\b', user_input)
-                if phone_match and not any(c.isalpha() for c in phone_match.group()):
+            phone_match = re.search(r'\b[\d\s\-\(\)]{7,}\b', value)
+            if phone_match:
+                # Check it's not mixed with letters
+                phone_candidate = phone_match.group()
+                if not any(c.isalpha() for c in phone_candidate):
                     data_type = 'phone'
-                    value = phone_match.group().strip()
-
-        # If still no value extracted, take everything after "save/remember"
-        if value == user_input:
-            # Remove keywords from the beginning
-            value = re.sub(r'^(save|remember|store|merke|speicher)\s+(my|meine?)\s+', '', user_input, flags=re.IGNORECASE)
+                    value = phone_candidate.strip()
 
         label = ''
         context = ''

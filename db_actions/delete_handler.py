@@ -1,8 +1,22 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-DELETE Action Handler (NEW in v9.0.0)
+DELETE Action Handler
 Handles deleting data from local database
+
+⚠️ ARCHITECTURE NOTE:
+   This handler receives pre-classified actions from Llama 3.2.
+
+   NO string matching for types (email/phone/etc) allowed here!
+   - Llama already classified the action (DELETE)
+   - Llama already extracted the query
+   - Llama already detected false positives
+
+   String matching ONLY happens in:
+   - local_storage_detector.py (initial keyword trigger from lang/*.conf)
+
+   We return ALL search results - NO type filtering!
+   Llama's query is already precise enough.
 """
 
 import sys
@@ -28,33 +42,15 @@ class DeleteHandler:
         Args:
             session_id: Current session ID
             user_input: Original user message
-            phi3_result: Parsed Phi-3 result with delete target
+            phi3_result: Parsed Llama result with delete target
 
         Returns:
             (response_message, metadata)
         """
-        # KISS: Extract type from user_input (same as retrieve!)
-        query_type = ''
-        if 'email' in user_input.lower() or 'e-mail' in user_input.lower():
-            query_type = 'email'
-        elif 'phone' in user_input.lower() or 'telefon' in user_input.lower() or 'number' in user_input.lower():
-            query_type = 'phone'
-        elif 'address' in user_input.lower() or 'adresse' in user_input.lower():
-            query_type = 'address'
-        elif 'password' in user_input.lower() or 'passwort' in user_input.lower():
-            query_type = 'password'
-
         # Search for items to delete
-        results = self.memory.search_private_data(user_input, limit=10, silent=True)
-
-        # ALWAYS filter by type if we detected one!
-        if query_type and results:
-            filtered = [r for r in results
-                       if r.get('metadata', {}).get('data_type', '').lower() == query_type.lower()]
-            if filtered:
-                results = filtered
-            else:
-                results = []
+        # NO type filtering - Llama's query is already precise!
+        # NO limit - show ALL matching items for confirmation
+        results = self.memory.search_private_data(user_input, silent=True)
 
         # Delete found items (with confirmation showing ALL items!)
         if results:

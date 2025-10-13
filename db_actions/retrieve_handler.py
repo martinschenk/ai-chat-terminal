@@ -3,6 +3,20 @@
 """
 RETRIEVE Action Handler
 Handles retrieving data from local database
+
+⚠️ ARCHITECTURE NOTE:
+   This handler receives pre-classified actions from Llama 3.2.
+
+   NO string matching for types (email/phone/etc) allowed here!
+   - Llama already classified the action (RETRIEVE)
+   - Llama already extracted the query
+   - Llama already detected false positives
+
+   String matching ONLY happens in:
+   - local_storage_detector.py (initial keyword trigger from lang/*.conf)
+
+   We return ALL search results - NO type filtering!
+   Llama's query is already precise enough.
 """
 
 import sys
@@ -28,42 +42,23 @@ class RetrieveHandler:
         Args:
             session_id: Current session ID
             user_input: Original user message
-            phi3_result: Parsed Phi-3 result with query information
+            phi3_result: Parsed Llama result with query information
 
         Returns:
             (response_message, metadata)
         """
-        # KISS: Extract type from user_input with keywords
-        query_type = ''
-        if 'email' in user_input.lower() or 'e-mail' in user_input.lower():
-            query_type = 'email'
-        elif 'phone' in user_input.lower() or 'telefon' in user_input.lower() or 'number' in user_input.lower():
-            query_type = 'phone'
-        elif 'address' in user_input.lower() or 'adresse' in user_input.lower():
-            query_type = 'address'
-        elif 'password' in user_input.lower() or 'passwort' in user_input.lower():
-            query_type = 'password'
-
         # Search in database using search_private_data
-        results = self.memory.search_private_data(user_input, limit=10, silent=True)
-
-        # ALWAYS filter by type if we detected one!
-        if query_type and results:
-            filtered = [r for r in results
-                       if r.get('metadata', {}).get('data_type', '').lower() == query_type.lower()]
-            if filtered:
-                results = filtered
-            else:
-                results = []  # No matches of this type!
+        # NO type filtering - Llama's query is already precise!
+        # NO limit - return ALL matching results (RETRIEVE now handles both single items and "show everything")
+        results = self.memory.search_private_data(user_input, silent=True)
 
         if results:
-            # Format results naturally (Phi-3 handles icons & varied phrasing!)
-            formatted_response = self._format_results(results, query_type, user_input)
+            # Format results naturally
+            formatted_response = self._format_results(results, user_input)
 
             # Save to history
             self.memory.add_message(session_id, 'user', user_input, {
                 'privacy_category': 'LOCAL_RETRIEVAL',
-                'query_type': query_type,
                 'query': user_input
             })
 
@@ -91,21 +86,34 @@ class RetrieveHandler:
                 "action": "RETRIEVE_EMPTY"
             }
 
-    def _format_results(self, results: list, query_type: str, query: str) -> str:
+    def _format_results(self, results: list, query: str) -> str:
         """
-        Format search results - KISS: Just show the data with 🔍 icon
+        Format search results - KISS: Show data with 🔍 icon
+
+        Handles both single item queries and "show everything" queries
 
         Args:
             results: List of search results from database
-            query_type: Type of data being queried
             query: Original query string
 
         Returns:
             Formatted response string
         """
-        # KISS: Show first result with icon
-        if results:
+        if not results:
+            return self.lang.get('msg_no_results', 'Not found')
+
+        # Single result: show inline with icon
+        if len(results) == 1:
             content = results[0].get('content', '').strip()
             return f"🔍 {content}"
 
-        return self.lang.get('msg_no_results', 'Not found')
+        # Multiple results: show as numbered list
+        output = f"🔍 Found {len(results)} items:\n"
+        for i, result in enumerate(results, 1):
+            content = result.get('content', '').strip()
+            # Truncate long items in list view
+            if len(content) > 70:
+                content = content[:70] + "..."
+            output += f"  {i}. {content}\n"
+
+        return output.rstrip()

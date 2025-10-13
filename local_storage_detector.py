@@ -1,174 +1,82 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Local Storage Detector - Expanded Keyword System (v9.0.1)
-Fast keyword detection to trigger Phi-3 intent analysis
-~12 keywords per language - covers all 5 operations (SAVE/RETRIEVE/DELETE/LIST/UPDATE)
+Local Storage Detector - v10.2.0 (Dynamic Keyword Loading)
+Loads keywords from lang/*.conf files instead of hardcoding
+Triggers Llama 3.2 for intelligent classification + false-positive detection
 """
 
-from typing import Tuple, List
-
-# Expanded keywords for "database intent" - ~12 per language
-# Covers all operations: SAVE, RETRIEVE, DELETE, LIST, UPDATE
-# Phi-3 will do the intelligent classification and false-positive detection
-DB_INTENT_KEYWORDS = {
-    'de': [
-        # DB/Storage
-        'db', 'datenbank', 'lokal', 'speicher', 'speichern', 'speichere',
-        # Save/Remember
-        'merke', 'merk', 'merken', 'behalte', 'behalten', 'notiere', 'notieren',
-        # Retrieve/Get
-        'hole', 'hol', 'holen', 'gib', 'gibst', 'abrufen', 'laden',
-        # Show/List
-        'zeig', 'zeige', 'zeigen', 'liste', 'auflistung', 'anzeigen',
-        # Delete/Forget
-        'vergiss', 'vergessen', 'lösche', 'löschen', 'entferne', 'entfernen',
-        # Data/Info
-        'daten', 'infos', 'informationen', 'gespeichert', 'gespeicherte',
-        # Question words
-        'meine', 'mein', 'welche', 'was', 'hast', 'kennst', 'weißt'
-    ],
-    'en': [
-        # DB/Storage
-        'db', 'database', 'local', 'locally', 'storage', 'store', 'stored',
-        # Save/Remember
-        'save', 'saving', 'remember', 'remind', 'keep', 'keeping', 'note', 'noting',
-        # Retrieve/Get
-        'get', 'getting', 'retrieve', 'load', 'loading', 'fetch',
-        # Show/List
-        'show', 'showing', 'list', 'listing', 'display',
-        # Delete/Forget
-        'forget', 'delete', 'deleting', 'remove', 'removing', 'clear',
-        # Data/Info
-        'data', 'info', 'infos', 'information', 'entries', 'records',
-        # Question words
-        'my', 'mine', 'which', 'what', 'have', 'has', 'know', 'knows', 'about'
-    ],
-    'es': [
-        # DB/Storage
-        'db', 'base de datos', 'local', 'localmente', 'almacenamiento', 'almacenar',
-        # Save/Remember
-        'guarda', 'guardar', 'guardado', 'recuerda', 'recordar', 'anota', 'anotar', 'mantén', 'mantener',
-        # Retrieve/Get
-        'obtén', 'obtener', 'muestra', 'mostrar', 'dame', 'dar', 'recupera', 'recuperar',
-        # Show/List
-        'lista', 'listar', 'enséñame', 'enseñar', 'muéstrame',
-        # Delete/Forget
-        'olvida', 'olvidar', 'elimina', 'eliminar', 'borra', 'borrar', 'quita', 'quitar',
-        # Data/Info
-        'datos', 'info', 'información', 'entradas', 'registros', 'guardados',
-        # Question words
-        'mi', 'mis', 'qué', 'cuál', 'cuáles', 'tienes', 'tiene', 'sabes', 'conoces'
-    ],
-    'fr': [
-        # DB/Storage
-        'db', 'base de données', 'local', 'localement', 'stockage', 'stocker',
-        # Save/Remember
-        'sauvegarde', 'sauvegarder', 'enregistre', 'enregistrer', 'souviens', 'garde', 'garder', 'note', 'noter',
-        # Retrieve/Get
-        'récupère', 'récupérer', 'obtiens', 'obtenir', 'affiche', 'afficher', 'montre', 'montrer',
-        # Show/List
-        'liste', 'lister', 'affiche-moi', 'montre-moi',
-        # Delete/Forget
-        'oublie', 'oublier', 'supprime', 'supprimer', 'efface', 'effacer', 'enlève', 'enlever',
-        # Data/Info
-        'données', 'infos', 'informations', 'entrées', 'enregistré', 'enregistrés',
-        # Question words
-        'mon', 'ma', 'mes', 'quel', 'quelle', 'quels', 'quelles', 'as', 'sais', 'connais'
-    ],
-    'it': [
-        # DB/Storage
-        'db', 'database', 'locale', 'localmente', 'archivio', 'memorizzazione', 'memorizza',
-        # Save/Remember
-        'salva', 'salvare', 'salvato', 'ricorda', 'ricordare', 'annota', 'annotare', 'mantieni', 'mantenere',
-        # Retrieve/Get
-        'prendi', 'prendere', 'recupera', 'recuperare', 'mostra', 'mostrare', 'dammi',
-        # Show/List
-        'lista', 'elenco', 'elenca', 'elencare', 'mostrami',
-        # Delete/Forget
-        'dimentica', 'dimenticare', 'elimina', 'eliminare', 'cancella', 'cancellare', 'rimuovi', 'rimuovere',
-        # Data/Info
-        'dati', 'info', 'informazioni', 'voci', 'salvati', 'memorizzati',
-        # Question words
-        'mio', 'mia', 'miei', 'mie', 'quale', 'quali', 'che', 'hai', 'sai', 'conosci'
-    ],
-    'pt': [
-        # DB/Storage
-        'db', 'base de dados', 'local', 'localmente', 'armazenamento', 'armazenar', 'armazenado',
-        # Save/Remember
-        'salvar', 'salvo', 'salvos', 'lembrar', 'lembra', 'anota', 'anotar', 'guarda', 'guardar',
-        # Retrieve/Get
-        'pegar', 'buscar', 'recuperar', 'mostrar', 'mostra', 'me dá', 'obter',
-        # Show/List
-        'listar', 'lista', 'exibir', 'mostra-me', 'me mostre',
-        # Delete/Forget
-        'esquecer', 'esquece', 'apagar', 'apaga', 'deletar', 'deleta', 'remover', 'remove',
-        # Data/Info
-        'dados', 'info', 'informação', 'informações', 'entradas', 'registros', 'salvos',
-        # Question words
-        'meu', 'minha', 'meus', 'minhas', 'qual', 'quais', 'que', 'tem', 'tens', 'sabe', 'conhece'
-    ],
-    'nl': [
-        'db', 'database', 'lokaal', 'opslag', 'opslaan', 'onthoud', 'haal', 'opgeslagen',
-        'vergeet', 'verwijder', 'toon', 'lijst'
-    ],
-    'pl': [
-        'db', 'baza danych', 'lokalnie', 'pamięć', 'zapisz', 'zapamiętaj', 'pokaż', 'zapisane',
-        'zapomnij', 'usuń', 'lista', 'aktualizuj'
-    ],
-    'ru': [
-        'бд', 'база данных', 'локально', 'хранилище', 'сохрани', 'запомни', 'покажи', 'сохранено',
-        'забудь', 'удали', 'список', 'обнови'
-    ],
-    'ja': [
-        'db', 'データベース', 'ローカル', 'ストレージ', '保存', '覚えて', '取得', '保存した',
-        '忘れて', '削除', 'リスト', '更新'
-    ],
-    'zh': [
-        'db', '数据库', '本地', '存储', '保存', '记住', '显示', '已保存',
-        '忘记', '删除', '列表', '更新'
-    ],
-    'ko': [
-        'db', '데이터베이스', '로컬', '저장소', '저장', '기억해', '보여줘', '저장된',
-        '잊어', '삭제', '목록', '업데이트'
-    ],
-    'ar': [
-        'db', 'قاعدة بيانات', 'محلي', 'تخزين', 'احفظ', 'تذكر', 'أظهر', 'محفوظ',
-        'انسى', 'احذف', 'قائمة', 'حدث'
-    ],
-    'hi': [
-        'db', 'डेटाबेस', 'स्थानीय', 'संग्रहण', 'सहेजें', 'याद रखें', 'दिखाएं', 'सहेजा',
-        'भूल जाओ', 'हटाएं', 'सूची', 'अद्यतन'
-    ],
-    'tr': [
-        'db', 'veritabanı', 'yerel', 'depolama', 'kaydet', 'hatırla', 'göster', 'kaydedildi',
-        'unut', 'sil', 'liste', 'güncelle'
-    ],
-    'sv': [
-        'db', 'databas', 'lokal', 'lagring', 'spara', 'kom ihåg', 'visa', 'sparat',
-        'glöm', 'ta bort', 'lista', 'uppdatera'
-    ],
-    'da': [
-        'db', 'database', 'lokal', 'lagring', 'gem', 'husk', 'vis', 'gemt',
-        'glem', 'slet', 'liste', 'opdater'
-    ],
-    'fi': [
-        'db', 'tietokanta', 'paikallinen', 'tallennus', 'tallenna', 'muista', 'näytä', 'tallennettu',
-        'unohda', 'poista', 'lista', 'päivitä'
-    ],
-    'no': [
-        'db', 'database', 'lokal', 'lagring', 'lagre', 'husk', 'vis', 'lagret',
-        'glem', 'slett', 'liste', 'oppdater'
-    ]
-}
+import os
+import re
+from pathlib import Path
+from typing import Tuple, List, Dict, Set
 
 
 class LocalStorageDetector:
-    """Fast keyword detector to trigger Phi-3 intent analysis"""
+    """Fast keyword detector to trigger Llama 3.2 classification"""
 
-    def __init__(self):
-        """Initialize detector with minimal keyword dictionary"""
-        self.keywords = DB_INTENT_KEYWORDS
+    def __init__(self, config_dir: str = None):
+        """
+        Initialize detector with keywords from lang/*.conf files
+
+        Args:
+            config_dir: Path to .aichat config directory (defaults to ~/.aichat)
+        """
+        self.config_dir = config_dir or str(Path.home() / '.aichat')
+        self.keywords = self._load_keywords_from_lang_files()
+
+    def _load_keywords_from_lang_files(self) -> Set[str]:
+        """
+        Load DB intent keywords from all lang/*.conf files
+
+        Returns:
+            Set of all keywords from all languages combined
+        """
+        all_keywords = set()
+        lang_dir = Path(self.config_dir) / 'lang'
+
+        if not lang_dir.exists():
+            # Fallback to basic English keywords
+            return {'save', 'store', 'remember', 'show', 'get', 'delete', 'remove',
+                    'list', 'what', 'my', 'database', 'db', 'local', 'data'}
+
+        # Keywords to load from each lang file
+        keyword_vars = [
+            'KEYWORDS_SAVE',
+            'KEYWORDS_RETRIEVE',
+            'KEYWORDS_DELETE',
+            'KEYWORDS_LIST'
+        ]
+
+        # Common trigger words (add these too)
+        common_words = ['my', 'mein', 'mi', 'mon', 'mio', 'meu',  # possessive
+                       'db', 'database', 'datenbank', 'base de datos',  # DB words
+                       'local', 'lokal', 'locally', 'localmente',  # local
+                       'data', 'daten', 'datos', 'données']  # data
+
+        for lang_file in lang_dir.glob('*.conf'):
+            try:
+                with open(lang_file, 'r', encoding='utf-8') as f:
+                    content = f.read()
+
+                # Extract keywords from each KEYWORDS_* variable
+                for var_name in keyword_vars:
+                    pattern = rf'{var_name}="([^"]+)"'
+                    match = re.search(pattern, content)
+                    if match:
+                        keywords_str = match.group(1)
+                        # Split by comma and clean
+                        keywords = [kw.strip().lower() for kw in keywords_str.split(',') if kw.strip()]
+                        all_keywords.update(keywords)
+
+            except Exception as e:
+                # Skip this lang file if error
+                continue
+
+        # Add common trigger words
+        all_keywords.update(common_words)
+
+        return all_keywords
 
     def detect_db_intent(self, text: str) -> Tuple[bool, List[str]]:
         """
@@ -185,57 +93,13 @@ class LocalStorageDetector:
         text_lower = text.lower()
         matched = []
 
-        # Check all languages
-        for lang, keywords in self.keywords.items():
-            for keyword in keywords:
-                if keyword in text_lower:
-                    matched.append(keyword)
+        # Check all keywords (loaded from lang files)
+        for keyword in self.keywords:
+            if keyword in text_lower:
+                matched.append(keyword)
 
         return (len(matched) > 0, matched)
 
-    def classify_action(self, text: str, matched_keywords: List[str]) -> str:
-        """
-        KISS: Simple rule-based action classification
-        More reliable than Phi-3!
-
-        Returns: SAVE|RETRIEVE|DELETE|LIST|UPDATE|NORMAL
-        """
-        text_lower = text.lower()
-
-        # Priority order matters! DELETE before RETRIEVE to avoid conflicts
-
-        # DELETE: delete/forget/remove + MY data (prevents false positives!)
-        if any(kw in text_lower for kw in ['delete', 'forget', 'remove', 'lösche', 'vergiss', 'entferne',
-                                             'elimina', 'olvida', 'supprime', 'oublie']):
-            # Check if user is deleting THEIR data (not just "delete this message")
-            if ('my' in text_lower or 'mein' in text_lower or 'mi' in text_lower or
-                'mon' in text_lower or 'mio' in text_lower or 'meu' in text_lower):
-                return 'DELETE'
-
-        # LIST: show all/list
-        if any(phrase in text_lower for phrase in ['show all', 'list all', 'what data', 'all data', 'zeig alle',
-                                                     'liste alle', 'qué datos', 'todos los datos']):
-            return 'LIST'
-
-        # SAVE: save/remember/store + has data (contains @ or digits)
-        if any(kw in text_lower for kw in ['save', 'remember', 'store', 'merke', 'speicher', 'behalte',
-                                             'guarda', 'recuerda', 'sauvegarde', 'salva', 'ricorda']):
-            # Check if message contains actual data (email@ or phone# or text after keyword)
-            if '@' in text or any(char.isdigit() for char in text):
-                return 'SAVE'
-
-        # RETRIEVE: show/get/what + my
-        if ('my' in text_lower or 'mein' in text_lower or 'mi' in text_lower or 'mon' in text_lower or 'mio' in text_lower):
-            if any(kw in text_lower for kw in ['show', 'get', 'what', 'hole', 'gib', 'zeig', 'muestra', 'dame',
-                                                 'affiche', 'montre', 'mostra', 'dammi']):
-                return 'RETRIEVE'
-
-        # UPDATE: change/update + to
-        if any(kw in text_lower for kw in ['change', 'update', 'ändere', 'aktualisiere', 'cambia', 'actualiza']):
-            if ' to ' in text_lower or ' zu ' in text_lower or ' a ' in text_lower or ' à ' in text_lower:
-                return 'UPDATE'
-
-        return 'NORMAL'
 
 
 # For testing
