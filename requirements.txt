@@ -1,7 +1,0 @@
-# Core dependencies
-sentence-transformers>=2.2.0
-sqlite-vec>=0.1.0
-apsw>=3.45.0
-
-# Response generation (optional - uses Phi-3 via Ollama)
-# ollama (external service, not a Python package)
