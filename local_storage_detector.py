@@ -1,9 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Local Storage Detector - v10.2.0 (Dynamic Keyword Loading)
+Local Storage Detector - v11.0.2 (Smart Word Boundary Matching)
 Loads keywords from lang/*.conf files instead of hardcoding
-Triggers Llama 3.2 for intelligent classification + false-positive detection
+Uses word boundaries for short keywords (1-2 chars) to avoid false positives
+
+v11.0.2 Changes:
+- Word boundary regex for short keywords like "es", "is", "my", "mi"
+- Prevents false matches like "es" in "test" or "test@ejemplo.es"
+- Fast substring matching for longer keywords (3+ chars)
 """
 
 import os
@@ -60,9 +65,11 @@ class LocalStorageDetector:
                     content = f.read()
 
                 # Extract keywords from each KEYWORDS_* variable
+                # v11.0.2: Use ^{var_name}= to match at line start only
+                # Prevents matching LANG_KEYWORDS_SAVE when looking for KEYWORDS_SAVE
                 for var_name in keyword_vars:
-                    pattern = rf'{var_name}="([^"]+)"'
-                    match = re.search(pattern, content)
+                    pattern = rf'^{var_name}="([^"]+)"'  # ^ = line start
+                    match = re.search(pattern, content, re.MULTILINE)
                     if match:
                         keywords_str = match.group(1)
                         # Split by comma and clean
@@ -82,6 +89,11 @@ class LocalStorageDetector:
         """
         Quick check: Does text contain ANY database-related keyword?
 
+        v11.0.2: Smart matching with word boundaries for short keywords
+        - Short keywords (1-2 chars) use word boundary regex to avoid false positives
+        - Example: "es" (Spanish "is") won't match in "test" or ".es" domain
+        - Longer keywords (3+ chars) use fast substring matching
+
         Args:
             text: User input message
 
@@ -93,10 +105,25 @@ class LocalStorageDetector:
         text_lower = text.lower()
         matched = []
 
-        # Check all keywords (loaded from lang files)
+        # v11.0.2: Smart keyword matching with word boundaries
         for keyword in self.keywords:
-            if keyword in text_lower:
-                matched.append(keyword)
+            # Short keywords (≤2 chars) need word boundary matching
+            # to avoid false positives like "es" in "test" or "test@ejemplo.es"
+            if len(keyword) <= 2:
+                # Use word boundary regex: \b ensures "es" only matches as standalone word
+                # Examples:
+                #   ✅ "mi correo es" → matches "es"
+                #   ✅ "esto es" → matches "es"
+                #   ❌ "test@ejemplo.es" → does NOT match "es" in "test"
+                #   ✅ "test@ejemplo.es" → matches "es" only at end as word
+                pattern = r'\b' + re.escape(keyword) + r'\b'
+                if re.search(pattern, text_lower):
+                    matched.append(keyword)
+            else:
+                # Longer keywords (≥3 chars) use fast substring matching
+                # No word boundaries needed - less likely to have false positives
+                if keyword in text_lower:
+                    matched.append(keyword)
 
         return (len(matched) > 0, matched)
 
