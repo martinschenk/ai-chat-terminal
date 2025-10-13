@@ -35,40 +35,20 @@ Your sensitive data **NEVER** leaves your Mac.
       └──┬────────┬──┘
          │        │
     YES  │        │  NO
-         ↓        └──────────────┐
-  ┌──────────┐                   │
-  │ Llama 3.2│                   │
-  │ (LOCAL)  │                   │
-  │ ~1000ms  │                   │
-  └─────┬────┘                   │
-        ↓                        │
-  ┌─────────────────┐            │
-  │ FALSE_POSITIVE? │            │
-  └──┬──────────┬───┘            │
-     │          │                │
-   YES│          │NO              │
-     │          ↓                ↓
-     │    ┌─────────────┐  ┌──────────────┐
-     │    │ Encrypted   │  │   OpenAI     │
-     │    │ SQLite DB   │  │  (CLOUD)     │
-     │    │ (AES-256)   │  │   5-7s       │
-     │    └─────────────┘  └──────┬───────┘
-     │                             │
-     └─────────────────────────────┤
-                                   ↓
-                          ┌──────────────┐
-                          │  Response    │
-                          │ with Context │
-                          └──────────────┘
+         ↓        ↓
+  ┌──────────┐  ┌──────────────┐
+  │ Llama 3.2│  │   OpenAI     │
+  │ (LOCAL)  │  │  (CLOUD)     │
+  └─────┬────┘  └──────┬───────┘
+        ↓               ↓
+  ┌─────────────┐  ┌──────────────┐
+  │ Encrypted   │  │  Response    │
+  │ SQLite DB   │  │ with Context │
+  │ (AES-256)   │  │              │
+  └─────────────┘  └──────────────┘
 ```
 
-**3-Phase System:**
-1. **Keyword Check** (<1ms) - Detects SAVE/RETRIEVE/DELETE from lang/*.conf
-2. **Llama Classification** (~1000ms) - Validates action + detects false positives
-3. **Routing:**
-   - Valid action → **Encrypted SQLite** (local)
-   - False positive → **OpenAI** (cloud)
-   - No keywords → **OpenAI** (cloud)
+**Note:** Llama 3.2 detects false positives (e.g., "show me how to save a file" = tutorial) and routes them to OpenAI.
 
 ## Quick Start
 
