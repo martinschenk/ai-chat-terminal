@@ -642,10 +642,6 @@ fi
 echo -n "  • sqlcipher3-binary (Python)... "
 pip3 install --user --quiet sqlcipher3-binary 2>/dev/null && echo -e "${GREEN}✓${RESET}" || echo -e "${YELLOW}⚠${RESET}"
 
-# v11.0.0: NO vector DB dependencies needed!
-# Qwen generates SQL directly - no embeddings, no vector search!
-echo -e "\n${GREEN}✓${RESET} v11.0.0 KISS: No vector dependencies needed!"
-
 # Step 6: Large Models - Interactive Choice
 echo -e "\n${CYAN}${BOLD}${LANG_STRINGS[MODEL_RECOMMENDATION]}${RESET}"
 echo -e "${DIM}${LANG_STRINGS[LARGE_MODELS]}${RESET}\n"
