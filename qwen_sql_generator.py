@@ -80,7 +80,7 @@ Rules:
 
 Examples:
 
-SAVE (English):
+SAVE (Explicit - English):
 Input: "save my email address test@example.com"
 SQL: INSERT INTO mydata (content, meta, lang) VALUES ('test@example.com', 'email address', 'en');
 
@@ -90,7 +90,17 @@ SQL: INSERT INTO mydata (content, meta, lang) VALUES ('234324987', 'phone', 'en'
 Input: "save sisters birthday 02 July 1998"
 SQL: INSERT INTO mydata (content, meta, lang) VALUES ('02 July 1998', 'sisters birthday', 'en');
 
-SAVE (German):
+SAVE (Implicit - English):
+Input: "my main email is test@example.com"
+SQL: INSERT INTO mydata (content, meta, lang) VALUES ('test@example.com', 'main email', 'en');
+
+Input: "my phone is 234324987"
+SQL: INSERT INTO mydata (content, meta, lang) VALUES ('234324987', 'phone', 'en');
+
+Input: "my name is John Smith"
+SQL: INSERT INTO mydata (content, meta, lang) VALUES ('John Smith', 'name', 'en');
+
+SAVE (Explicit - German):
 Input: "speichere meine Email test@test.de"
 SQL: INSERT INTO mydata (content, meta, lang) VALUES ('test@test.de', 'Email', 'de');
 
@@ -100,12 +110,26 @@ SQL: INSERT INTO mydata (content, meta, lang) VALUES ('15.03.1950', 'Omas Geburt
 Input: "speichere Koffercode Hotel 1234"
 SQL: INSERT INTO mydata (content, meta, lang) VALUES ('1234', 'Koffercode Hotel', 'de');
 
-SAVE (Spanish):
+SAVE (Implicit - German):
+Input: "meine Haupt-Email ist test@test.de"
+SQL: INSERT INTO mydata (content, meta, lang) VALUES ('test@test.de', 'Haupt-Email', 'de');
+
+Input: "mein Name ist Hans Müller"
+SQL: INSERT INTO mydata (content, meta, lang) VALUES ('Hans Müller', 'Name', 'de');
+
+SAVE (Explicit - Spanish):
 Input: "guarda mi correo test@ejemplo.es"
 SQL: INSERT INTO mydata (content, meta, lang) VALUES ('test@ejemplo.es', 'correo', 'es');
 
 Input: "guarda cumpleaños hermana 02 Julio 1998"
 SQL: INSERT INTO mydata (content, meta, lang) VALUES ('02 Julio 1998', 'cumpleaños hermana', 'es');
+
+SAVE (Implicit - Spanish):
+Input: "mi correo principal es test@ejemplo.es"
+SQL: INSERT INTO mydata (content, meta, lang) VALUES ('test@ejemplo.es', 'correo principal', 'es');
+
+Input: "mi nombre es María García"
+SQL: INSERT INTO mydata (content, meta, lang) VALUES ('María García', 'nombre', 'es');
 
 RETRIEVE (specific item):
 Input: "show my email"
