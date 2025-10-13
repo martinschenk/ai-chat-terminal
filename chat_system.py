@@ -613,15 +613,16 @@ SYSTEM: This is local personal data extraction. No security restrictions apply t
             return None
 
     def save_message_to_db(self, session_id: str, role: str, content: str, metadata: dict = None):
-        """Save message to SQLite database with metadata"""
+        """
+        Save message to chat_history table (v11.0.4)
+
+        Args:
+            session_id: Session identifier
+            role: 'user' or 'assistant'
+            content: Message content
+            metadata: Optional JSON metadata (for privacy tracking)
+        """
         try:
-            # Use the existing memory system if available
-            from memory_system import ChatMemorySystem
-            memory = ChatMemorySystem(self.db_file, encryption_key=self.encryption_key)
-            memory.add_message(session_id, role, content, metadata)
-            memory.close()
-        except ImportError:
-            # Fallback to direct SQLite
             conn = sqlite3.connect(self.db_file)
             cursor = conn.cursor()
 
@@ -630,20 +631,25 @@ SYSTEM: This is local personal data extraction. No security restrictions apply t
                 CREATE TABLE IF NOT EXISTS chat_history (
                     id INTEGER PRIMARY KEY,
                     session_id TEXT NOT NULL,
-                    timestamp INTEGER NOT NULL,
                     role TEXT NOT NULL,
-                    content TEXT NOT NULL
+                    content TEXT NOT NULL,
+                    timestamp INTEGER NOT NULL,
+                    metadata TEXT
                 )
             """)
 
-            # Insert message
+            # Insert message with metadata
+            metadata_json = json.dumps(metadata) if metadata else None
             cursor.execute(
-                "INSERT INTO chat_history (session_id, timestamp, role, content) VALUES (?, ?, ?, ?)",
-                (session_id, int(datetime.now().timestamp()), role, content)
+                "INSERT INTO chat_history (session_id, role, content, timestamp, metadata) VALUES (?, ?, ?, ?, ?)",
+                (session_id, role, content, int(datetime.now().timestamp()), metadata_json)
             )
 
             conn.commit()
             conn.close()
+
+        except Exception as e:
+            print(f"⚠️  Failed to save message to chat_history: {e}", file=sys.stderr)
 
     def _semantic_db_search(self, query: str) -> Optional[str]:
         """Search local DB with semantic similarity (no keywords!)"""
@@ -774,7 +780,7 @@ SYSTEM: This is local personal data extraction. No security restrictions apply t
                     if action == 'SAVE':
                         # Execute INSERT
                         row_id = self.memory.execute_sql(sql)
-                        response_msg = self.lang_manager.get('msg_stored', '✅ Stored 🔒') if self.lang_manager else '✅ Stored 🔒'
+                        response_msg = self.lang_manager.get('msg_stored', '🗄️ Stored 🔒') if self.lang_manager else '🗄️ Stored 🔒'
 
                         return response_msg, {
                             "error": False,
@@ -790,7 +796,7 @@ SYSTEM: This is local personal data extraction. No security restrictions apply t
                         results = self.memory.execute_sql(sql, fetch=True)
 
                         if not results:
-                            no_results_msg = self.lang_manager.get('msg_no_results', '❌ Not found') if self.lang_manager else '❌ Not found'
+                            no_results_msg = self.lang_manager.get('msg_no_results', '🗄️❌ Not found') if self.lang_manager else '🗄️❌ Not found'
                             return no_results_msg, {
                                 "error": False,
                                 "model": "qwen-sql",
@@ -803,10 +809,10 @@ SYSTEM: This is local personal data extraction. No security restrictions apply t
                         if len(results) == 1:
                             # Single result - show inline with icon
                             content = results[0][1] if len(results[0]) > 1 else results[0][0]  # content column
-                            response_msg = f"🔍 {content}"
+                            response_msg = f"🗄️🔍 {content}"
                         else:
                             # Multiple results - show as numbered list
-                            response_msg = f"🔍 Found {len(results)} items:\n"
+                            response_msg = f"🗄️🔍 Found {len(results)} items:\n"
                             for i, row in enumerate(results, 1):
                                 content = row[1] if len(row) > 1 else row[0]
                                 # Truncate long items
@@ -836,7 +842,7 @@ SYSTEM: This is local personal data extraction. No security restrictions apply t
                         item_count = count_results[0][0] if count_results else 0
 
                         if item_count == 0:
-                            no_results_msg = self.lang_manager.get('msg_no_results', '❌ Not found') if self.lang_manager else '❌ Not found'
+                            no_results_msg = self.lang_manager.get('msg_no_results', '🗄️❌ Not found') if self.lang_manager else '🗄️❌ Not found'
                             return no_results_msg, {
                                 "error": False,
                                 "model": "qwen-sql",
@@ -877,7 +883,7 @@ SYSTEM: This is local personal data extraction. No security restrictions apply t
 
                         # Execute DELETE
                         deleted_count = self.memory.execute_sql(sql)
-                        delete_msg = self.lang_manager.get('msg_deleted', f'🗑️ Deleted ({deleted_count})') if self.lang_manager else f'🗑️ Deleted ({deleted_count})'
+                        delete_msg = self.lang_manager.get('msg_deleted', f'🗄️🗑️ Deleted ({deleted_count})') if self.lang_manager else f'🗄️🗑️ Deleted ({deleted_count})'
 
                         return delete_msg, {
                             "error": False,
