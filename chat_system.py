@@ -725,7 +725,58 @@ SYSTEM: This is local personal data extraction. No security restrictions apply t
                         }
 
                     elif action == 'DELETE':
-                        # Execute DELETE (with confirmation handled by mydata handler logic if needed)
+                        # First: Check how many items would be deleted
+                        count_sql = sql.replace('DELETE FROM', 'SELECT COUNT(*) FROM', 1)
+                        if 'WHERE' in count_sql:
+                            count_sql = count_sql.split('WHERE')[0] + 'FROM mydata WHERE' + count_sql.split('WHERE')[1]
+                        else:
+                            count_sql = 'SELECT COUNT(*) FROM mydata'
+
+                        count_results = self.memory.execute_sql(count_sql, fetch=True)
+                        item_count = count_results[0][0] if count_results else 0
+
+                        if item_count == 0:
+                            no_results_msg = self.lang_manager.get('msg_no_results', '❌ Not found') if self.lang_manager else '❌ Not found'
+                            return no_results_msg, {
+                                "error": False,
+                                "model": "qwen-sql",
+                                "tokens": 0,
+                                "source": "local",
+                                "action": "DELETE_EMPTY"
+                            }
+
+                        # Ask for confirmation (Yes is default!)
+                        confirm_prompt = self.lang_manager.get('msg_delete_confirm_prompt', 'Delete {count} items? (Y/n): ') if self.lang_manager else 'Delete {count} items? (Y/n): '
+                        confirm_prompt = confirm_prompt.replace('{count}', str(item_count))
+
+                        print(f"\n{confirm_prompt}", end='', flush=True)
+
+                        # Read user input
+                        try:
+                            import sys
+                            response = input().strip().lower()
+
+                            # Default is YES! Only 'n' or 'no' cancels
+                            if response in ['n', 'no', 'nein', 'nee']:
+                                cancelled_msg = self.lang_manager.get('msg_delete_cancelled', '❌ Delete cancelled') if self.lang_manager else '❌ Delete cancelled'
+                                return cancelled_msg, {
+                                    "error": False,
+                                    "model": "qwen-sql",
+                                    "tokens": 0,
+                                    "source": "local",
+                                    "action": "DELETE_CANCELLED"
+                                }
+                        except (EOFError, KeyboardInterrupt):
+                            cancelled_msg = self.lang_manager.get('msg_delete_cancelled', '❌ Delete cancelled') if self.lang_manager else '❌ Delete cancelled'
+                            return cancelled_msg, {
+                                "error": False,
+                                "model": "qwen-sql",
+                                "tokens": 0,
+                                "source": "local",
+                                "action": "DELETE_CANCELLED"
+                            }
+
+                        # Execute DELETE
                         deleted_count = self.memory.execute_sql(sql)
                         delete_msg = self.lang_manager.get('msg_deleted', f'🗑️ Deleted ({deleted_count})') if self.lang_manager else f'🗑️ Deleted ({deleted_count})'
 
