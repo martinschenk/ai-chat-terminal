@@ -642,35 +642,7 @@ fi
 echo -n "  • sqlcipher3-binary (Python)... "
 pip3 install --user --quiet sqlcipher3-binary 2>/dev/null && echo -e "${GREEN}✓${RESET}" || echo -e "${YELLOW}⚠${RESET}"
 
-# Step 6: Large Models - Interactive Choice
-echo -e "\n${CYAN}${BOLD}${LANG_STRINGS[MODEL_RECOMMENDATION]}${RESET}"
-echo -e "${DIM}${LANG_STRINGS[LARGE_MODELS]}${RESET}\n"
-
-# Model recommendations based on RAM
-declare -A MODEL_RECOMMENDATIONS
-
-if [ $SYSTEM_RAM -ge 16 ]; then
-    MODEL_RECOMMENDATIONS[presidio]="recommended"
-    MODEL_RECOMMENDATIONS[spacy_multi]="recommended"
-elif [ $SYSTEM_RAM -ge 8 ]; then
-    MODEL_RECOMMENDATIONS[presidio]="recommended"
-    MODEL_RECOMMENDATIONS[spacy_multi]="optional"
-else
-    MODEL_RECOMMENDATIONS[presidio]="optional"
-    MODEL_RECOMMENDATIONS[spacy_multi]="skip"
-fi
-
-# Note: Phi-3 already installed as mandatory requirement above
-
-# Step 7: Privacy Level Configuration (automatic based on installed components)
-# Check if Presidio was installed and set privacy level accordingly
-if grep -q "PRESIDIO_ENABLED=true" "$INSTALL_DIR/config" 2>/dev/null; then
-    echo "PRIVACY_LEVEL=enhanced" >> "$INSTALL_DIR/config"
-    echo -e "\n${GREEN}✓${RESET} Privacy: Enhanced (Presidio + AI Classifier)"
-else
-    echo "PRIVACY_LEVEL=basic" >> "$INSTALL_DIR/config"
-    echo -e "\n${GREEN}✓${RESET} Privacy: Basic (AI Classifier only)"
-fi
+# v11.0.0: No optional models - only Qwen 2.5 Coder (already installed above)
 
 # Save language preference and other AI_CHAT_* settings
 cat >> "$INSTALL_DIR/config" << EOF
