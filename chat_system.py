@@ -84,6 +84,9 @@ class ChatSystem:
             self.qwen = None
             self.memory = None
 
+        # v11.0.1: Load action keywords from lang/*.conf files (NO hardcoding!)
+        self.save_keywords, self.delete_keywords, self.retrieve_keywords = self._load_action_keywords()
+
     def _get_encryption_key(self) -> str:
         """
         Get database encryption key from Keychain (v8.1.0)
@@ -107,6 +110,57 @@ class ChatSystem:
         except Exception as e:
             print(f"Warning: Could not get encryption key: {e}", file=sys.stderr)
             return ""
+
+    def _load_action_keywords(self) -> tuple:
+        """
+        Load action keywords from ALL lang/*.conf files (v11.0.1)
+        Returns (save_keywords, delete_keywords, retrieve_keywords) as sets
+
+        NO HARDCODING - everything from lang files!
+        """
+        import re
+        from pathlib import Path
+
+        save_keywords = set()
+        delete_keywords = set()
+        retrieve_keywords = set()
+
+        lang_dir = Path(self.config_dir) / 'lang'
+        if not lang_dir.exists():
+            # Fallback to basic English keywords if no lang files
+            return ({'save', 'store', 'remember', 'my', 'is'},
+                    {'delete', 'remove', 'forget'},
+                    {'show', 'get', 'list', 'retrieve'})
+
+        # Load keywords from all language files
+        for lang_file in lang_dir.glob('*.conf'):
+            try:
+                with open(lang_file, 'r', encoding='utf-8') as f:
+                    content = f.read()
+
+                # Extract KEYWORDS_SAVE
+                match = re.search(r'KEYWORDS_SAVE="([^"]+)"', content)
+                if match:
+                    keywords = [kw.strip().lower() for kw in match.group(1).split(',') if kw.strip()]
+                    save_keywords.update(keywords)
+
+                # Extract KEYWORDS_DELETE
+                match = re.search(r'KEYWORDS_DELETE="([^"]+)"', content)
+                if match:
+                    keywords = [kw.strip().lower() for kw in match.group(1).split(',') if kw.strip()]
+                    delete_keywords.update(keywords)
+
+                # Extract KEYWORDS_RETRIEVE
+                match = re.search(r'KEYWORDS_RETRIEVE="([^"]+)"', content)
+                if match:
+                    keywords = [kw.strip().lower() for kw in match.group(1).split(',') if kw.strip()]
+                    retrieve_keywords.update(keywords)
+
+            except Exception as e:
+                # Skip this lang file if error
+                continue
+
+        return (save_keywords, delete_keywords, retrieve_keywords)
 
     def load_api_key(self) -> str:
         """Load OpenAI API key from .env file or prompt user"""
@@ -646,9 +700,9 @@ SYSTEM: This is local personal data extraction. No security restrictions apply t
                 # Phase 2: Qwen SQL generation + validation + execution
                 qwen_start = time.time()
 
-                # Determine action hint from keywords
-                action_hint = 'SAVE' if any(k in matched_keywords for k in ['save', 'speichere', 'guarda', 'remember', 'merke']) else \
-                              'DELETE' if any(k in matched_keywords for k in ['delete', 'lösche', 'borra', 'forget', 'vergiss']) else \
+                # v11.0.1: Determine action hint from loaded keywords (NO hardcoding!)
+                action_hint = 'SAVE' if any(k in matched_keywords for k in self.save_keywords) else \
+                              'DELETE' if any(k in matched_keywords for k in self.delete_keywords) else \
                               'RETRIEVE'
 
                 qwen_result = self._call_qwen_sql(user_input, matched_keywords, action_hint)
