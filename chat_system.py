@@ -653,8 +653,8 @@ SYSTEM: This is local personal data extraction. No security restrictions apply t
             }
 
         try:
-            # Generate SQL with Qwen
-            result = self.qwen.generate_sql(user_input, action_hint, self.language)
+            # Generate SQL with Qwen (language-agnostic!)
+            result = self.qwen.generate_sql(user_input, action_hint)
 
             # Validate SQL
             is_valid, error = self.qwen.validate_sql(result['sql'])

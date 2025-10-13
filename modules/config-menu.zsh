@@ -58,18 +58,17 @@ show_config_menu() {
         echo -e "${PURPLE}│${RESET}  ${GREEN}[4]${RESET} ${LANG_CONFIG_OPT5}"
         echo -e "${PURPLE}│${RESET}  ${GREEN}[5]${RESET} 💬 ${LANG_CONTEXT_SET:-Set context window}"
         echo -e "${PURPLE}│${RESET}  ${GREEN}[6]${RESET} 🔑 Set OpenAI API key"
-        echo -e "${PURPLE}│${RESET}  ${GREEN}[7]${RESET} 🧠 ${LANG_CONFIG_MEMORY_SYSTEM:-Memory system}"
-        echo -e "${PURPLE}│${RESET}  ${GREEN}[8]${RESET} 🔒 Privacy & AI Models"
-        echo -e "${PURPLE}│${RESET}  ${GREEN}[9]${RESET} ⚡ Toggle Ollama always-on"
-        echo -e "${PURPLE}│${RESET}  ${GREEN}[10]${RESET} 🧹 ${LANG_CONFIG_OPT7}"
-        echo -e "${PURPLE}│${RESET}  ${GREEN}[11]${RESET} ℹ️  ${LANG_CONFIG_ABOUT:-About & Version}"
-        echo -e "${PURPLE}│${RESET}  ${GREEN}[12]${RESET} ${LANG_CONFIG_OPT6}"
+        echo -e "${PURPLE}│${RESET}  ${GREEN}[7]${RESET} 🔒 Privacy & AI Models"
+        echo -e "${PURPLE}│${RESET}  ${GREEN}[8]${RESET} ⚡ Toggle Ollama always-on"
+        echo -e "${PURPLE}│${RESET}  ${GREEN}[9]${RESET} 🧹 ${LANG_CONFIG_OPT7}"
+        echo -e "${PURPLE}│${RESET}  ${GREEN}[10]${RESET} ℹ️  ${LANG_CONFIG_ABOUT:-About & Version}"
+        echo -e "${PURPLE}│${RESET}  ${GREEN}[11]${RESET} ${LANG_CONFIG_OPT6}"
         echo -e "${PURPLE}│${RESET}"
-        echo -e "${PURPLE}│${RESET}  ${RED}[13]${RESET} 🗑️  ${LANG_CONFIG_OPT9}"
+        echo -e "${PURPLE}│${RESET}  ${RED}[12]${RESET} 🗑️  ${LANG_CONFIG_OPT9}"
         echo -e "${PURPLE}└─────────────────────────────────────${RESET}"
         echo ""
 
-        echo -ne "${CYAN}${LANG_CONFIG_SELECT_OPTION:-Select [1-13]:} ${RESET}"
+        echo -ne "${CYAN}${LANG_CONFIG_SELECT_OPTION:-Select [1-12]:} ${RESET}"
 
         # Handle ESC key detection in config menu
         local choice=""
@@ -127,25 +126,22 @@ show_config_menu() {
             6)  # Set OpenAI API key
                 change_openai_api_key
                 ;;
-            7)  # Memory system
-                memory_system_menu
-                ;;
-            8)  # Privacy & AI Models
+            7)  # Privacy & AI Models
                 privacy_models_menu
                 ;;
-            9)  # Toggle Ollama always-on
+            8)  # Toggle Ollama always-on
                 toggle_ollama_always_on
                 ;;
-            10)  # Clear cache
+            9)  # Clear cache
                 clear_chat_cache
                 ;;
-            11)  # About & Version
+            10)  # About & Version
                 show_about_info
                 ;;
-            12)  # Back to chat
+            11)  # Back to chat
                 return
                 ;;
-            13)  # Uninstall
+            12)  # Uninstall
                 uninstall_terminal
                 # If uninstall was cancelled, we continue the loop
                 # If uninstall succeeded, the script will have exited
@@ -781,185 +777,6 @@ privacy_models_menu() {
 
             *)
                 echo -e "${RED}Invalid option${RESET}"
-                sleep 1
-                ;;
-        esac
-    done
-}
-
-# Memory system menu
-memory_system_menu() {
-    local CYAN='\033[0;36m'
-    local GREEN='\033[0;32m'
-    local YELLOW='\033[1;33m'
-    local PURPLE='\033[0;35m'
-    local RED='\033[0;31m'
-    local BLUE='\033[0;34m'
-    local RESET='\033[0m'
-    local BOLD='\033[1m'
-    local DIM='\033[2m'
-
-    while true; do
-        clear
-        echo -e "${BOLD}${CYAN}🧠 ${LANG_MEMORY_TITLE:-Memory System}${RESET}\n"
-
-        # Get memory statistics
-        local MEMORY_STATS=""
-        if [[ -f "$SCRIPT_DIR/memory_system.py" ]]; then
-            MEMORY_STATS=$(python3 "$SCRIPT_DIR/memory_system.py" stats 2>/dev/null)
-        fi
-
-        # Parse stats
-        local TOTAL_MESSAGES="0"
-        local TOTAL_SESSIONS="0"
-        local DB_SIZE="0.0"
-        local OLDEST_DATE="N/A"
-        local NEWEST_DATE="N/A"
-
-        if [[ -n "$MEMORY_STATS" ]]; then
-            TOTAL_MESSAGES=$(echo "$MEMORY_STATS" | jq -r '.total_messages // 0' 2>/dev/null)
-            TOTAL_SESSIONS=$(echo "$MEMORY_STATS" | jq -r '.total_sessions // 0' 2>/dev/null)
-            DB_SIZE=$(echo "$MEMORY_STATS" | jq -r '.db_size_mb // 0' 2>/dev/null)
-            OLDEST_DATE=$(echo "$MEMORY_STATS" | jq -r '.oldest_message // "N/A"' 2>/dev/null)
-            NEWEST_DATE=$(echo "$MEMORY_STATS" | jq -r '.newest_message // "N/A"' 2>/dev/null)
-        fi
-
-        echo -e "${PURPLE}┌─────────────────────────────────────${RESET}"
-        echo -e "${PURPLE}│${RESET}  ${BOLD}Memory Database Statistics:${RESET}"
-        echo -e "${PURPLE}│${RESET}  ├─ Total Messages: ${YELLOW}$TOTAL_MESSAGES${RESET}"
-        echo -e "${PURPLE}│${RESET}  ├─ Chat Sessions: ${YELLOW}$TOTAL_SESSIONS${RESET}"
-        echo -e "${PURPLE}│${RESET}  ├─ Database Size: ${YELLOW}${DB_SIZE} MB${RESET}"
-        echo -e "${PURPLE}│${RESET}  ├─ Oldest Message: ${YELLOW}$OLDEST_DATE${RESET}"
-        echo -e "${PURPLE}│${RESET}  └─ Newest Message: ${YELLOW}$NEWEST_DATE${RESET}"
-        echo -e "${PURPLE}├─────────────────────────────────────${RESET}"
-        echo -e "${PURPLE}│${RESET}  ${GREEN}[1]${RESET} ${LANG_MEMORY_SEARCH:-Search memories}"
-        echo -e "${PURPLE}│${RESET}  ${GREEN}[2]${RESET} Show recent messages"
-        echo -e "${PURPLE}│${RESET}  ${GREEN}[3]${RESET} Database statistics"
-        echo -e "${PURPLE}│${RESET}  ${YELLOW}[4]${RESET} Smart cleanup (5000+ msgs/50MB)"
-        echo -e "${PURPLE}│${RESET}  ${GREEN}[5]${RESET} Back to main menu"
-        echo -e "${PURPLE}└─────────────────────────────────────${RESET}"
-        echo ""
-
-        echo -ne "${CYAN}Select [1-5]: ${RESET}"
-
-        # Handle ESC key detection in memory menu
-        local choice=""
-        if [[ "$ENABLE_ESC" == "true" ]] && [[ -t 0 ]]; then
-            # Save current terminal settings
-            OLD_STTY=$(stty -g)
-            stty raw -echo min 1 time 0 2>/dev/null
-
-            while true; do
-                char=$(dd bs=1 count=1 2>/dev/null)
-
-                if [[ $char == $'\e' ]]; then
-                    # ESC pressed - return to terminal
-                    stty "$OLD_STTY" 2>/dev/null
-                    echo -e "\n\n${YELLOW}👋 ${LANG_MSG_GOODBYE:-Goodbye!}${RESET}\n"
-                    return
-                elif [[ $char == $'\r' ]] || [[ $char == $'\n' ]]; then
-                    # Enter pressed
-                    stty "$OLD_STTY" 2>/dev/null
-                    echo
-                    break
-                elif [[ $char == $'\177' ]] || [[ $char == $'\b' ]]; then
-                    # Backspace
-                    if [[ -n "$choice" ]]; then
-                        choice="${choice%?}"
-                        echo -ne "\b \b"
-                    fi
-                else
-                    # Normal character
-                    choice="${choice}${char}"
-                    echo -n "$char"
-                fi
-            done
-        else
-            # Simple read without ESC
-            read -r choice
-        fi
-
-        case $choice in
-            1)  # Search memories
-                echo ""
-                echo -ne "${CYAN}${LANG_MEMORY_ENTER_QUERY:-Enter search query:} ${RESET}"
-                read -r query
-                if [[ -n "$query" ]]; then
-                    echo -e "\n${YELLOW}Searching memories for: \"$query\"${RESET}\n"
-                    if [[ -f "$SCRIPT_DIR/memory_system.py" ]]; then
-                        python3 "$SCRIPT_DIR/memory_system.py" search "$query" 2>/dev/null || echo -e "${RED}Error searching memories${RESET}"
-                    else
-                        echo -e "${RED}Memory system not available${RESET}"
-                    fi
-                    echo ""
-                    echo -e "${CYAN}Press any key to continue...${RESET}"
-                    read -r
-                fi
-                ;;
-            2)  # Show recent messages
-                echo -e "\n${YELLOW}Recent messages from current session:${RESET}\n"
-                # Get current command from config
-                local CONFIG_FILE="$HOME/.aichat/config"
-                local COMMAND_CHAR="chat"
-                if [[ -f "$CONFIG_FILE" ]]; then
-                    source "$CONFIG_FILE"
-                    COMMAND_CHAR="${AI_CHAT_COMMAND:-chat}"
-                fi
-                local CHAT_NAME="${COMMAND_CHAR}_session"
-                if [[ -f "/tmp/chat_cache/$CHAT_NAME" ]]; then
-                    python3 -c "
-import json
-try:
-    with open('/tmp/chat_cache/$CHAT_NAME', 'r') as f:
-        messages = json.load(f)
-    for msg in messages[-10:]:  # Last 10 messages
-        role = msg.get('role', 'unknown')
-        content = msg.get('content', '')[:100]
-        print(f'{role}: {content}...')
-except:
-    print('No recent messages found')
-"
-                else
-                    echo "No recent chat session found"
-                fi
-                echo ""
-                echo -e "${CYAN}Press any key to continue...${RESET}"
-                read -r
-                ;;
-            3)  # Database statistics
-                echo -e "\n${YELLOW}Detailed Statistics:${RESET}\n"
-                if [[ -f "$SCRIPT_DIR/memory_system.py" ]]; then
-                    python3 "$SCRIPT_DIR/memory_system.py" stats 2>/dev/null | jq . 2>/dev/null || echo -e "${RED}Error getting statistics${RESET}"
-                else
-                    echo -e "${RED}Memory system not available${RESET}"
-                fi
-                echo ""
-                echo -e "${CYAN}Press any key to continue...${RESET}"
-                read -r
-                ;;
-            4)  # Smart cleanup
-                echo ""
-                echo -e "${YELLOW}⚠️  Smart Cleanup: Removes low-priority messages if over 5000 msgs or 50MB${RESET}"
-                echo -e "${YELLOW}   Keeps important messages (names, TODOs) forever${RESET}"
-                echo -ne "${CYAN}Continue? (y/N): ${RESET}"
-                read -r confirm
-                if [[ "$confirm" =~ ^[Yy]$ ]]; then
-                    if [[ -f "$SCRIPT_DIR/memory_system.py" ]]; then
-                        local RESULT=$(python3 "$SCRIPT_DIR/memory_system.py" cleanup force 2>/dev/null)
-                        echo -e "${GREEN}$RESULT${RESET}"
-                    else
-                        echo -e "${RED}Memory system not available${RESET}"
-                    fi
-                    echo ""
-                    echo -e "${CYAN}Press any key to continue...${RESET}"
-                    read -r
-                fi
-                ;;
-            5)  # Back
-                return
-                ;;
-            *)
-                echo -e "${RED}${LANG_CONFIG_INVALID:-Invalid option. Please try again.}${RESET}"
                 sleep 1
                 ;;
         esac

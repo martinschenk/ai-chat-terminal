@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-AI Chat Terminal v11.0.0 - Memory System (KISS!)
+AI Chat Terminal v11.0.3 - Memory System (KISS + Duplicate Prevention!)
 Simple SQLite database with mydata table - NO vector embeddings, NO complex PII categories!
+
+v11.0.3: Added UNIQUE(content, meta) constraint to prevent duplicates
+- Same meta+content → INSERT OR REPLACE updates timestamp instead of creating duplicate
+- Example: "my name is Martin" twice → only ONE entry in DB
 """
 
 import os
@@ -34,7 +38,7 @@ except ImportError:
 
 class ChatMemorySystem:
     """
-    Simple memory system for AI Chat Terminal v11.0.0
+    Simple memory system for AI Chat Terminal v11.0.3
 
     Database schema:
         mydata (
@@ -42,10 +46,12 @@ class ChatMemorySystem:
             content TEXT NOT NULL,     -- The actual data
             meta TEXT,                  -- Simple label: "email", "geburtstag", etc.
             lang TEXT,                  -- Language: en, de, es
-            timestamp INTEGER           -- Unix timestamp
+            timestamp INTEGER,          -- Unix timestamp
+            UNIQUE(content, meta)       -- v11.0.3: Prevent duplicates
         )
 
     No vector embeddings, no complex metadata, no PII categories!
+    INSERT OR REPLACE ensures same content+meta updates timestamp, not creates duplicate!
     """
 
     def __init__(self, db_path=None, encryption_key=None):
@@ -141,13 +147,14 @@ class ChatMemorySystem:
         """Create simple mydata table - NO vector embeddings, NO complex metadata!"""
         try:
             self.db.executescript("""
-                -- Simple data storage table (v11.0.0 KISS!)
+                -- Simple data storage table (v11.0.3 KISS + Duplicate Prevention!)
                 CREATE TABLE IF NOT EXISTS mydata (
                     id INTEGER PRIMARY KEY,
                     content TEXT NOT NULL,
                     meta TEXT,
                     lang TEXT DEFAULT 'en',
-                    timestamp INTEGER DEFAULT (strftime('%s','now'))
+                    timestamp INTEGER DEFAULT (strftime('%s','now')),
+                    UNIQUE(content, meta)  -- v11.0.3: Prevent duplicate content+meta
                 );
 
                 -- Indexes for performance
@@ -163,7 +170,7 @@ class ChatMemorySystem:
 
     def execute_sql(self, sql: str, params: tuple = (), fetch: bool = False):
         """
-        Execute SQL directly on database (v11.0.0 - SQL from Qwen!)
+        Execute SQL directly on database (v11.0.3 - SQL from Qwen with duplicate prevention!)
 
         Args:
             sql: SQL statement (validated by qwen_sql_generator)
@@ -172,6 +179,8 @@ class ChatMemorySystem:
 
         Returns:
             Query results if fetch=True, None otherwise
+
+        Note: INSERT OR REPLACE prevents duplicates with same content+meta
         """
         try:
             cursor = self.db.execute(sql, params)

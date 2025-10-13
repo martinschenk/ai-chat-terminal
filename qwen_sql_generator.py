@@ -36,14 +36,13 @@ class QwenSQLGenerator:
         except FileNotFoundError:
             raise RuntimeError("❌ Ollama not installed. Install from: https://ollama.ai")
 
-    def generate_sql(self, user_input: str, action_hint: str, language: str = 'en') -> dict:
+    def generate_sql(self, user_input: str, action_hint: str) -> dict:
         """
-        Generate SQL query from user input
+        Generate SQL query from user input (language-agnostic!)
 
         Args:
-            user_input: User's raw input ("save my email test@test.com")
+            user_input: User's raw input ("save my email test@test.com" or "speichere meine Email...")
             action_hint: Detected action (SAVE, RETRIEVE, DELETE)
-            language: User's language (en, de, es)
 
         Returns:
             dict: {
@@ -52,9 +51,12 @@ class QwenSQLGenerator:
                 'confidence': 0.0-1.0,
                 'meta': extracted meta label (optional)
             }
+
+        Note: Qwen 2.5 Coder is multilingual! Prompt contains ALL language examples (EN/DE/ES).
+              Language detection happens automatically - mixed inputs work too!
         """
-        # Build context-aware prompt for Qwen
-        prompt = self._build_prompt(user_input, action_hint, language)
+        # Build multilingual prompt for Qwen (shows ALL language examples)
+        prompt = self._build_prompt(user_input, action_hint)
 
         # Call Qwen
         result_text = self._call_qwen(prompt)
@@ -62,9 +64,9 @@ class QwenSQLGenerator:
         # Parse response
         return self._parse_qwen_output(result_text, user_input)
 
-    def _build_prompt(self, user_input: str, action_hint: str, language: str) -> str:
-        """Build Qwen prompt with examples"""
-        prompt = f"""You are a SQL generator for SQLite database 'mydata' with this schema:
+    def _build_prompt(self, user_input: str, action_hint: str) -> str:
+        """Build multilingual Qwen prompt with ALL language examples"""
+        prompt = f"""You are a multilingual SQL generator for SQLite database 'mydata' with this schema:
 
 CREATE TABLE mydata (
     id INTEGER PRIMARY KEY,
@@ -178,9 +180,9 @@ SQL: NO_ACTION
 
 Now generate SQL for:
 Action: {action_hint}
-Language: {language}
 Input: "{user_input}"
 
+IMPORTANT: Detect language automatically from input! Mixed languages OK (e.g., "my email ist..." → extract "email", not "email ist")!
 Respond with ONLY the SQL statement or "NO_ACTION". No explanation needed.
 """
         return prompt
