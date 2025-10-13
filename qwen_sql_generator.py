@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Qwen 2.5 Coder SQL Generator (v11.0.0 - KISS Architecture!)
+Qwen 2.5 Coder SQL Generator (v11.0.3 - Duplicate Prevention!)
 Generates SQL directly for mydata table - NO complex extraction, NO PII categories!
+
+v11.0.3: INSERT OR REPLACE to prevent duplicates
+- Same meta+content → updates existing entry instead of creating duplicate
+- Example: "my name is Martin" twice → only ONE entry in DB
 """
 
 import subprocess
@@ -73,63 +77,64 @@ CREATE TABLE mydata (
 Rules:
 1. Generate ONLY valid SQLite SQL
 2. Table name MUST be "mydata"
-3. For SAVE: Extract description for meta field (keep original language!)
-4. For RETRIEVE: Use LIKE for flexible matching
-5. For DELETE: Use LIKE to match both meta and content
-6. For false positives (tutorials, questions about DB): Return "NO_ACTION"
+3. For SAVE: Use INSERT OR REPLACE to prevent duplicates (same meta+content = update, not new row)
+4. For SAVE: Extract description for meta field (keep original language!)
+5. For RETRIEVE: Use LIKE for flexible matching
+6. For DELETE: Use LIKE to match both meta and content
+7. For false positives (tutorials, questions about DB): Return "NO_ACTION"
 
 Examples:
 
 SAVE (Explicit - English):
 Input: "save my email address test@example.com"
-SQL: INSERT INTO mydata (content, meta, lang) VALUES ('test@example.com', 'email address', 'en');
+SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('test@example.com', 'email address', 'en');
 
 Input: "remember my phone 234324987"
-SQL: INSERT INTO mydata (content, meta, lang) VALUES ('234324987', 'phone', 'en');
+SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('234324987', 'phone', 'en');
 
 Input: "save sisters birthday 02 July 1998"
-SQL: INSERT INTO mydata (content, meta, lang) VALUES ('02 July 1998', 'sisters birthday', 'en');
+SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('02 July 1998', 'sisters birthday', 'en');
 
 SAVE (Implicit - English):
 Input: "my main email is test@example.com"
-SQL: INSERT INTO mydata (content, meta, lang) VALUES ('test@example.com', 'main email', 'en');
+SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('test@example.com', 'main email', 'en');
 
 Input: "my phone is 234324987"
-SQL: INSERT INTO mydata (content, meta, lang) VALUES ('234324987', 'phone', 'en');
+SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('234324987', 'phone', 'en');
 
 Input: "my name is John Smith"
-SQL: INSERT INTO mydata (content, meta, lang) VALUES ('John Smith', 'name', 'en');
+SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('John Smith', 'name', 'en');
 
 SAVE (Explicit - German):
 Input: "speichere meine Email test@test.de"
-SQL: INSERT INTO mydata (content, meta, lang) VALUES ('test@test.de', 'Email', 'de');
+SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('test@test.de', 'Email', 'de');
 
 Input: "merke Omas Geburtstag 15.03.1950"
-SQL: INSERT INTO mydata (content, meta, lang) VALUES ('15.03.1950', 'Omas Geburtstag', 'de');
+SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('15.03.1950', 'Omas Geburtstag', 'de');
 
 Input: "speichere Koffercode Hotel 1234"
-SQL: INSERT INTO mydata (content, meta, lang) VALUES ('1234', 'Koffercode Hotel', 'de');
+SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('1234', 'Koffercode Hotel', 'de');
 
 SAVE (Implicit - German):
 Input: "meine Haupt-Email ist test@test.de"
-SQL: INSERT INTO mydata (content, meta, lang) VALUES ('test@test.de', 'Haupt-Email', 'de');
+SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('test@test.de', 'Haupt-Email', 'de');
 
 Input: "mein Name ist Hans Müller"
-SQL: INSERT INTO mydata (content, meta, lang) VALUES ('Hans Müller', 'Name', 'de');
+SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('Hans Müller', 'Name', 'de');
 
 SAVE (Explicit - Spanish):
 Input: "guarda mi correo test@ejemplo.es"
-SQL: INSERT INTO mydata (content, meta, lang) VALUES ('test@ejemplo.es', 'correo', 'es');
+SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('test@ejemplo.es', 'correo', 'es');
 
 Input: "guarda cumpleaños hermana 02 Julio 1998"
-SQL: INSERT INTO mydata (content, meta, lang) VALUES ('02 Julio 1998', 'cumpleaños hermana', 'es');
+SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('02 Julio 1998', 'cumpleaños hermana', 'es');
 
 SAVE (Implicit - Spanish):
 Input: "mi correo principal es test@ejemplo.es"
-SQL: INSERT INTO mydata (content, meta, lang) VALUES ('test@ejemplo.es', 'correo principal', 'es');
+SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('test@ejemplo.es', 'correo principal', 'es');
 
 Input: "mi nombre es María García"
-SQL: INSERT INTO mydata (content, meta, lang) VALUES ('María García', 'nombre', 'es');
+SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('María García', 'nombre', 'es');
 
 RETRIEVE (specific item):
 Input: "show my email"
