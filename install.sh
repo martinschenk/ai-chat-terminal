@@ -120,36 +120,14 @@ get_cpu_cores() {
 check_installed_models() {
     local models_found=()
 
-    # Check Ollama models
+    # v11.0.0: Only check Ollama models (Qwen 2.5 Coder)
+    # No more vector DB dependencies (sentence-transformers, spacy)!
     if command -v ollama &> /dev/null; then
         local ollama_models=$(ollama list 2>/dev/null | tail -n +2 | awk '{print $1}' || true)
         if [[ -n "$ollama_models" ]]; then
             while IFS= read -r model; do
                 models_found+=("ollama:$model")
             done <<< "$ollama_models"
-        fi
-    fi
-
-    # Check Python packages
-    local python_packages=(
-        "sentence-transformers:multilingual-e5-base"
-        "spacy:spaCy NLP"
-    )
-
-    for pkg_check in "${python_packages[@]}"; do
-        IFS=':' read -r pkg_name pkg_desc <<< "$pkg_check"
-        if python3 -c "import ${pkg_name//-/_}" 2>/dev/null; then
-            models_found+=("python:$pkg_desc")
-        fi
-    done
-
-    # Check spaCy models
-    if python3 -c "import spacy" 2>/dev/null; then
-        local spacy_models=$(python3 -c "import spacy; print(' '.join(spacy.util.get_installed_models()))" 2>/dev/null || true)
-        if [[ -n "$spacy_models" ]]; then
-            for model in $spacy_models; do
-                models_found+=("spacy:$model")
-            done
         fi
     fi
 
