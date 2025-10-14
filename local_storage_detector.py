@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Local Storage Detector - v11.0.2 (Smart Word Boundary Matching)
-Loads keywords from lang/*.conf files instead of hardcoding
-Uses word boundaries for short keywords (1-2 chars) to avoid false positives
+Local Storage Detector - v11.0.9 (Smart Pattern Matching!)
+Loads keywords from lang/*.conf files with pattern support
+Supports {x} placeholders for flexible matching (e.g., "my {x} is" matches ANY data type)
 
-v11.0.2 Changes:
-- Word boundary regex for short keywords like "es", "is", "my", "mi"
-- Prevents false matches like "es" in "test" or "test@ejemplo.es"
-- Fast substring matching for longer keywords (3+ chars)
+v11.0.9 Changes:
+- Pattern support: {x} = any word (e.g., "my {x} is" matches "my email is", "my phone is")
+- Solves ambiguity: "what is my email?" vs "my email is test@test.com"
+- Future-proof: New data types automatically supported without keyword updates
+- Maintains good generic single words (save, show, delete) + adds flexible patterns
 """
 
 import os
@@ -85,14 +86,49 @@ class LocalStorageDetector:
 
         return all_keywords
 
+    def _keyword_to_regex(self, keyword: str) -> str:
+        """
+        Convert keyword pattern to regex (v11.0.9)
+
+        Pattern syntax:
+            {x} → \w+ (any single word: email, phone, name, etc.)
+            {*} → .+? (any text, non-greedy - future use)
+
+        Examples:
+            "my {x} is"      → r'\bmy \w+ is\b'  (matches "my email is", "my phone is")
+            "what is my {x}" → r'\bwhat is my \w+\b' (matches "what is my email")
+            "save"           → r'\bsave\b' (no pattern, just word boundary)
+
+        Args:
+            keyword: Keyword with optional {x} or {*} placeholders
+
+        Returns:
+            Regex pattern string
+        """
+        # Escape special regex chars first
+        pattern = re.escape(keyword)
+
+        # Replace escaped placeholders with regex patterns
+        pattern = pattern.replace(r'\{x\}', r'\w+')  # {x} → any word
+        pattern = pattern.replace(r'\{\*\}', r'.+?')  # {*} → any text (non-greedy)
+
+        # Add word boundaries for clean matching
+        return r'\b' + pattern + r'\b'
+
     def detect_db_intent(self, text: str) -> Tuple[bool, List[str]]:
         """
         Quick check: Does text contain ANY database-related keyword?
 
-        v11.0.2: Smart matching with word boundaries for short keywords
-        - Short keywords (1-2 chars) use word boundary regex to avoid false positives
-        - Example: "es" (Spanish "is") won't match in "test" or ".es" domain
-        - Longer keywords (3+ chars) use fast substring matching
+        v11.0.9: Pattern-aware matching with {x} placeholder support
+        - Pattern keywords (e.g., "my {x} is") match flexibly (highest priority)
+        - Multi-word phrases get exact substring matching (medium priority)
+        - Single words use word boundary matching (lowest priority)
+
+        Examples:
+            "my email is test@test.com" → matches pattern "my {x} is" ✅
+            "what is my email?" → matches pattern "what is my {x}" ✅
+            "save this" → matches single word "save" ✅
+            "guarda mi correo test@test.es" → matches pattern "guarda mi {x}" ✅
 
         Args:
             text: User input message
@@ -100,29 +136,27 @@ class LocalStorageDetector:
         Returns:
             Tuple of (detected, matched_keywords)
             - detected: True if any keyword found
-            - matched_keywords: List of keywords that matched
+            - matched_keywords: List of keywords that matched (with original patterns)
         """
         text_lower = text.lower()
         matched = []
 
-        # v11.0.2: Smart keyword matching with word boundaries
+        # v11.0.9: Pattern-aware keyword matching
         for keyword in self.keywords:
-            # Short keywords (≤2 chars) need word boundary matching
-            # to avoid false positives like "es" in "test" or "test@ejemplo.es"
-            if len(keyword) <= 2:
-                # Use word boundary regex: \b ensures "es" only matches as standalone word
-                # Examples:
-                #   ✅ "mi correo es" → matches "es"
-                #   ✅ "esto es" → matches "es"
-                #   ❌ "test@ejemplo.es" → does NOT match "es" in "test"
-                #   ✅ "test@ejemplo.es" → matches "es" only at end as word
-                pattern = r'\b' + re.escape(keyword) + r'\b'
-                if re.search(pattern, text_lower):
+            if '{x}' in keyword or '{*}' in keyword:
+                # 1. Pattern keyword - convert to regex (HIGHEST PRIORITY)
+                regex_pattern = self._keyword_to_regex(keyword)
+                if re.search(regex_pattern, text_lower):
+                    matched.append(keyword)
+            elif ' ' in keyword:
+                # 2. Multi-word phrase - exact substring match (MEDIUM PRIORITY)
+                if keyword in text_lower:
                     matched.append(keyword)
             else:
-                # Longer keywords (≥3 chars) use fast substring matching
-                # No word boundaries needed - less likely to have false positives
-                if keyword in text_lower:
+                # 3. Single word - word boundary match (LOWEST PRIORITY)
+                # Use word boundary to avoid false positives
+                pattern = rf'\b{re.escape(keyword)}\b'
+                if re.search(pattern, text_lower):
                     matched.append(keyword)
 
         return (len(matched) > 0, matched)

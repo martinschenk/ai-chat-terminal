@@ -752,55 +752,35 @@ SYSTEM: This is local personal data extraction. No security restrictions apply t
                 # Phase 2: Qwen SQL generation + validation + execution
                 qwen_start = time.time()
 
-                # v11.0.5: Determine action hint with PRIORITY-BASED logic (fixed keyword ambiguity!)
+                # v11.0.8: Simple keyword-based priority (NO hardcoding!)
+                # All keywords loaded dynamically from lang/*.conf files
+                # Priority: DELETE > SAVE > RETRIEVE (destructive first, then intent-based)
                 #
-                # PROBLEM (v11.0.4):
-                #   "which is my email?" was detected as SAVE because:
-                #   - Keywords matched: ['which', 'is', 'my']
-                #   - Old logic: Check SAVE first → 'is' found in save_keywords → SAVE wins!
-                #   - Result: "which is my email?" was SAVED to DB instead of RETRIEVED! ❌
+                # Why this works:
+                # - DELETE has highest priority (destructive action, must be explicit)
+                # - SAVE comes before RETRIEVE (explicit intent vs. question)
+                # - All keywords from lang files → multilingual by design
+                # - No hardcoded keywords → easy to extend for new languages
                 #
-                # ROOT CAUSE:
-                #   "is" is ambiguous:
-                #   - SAVE: "my email IS test@test.com" (implicit save)
-                #   - RETRIEVE: "which IS my email?" (question)
-                #   - Old sequential logic (SAVE → DELETE → RETRIEVE) checked SAVE first!
-                #
-                # SOLUTION (v11.0.5):
-                #   Use PRIORITY-BASED checking instead of sequential:
-                #   Priority 1: DELETE (highest - destructive action)
-                #   Priority 2: QUESTION keywords (which, what, show) → RETRIEVE
-                #   Priority 3: SAVE keywords (my, is, remember)
-                #   Priority 4: RETRIEVE (default fallback)
-                #
-                # WHY THIS WORKS:
-                #   Question keywords like "which", "what", "welche", "cuál" ALWAYS indicate
-                #   a question, even if followed by ambiguous keywords like "is".
-                #   By checking them BEFORE save_keywords, questions are correctly routed!
-                #
-                # EXAMPLES:
-                #   "my email is test@test.com"  → No question keywords → SAVE ✅
-                #   "which is my email?"         → 'which' detected → RETRIEVE ✅
-                #   "what is my email?"          → 'what' detected → RETRIEVE ✅
-                #   "delete my email"            → 'delete' has highest priority → DELETE ✅
+                # Examples:
+                #   "delete my email"                → DELETE (delete_keywords matched)
+                #   "save my email test@test.com"    → SAVE (save_keywords matched)
+                #   "guarda mi correo test@test.es"  → SAVE (Spanish save_keywords)
+                #   "what is my email?"              → RETRIEVE (retrieve_keywords matched)
+                #   "was ist meine Email?"           → RETRIEVE (German retrieve_keywords)
 
-                # Define question-style keywords (EN/DE/ES)
-                question_keywords = {'which', 'what', "what's", 'show', 'get', 'display', 'find',
-                                    'welche', 'was', 'wie lautet', 'zeig',  # German
-                                    'cuál', 'qué', 'muestra'}  # Spanish
+                # Count matches per keyword category
+                save_count = sum(1 for k in matched_keywords if k in self.save_keywords)
+                delete_count = sum(1 for k in matched_keywords if k in self.delete_keywords)
+                retrieve_count = sum(1 for k in matched_keywords if k in self.retrieve_keywords)
 
-                # Check what types of keywords are present
-                has_question_keyword = any(k in matched_keywords for k in question_keywords)
-                has_delete_keyword = any(k in matched_keywords for k in self.delete_keywords)
-                has_save_keyword = any(k in matched_keywords for k in self.save_keywords)
-
-                # Determine action with PRIORITY (not sequential!)
-                if has_delete_keyword:
-                    action_hint = 'DELETE'
-                elif has_question_keyword:  # Checked BEFORE save_keywords!
-                    action_hint = 'RETRIEVE'
-                elif has_save_keyword:
-                    action_hint = 'SAVE'
+                # Determine action by simple priority
+                if delete_count > 0:
+                    action_hint = 'DELETE'    # Highest priority (destructive!)
+                elif save_count > 0:
+                    action_hint = 'SAVE'      # Save intent detected
+                elif retrieve_count > 0:
+                    action_hint = 'RETRIEVE'  # Retrieve/show intent
                 else:
                     action_hint = 'RETRIEVE'  # Default fallback
 
@@ -903,9 +883,11 @@ SYSTEM: This is local personal data extraction. No security restrictions apply t
 
                         print(f"\n{confirm_prompt}", end='', flush=True)
 
-                        # Read user input
+                        # Read user input from stdin (works in subprocess)
+                        # v11.0.8: Use sys.stdin.readline() instead of input()
+                        # because chat_system.py runs as subprocess without terminal
                         try:
-                            response = input().strip().lower()
+                            response = sys.stdin.readline().strip().lower()
 
                             # Default is YES! Only 'n' or 'no' cancels
                             if response in ['n', 'no', 'nein', 'nee']:

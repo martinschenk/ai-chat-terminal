@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Qwen 2.5 Coder SQL Generator (v11.0.3 - Duplicate Prevention!)
-Generates SQL directly for mydata table - NO complex extraction, NO PII categories!
+Qwen 2.5 Coder SQL Generator (v11.0.9 - Pattern-Powered!)
+Generates SQL directly for mydata table with diverse examples for ANY data type
 
-v11.0.3: INSERT OR REPLACE to prevent duplicates
-- Same meta+content → updates existing entry instead of creating duplicate
-- Example: "my name is Martin" twice → only ONE entry in DB
+v11.0.9: Pattern-based examples
+- Diverse examples show flexibility: email, phone, birthday, API key, wallet, etc.
+- Demonstrates that system works for ANY data type without updates
+- INSERT OR REPLACE prevents duplicates (same meta+content = update, not new row)
 """
 
 import subprocess
@@ -97,7 +98,7 @@ SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('234324987', 'p
 Input: "save sisters birthday 02 July 1998"
 SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('02 July 1998', 'sisters birthday', 'en');
 
-SAVE (Implicit - English):
+SAVE (Implicit - English - Shows pattern flexibility!):
 Input: "my main email is test@example.com"
 SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('test@example.com', 'main email', 'en');
 
@@ -106,6 +107,15 @@ SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('234324987', 'p
 
 Input: "my name is John Smith"
 SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('John Smith', 'name', 'en');
+
+Input: "my API key is sk-1234567890"
+SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('sk-1234567890', 'API key', 'en');
+
+Input: "my birthday is March 15, 1990"
+SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('March 15, 1990', 'birthday', 'en');
+
+Input: "my crypto wallet is 0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb"
+SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb', 'crypto wallet', 'en');
 
 SAVE (Explicit - German):
 Input: "speichere meine Email test@test.de"
@@ -124,6 +134,9 @@ SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('test@test.de',
 Input: "mein Name ist Hans Müller"
 SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('Hans Müller', 'Name', 'de');
 
+Input: "meine Telefonnummer ist 0176-12345678"
+SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('0176-12345678', 'Telefonnummer', 'de');
+
 SAVE (Explicit - Spanish):
 Input: "guarda mi correo test@ejemplo.es"
 SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('test@ejemplo.es', 'correo', 'es');
@@ -138,7 +151,13 @@ SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('test@ejemplo.e
 Input: "mi nombre es María García"
 SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('María García', 'nombre', 'es');
 
-RETRIEVE (specific item):
+Input: "mi teléfono es 612345678"
+SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('612345678', 'teléfono', 'es');
+
+Input: "recuerda código wifi CASA2024"
+SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('CASA2024', 'código wifi', 'es');
+
+RETRIEVE (specific item - Pattern "what is my {{x}}" works for ANY data type!):
 Input: "show my email"
 SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%email%' OR content LIKE '%email%' ORDER BY timestamp DESC LIMIT 5;
 
@@ -150,6 +169,15 @@ SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%email%' O
 
 Input: "what's my phone number?"
 SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%phone%' OR content LIKE '%phone%' OR meta LIKE '%number%' ORDER BY timestamp DESC LIMIT 5;
+
+Input: "what is my API key?"
+SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%API%' OR meta LIKE '%key%' OR content LIKE '%API%' ORDER BY timestamp DESC LIMIT 5;
+
+Input: "what is my crypto wallet?"
+SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%crypto%' OR meta LIKE '%wallet%' OR content LIKE '%crypto%' ORDER BY timestamp DESC LIMIT 5;
+
+Input: "what is my birthday?"
+SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%birthday%' OR content LIKE '%birthday%' ORDER BY timestamp DESC LIMIT 5;
 
 Input: "zeig Omas Geburtstag"
 SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%Geburtstag%' OR content LIKE '%Geburtstag%' ORDER BY timestamp DESC LIMIT 5;
@@ -189,11 +217,20 @@ DELETE:
 Input: "delete my email"
 SQL: DELETE FROM mydata WHERE meta LIKE '%email%' OR content LIKE '%email%';
 
+Input: "remove my phone number"
+SQL: DELETE FROM mydata WHERE meta LIKE '%phone%' OR content LIKE '%phone%' OR meta LIKE '%number%';
+
 Input: "lösche Omas Geburtstag"
 SQL: DELETE FROM mydata WHERE meta LIKE '%Geburtstag%' OR content LIKE '%Geburtstag%';
 
+Input: "entferne meine Email"
+SQL: DELETE FROM mydata WHERE meta LIKE '%Email%' OR content LIKE '%Email%';
+
 Input: "borra mi teléfono"
 SQL: DELETE FROM mydata WHERE meta LIKE '%teléfono%' OR meta LIKE '%telefono%';
+
+Input: "elimina mi correo"
+SQL: DELETE FROM mydata WHERE meta LIKE '%correo%' OR content LIKE '%correo%';
 
 FALSE POSITIVE (not a DB operation):
 Input: "how do I save a file in Python?"
@@ -369,7 +406,7 @@ if __name__ == '__main__':
 
     for user_input, action_hint, lang in tests:
         print(f"📝 Input:  {user_input} (action: {action_hint}, lang: {lang})")
-        result = generator.generate_sql(user_input, action_hint, lang)
+        result = generator.generate_sql(user_input, action_hint)
 
         print(f"   SQL:    {result['sql']}")
         print(f"   Action: {result['action']}")

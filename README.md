@@ -2,7 +2,7 @@
 
 **Privacy-first terminal chat: OpenAI for general queries, local Qwen 2.5 Coder for private data with direct SQL generation.**
 
-[![Version](https://img.shields.io/badge/version-11.0.0-blue.svg)](https://github.com/martinschenk/ai-chat-terminal)
+[![Version](https://img.shields.io/badge/version-11.0.9-blue.svg)](https://github.com/martinschenk/ai-chat-terminal)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](https://github.com/martinschenk/ai-chat-terminal)
 [![Encryption](https://img.shields.io/badge/encryption-AES--256-green.svg)](https://github.com/martinschenk/ai-chat-terminal#encryption)
@@ -151,6 +151,37 @@ chat
   - EN: `save`, `show`, `delete`
   - DE: `speichere`, `zeig`, `lösche`
   - ES: `guarda`, `muestra`, `borra`
+
+### 🎯 Smart Pattern Matching (v11.0.9)
+
+**Problem Solved:** Ambiguity between questions and statements
+- ❌ OLD: "what is my email?" vs "my email is test@test.com" → both had "is" + "my"
+- ✅ NEW: Pattern `{x}` = any word → precise matching for ANY data type
+
+**Pattern Examples:**
+```bash
+# Pattern: "my {x} is" → Matches SAVE for ANY data type
+✅ "my email is test@test.com"        → SAVE
+✅ "my API key is sk-123"             → SAVE
+✅ "my crypto wallet is 0x123..."     → SAVE
+✅ "my birthday is March 15, 1990"    → SAVE
+
+# Pattern: "what is my {x}" → Matches RETRIEVE for ANY data type
+✅ "what is my email?"                → RETRIEVE
+✅ "what is my API key?"              → RETRIEVE
+✅ "what is my crypto wallet?"        → RETRIEVE
+
+# Single words still work!
+✅ "save test@test.com"               → SAVE
+✅ "show data"                        → RETRIEVE
+✅ "delete everything"                → DELETE
+```
+
+**Benefits:**
+- 🚀 **Future-proof:** New data types automatically supported without keyword updates
+- 🎯 **Precise:** Solves ambiguity - "what is my X?" vs "my X is Y"
+- 🌍 **Multilingual:** Patterns work in EN/DE/ES
+- 💪 **Flexible:** Mix of patterns + good generic single words
 
 ### ⚡ Fast & Transparent
 
@@ -443,7 +474,25 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 ## Version History
 
-### v11.0.0 (Current) - KISS SQL Architecture
+### v11.0.9 (Current) - Smart Pattern Keywords
+
+**🎯 Intelligent keyword matching with {x} placeholders!**
+
+**What's New:**
+- ✅ **Pattern keywords:** `my {x} is`, `what is my {x}`, `delete my {x}` → works for ANY data type
+- ✅ **Solves ambiguity:** "what is my email?" vs "my email is test@test.com" now correctly identified
+- ✅ **Future-proof:** New data types (API keys, crypto wallets, etc.) automatically supported
+- ✅ **Maintains single words:** Good generic keywords (save, show, delete) still work
+- ✅ **Multilingual patterns:** EN/DE/ES all use same flexible system
+
+**Examples:**
+```
+"my API key is sk-123"        → SAVE (pattern: my {x} is)
+"what is my crypto wallet?"   → RETRIEVE (pattern: what is my {x})
+"delete my password"          → DELETE (pattern: delete my {x})
+```
+
+### v11.0.0 - KISS SQL Architecture
 
 **🚀 RADICAL SIMPLIFICATION - 1528 lines removed!**
 
