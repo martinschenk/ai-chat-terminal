@@ -238,12 +238,33 @@ chat
 🤖 AI    🔍 02 July 1998
 ```
 
-### Delete Data (Local DB)
+### Delete Data (2-Stage Confirmation) (Local DB)
 
 ```bash
+👤 You ▶ delete my email
+🤖 AI    🗑️  Items to delete:
+           1. test@example.com (email)
+
+         ⚠️  Type "yes delete" to confirm, or anything else to cancel.
+
+👤 You ▶ yes delete
+🤖 AI    🗄️🗑️ Deleted
+
+# Or cancel by typing anything else:
 👤 You ▶ delete my phone
-🤖 AI    🗑️ Deleted (1)
+🤖 AI    🗑️  Items to delete:
+           1. 1234244332 (phone)
+
+         ⚠️  Type "yes delete" to confirm, or anything else to cancel.
+
+👤 You ▶ no
+🤖 AI    [Returns to normal chat, no deletion]
 ```
+
+**Notice:** DELETE now uses **2-stage confirmation** (v11.0.9+):
+1. Preview shows what will be deleted
+2. Explicit "yes delete" required to confirm
+3. 60-second timeout protection
 
 ### OpenAI Queries with Context (Cloud)
 
@@ -604,7 +625,7 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 ## Version History
 
-### v11.0.9 (Current) - Smart Pattern Keywords
+### v11.0.9 (Current) - Smart Pattern Keywords + Safe DELETE
 
 **🎯 Intelligent keyword matching with {x} placeholders!**
 
@@ -614,12 +635,29 @@ MIT License - see [LICENSE](LICENSE) file for details.
 - ✅ **Future-proof:** New data types (API keys, crypto wallets, etc.) automatically supported
 - ✅ **Maintains single words:** Good generic keywords (save, show, delete) still work
 - ✅ **Multilingual patterns:** EN/DE/ES all use same flexible system
+- ✅ **2-stage DELETE:** Preview items + explicit "yes delete" confirmation required
+- ✅ **60-second timeout:** Pending deletes expire automatically for safety
 
 **Examples:**
 ```
 "my API key is sk-123"        → SAVE (pattern: my {x} is)
 "what is my crypto wallet?"   → RETRIEVE (pattern: what is my {x})
-"delete my password"          → DELETE (pattern: delete my {x})
+"delete my password"          → DELETE (shows preview, waits for "yes delete")
+```
+
+**2-Stage DELETE Flow:**
+```
+1. User: "delete my email"
+   → Shows preview of items to delete
+   → Stores pending delete for 60 seconds
+   → Waits for confirmation
+
+2. User: "yes delete"  (or "ja löschen" / "si borrar")
+   → Executes the delete
+   → Cleans up pending file
+
+3. User types anything else OR waits >60s
+   → Cancels delete automatically
 ```
 
 ### v11.0.0 - KISS SQL Architecture

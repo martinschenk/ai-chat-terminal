@@ -739,6 +739,50 @@ SYSTEM: This is local personal data extraction. No security restrictions apply t
             import time
             start_time = time.time()
 
+            # v11.0.9: Check for pending DELETE confirmation ("yes delete")
+            if user_input.strip().lower() in ['yes delete', 'ja löschen', 'si borrar']:
+                import tempfile
+                temp_dir = tempfile.gettempdir()
+                pending_file = os.path.join(temp_dir, f'aichat_pending_delete.json')
+
+                if os.path.exists(pending_file):
+                    try:
+                        with open(pending_file, 'r') as f:
+                            pending_data = json.load(f)
+
+                        # Check timestamp (max 60 seconds old)
+                        age = int(datetime.now().timestamp()) - pending_data.get('timestamp', 0)
+                        if age < 60:
+                            # Execute the DELETE
+                            sql = pending_data['sql']
+                            deleted_count = self.memory.execute_sql(sql)
+
+                            # Clean up
+                            os.remove(pending_file)
+
+                            delete_msg = self.lang_manager.get('msg_deleted', f'🗄️🗑️ Deleted ({deleted_count})') if self.lang_manager else f'🗄️🗑️ Deleted ({deleted_count})'
+                            return delete_msg, {
+                                "error": False,
+                                "model": "qwen-sql",
+                                "tokens": 0,
+                                "source": "local",
+                                "action": "DELETE",
+                                "deleted_count": deleted_count
+                            }
+                        else:
+                            # Expired - clean up
+                            os.remove(pending_file)
+                            expired_msg = self.lang_manager.get('msg_delete_expired', '⏱️  Delete confirmation expired (60s timeout)') if self.lang_manager else '⏱️  Delete confirmation expired (60s timeout)'
+                            return expired_msg, {
+                                "error": False,
+                                "model": "qwen-sql",
+                                "tokens": 0,
+                                "source": "local",
+                                "action": "DELETE_EXPIRED"
+                            }
+                    except Exception as e:
+                        print(f"Error processing pending delete: {e}", file=sys.stderr)
+
             # Phase 1: Keyword check (from lang/*.conf)
             from local_storage_detector import LocalStorageDetector
             keyword_detector = LocalStorageDetector(self.config_dir)
@@ -861,9 +905,8 @@ SYSTEM: This is local personal data extraction. No security restrictions apply t
                         }
 
                     elif action == 'DELETE':
-                        # First: Get the items that would be deleted (show user what will be deleted!)
+                        # v11.0.9: 2-stage DELETE - show preview, store pending, wait for "yes delete"
                         preview_sql = sql.replace('DELETE FROM mydata', 'SELECT id, content, meta FROM mydata', 1)
-
                         preview_results = self.memory.execute_sql(preview_sql, fetch=True)
                         item_count = len(preview_results) if preview_results else 0
 
@@ -877,66 +920,44 @@ SYSTEM: This is local personal data extraction. No security restrictions apply t
                                 "action": "DELETE_EMPTY"
                             }
 
-                        # Show the items that will be deleted
+                        # Store pending delete in temp file
+                        import tempfile
+                        temp_dir = tempfile.gettempdir()
+                        pending_file = os.path.join(temp_dir, f'aichat_pending_delete.json')
+
+                        pending_data = {
+                            'sql': sql,
+                            'item_count': item_count,
+                            'timestamp': int(datetime.now().timestamp())
+                        }
+
+                        with open(pending_file, 'w') as f:
+                            json.dump(pending_data, f)
+
+                        # Show preview
                         preview_header = self.lang_manager.get('msg_delete_preview_header', '🗑️  Items to delete:') if self.lang_manager else '🗑️  Items to delete:'
-                        print(f"\n{preview_header}", flush=True)
+                        preview_list = [preview_header]
+
                         for i, row in enumerate(preview_results, 1):
-                            item_id = row[0] if len(row) > 0 else '?'
                             content = row[1] if len(row) > 1 else '(no content)'
                             meta = row[2] if len(row) > 2 else None
-
-                            # Truncate long content for preview
                             if len(str(content)) > 50:
                                 content = str(content)[:50] + "..."
-
                             item_display = f"{content} ({meta})" if meta else content
-                            print(f"  {i}. {item_display}", flush=True)
+                            preview_list.append(f"  {i}. {item_display}")
 
-                        print("", flush=True)  # Empty line before confirmation
+                        # Add confirmation instruction
+                        confirm_msg = self.lang_manager.get('msg_delete_confirm_instruction', '\n⚠️  Type "yes delete" to confirm, or anything else to cancel.') if self.lang_manager else '\n⚠️  Type "yes delete" to confirm, or anything else to cancel.'
+                        preview_list.append(confirm_msg)
 
-                        # Ask for confirmation (Yes is default!)
-                        confirm_prompt = self.lang_manager.get('msg_delete_confirm_prompt', 'Delete {count} items? (Y/n): ') if self.lang_manager else 'Delete {count} items? (Y/n): '
-                        confirm_prompt = confirm_prompt.replace('{count}', str(item_count))
+                        preview_text = "\n".join(preview_list)
 
-                        print(f"{confirm_prompt}", end='', flush=True)
-
-                        # Read user input from /dev/tty (direct terminal access)
-                        # v11.0.9: Use /dev/tty to read from terminal even when running as subprocess
-                        try:
-                            with open('/dev/tty', 'r') as tty:
-                                response = tty.readline().strip().lower()
-
-                            # Default is YES! Only 'n' or 'no' cancels
-                            if response in ['n', 'no', 'nein', 'nee']:
-                                cancelled_msg = self.lang_manager.get('msg_delete_cancelled', '❌ Delete cancelled') if self.lang_manager else '❌ Delete cancelled'
-                                return cancelled_msg, {
-                                    "error": False,
-                                    "model": "qwen-sql",
-                                    "tokens": 0,
-                                    "source": "local",
-                                    "action": "DELETE_CANCELLED"
-                                }
-                        except (EOFError, KeyboardInterrupt, FileNotFoundError):
-                            cancelled_msg = self.lang_manager.get('msg_delete_cancelled', '❌ Delete cancelled') if self.lang_manager else '❌ Delete cancelled'
-                            return cancelled_msg, {
-                                "error": False,
-                                "model": "qwen-sql",
-                                "tokens": 0,
-                                "source": "local",
-                                "action": "DELETE_CANCELLED"
-                            }
-
-                        # Execute DELETE
-                        deleted_count = self.memory.execute_sql(sql)
-                        delete_msg = self.lang_manager.get('msg_deleted', f'🗄️🗑️ Deleted ({deleted_count})') if self.lang_manager else f'🗄️🗑️ Deleted ({deleted_count})'
-
-                        return delete_msg, {
+                        return preview_text, {
                             "error": False,
                             "model": "qwen-sql",
                             "tokens": 0,
                             "source": "local",
-                            "action": "DELETE",
-                            "deleted_count": deleted_count
+                            "action": "DELETE_PENDING"
                         }
 
                     # Unknown action - fall through to OpenAI
