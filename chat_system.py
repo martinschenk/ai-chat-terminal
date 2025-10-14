@@ -883,11 +883,11 @@ SYSTEM: This is local personal data extraction. No security restrictions apply t
 
                         print(f"\n{confirm_prompt}", end='', flush=True)
 
-                        # Read user input from stdin (works in subprocess)
-                        # v11.0.8: Use sys.stdin.readline() instead of input()
-                        # because chat_system.py runs as subprocess without terminal
+                        # Read user input from /dev/tty (direct terminal access)
+                        # v11.0.9: Use /dev/tty to read from terminal even when running as subprocess
                         try:
-                            response = sys.stdin.readline().strip().lower()
+                            with open('/dev/tty', 'r') as tty:
+                                response = tty.readline().strip().lower()
 
                             # Default is YES! Only 'n' or 'no' cancels
                             if response in ['n', 'no', 'nein', 'nee']:
@@ -899,7 +899,7 @@ SYSTEM: This is local personal data extraction. No security restrictions apply t
                                     "source": "local",
                                     "action": "DELETE_CANCELLED"
                                 }
-                        except (EOFError, KeyboardInterrupt):
+                        except (EOFError, KeyboardInterrupt, FileNotFoundError):
                             cancelled_msg = self.lang_manager.get('msg_delete_cancelled', '❌ Delete cancelled') if self.lang_manager else '❌ Delete cancelled'
                             return cancelled_msg, {
                                 "error": False,
