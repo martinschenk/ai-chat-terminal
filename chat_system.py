@@ -739,13 +739,28 @@ SYSTEM: This is local personal data extraction. No security restrictions apply t
             import time
             start_time = time.time()
 
-            # v11.0.9: Check for pending DELETE confirmation ("yes delete")
-            if user_input.strip().lower() in ['yes delete', 'ja löschen', 'si borrar']:
-                import tempfile
-                temp_dir = tempfile.gettempdir()
-                pending_file = os.path.join(temp_dir, f'aichat_pending_delete.json')
+            # v11.0.9: Check for pending DELETE confirmation (y/n/Enter)
+            import tempfile
+            temp_dir = tempfile.gettempdir()
+            pending_file = os.path.join(temp_dir, f'aichat_pending_delete.json')
 
-                if os.path.exists(pending_file):
+            if os.path.exists(pending_file):
+                user_response = user_input.strip().lower()
+
+                # Empty input (Enter) = Cancel
+                if not user_response:
+                    os.remove(pending_file)
+                    cancel_msg = self.lang_manager.get('msg_delete_cancelled', '❌ Delete cancelled') if self.lang_manager else '❌ Delete cancelled'
+                    return cancel_msg, {
+                        "error": False,
+                        "model": "qwen-sql",
+                        "tokens": 0,
+                        "source": "local",
+                        "action": "DELETE_CANCELLED"
+                    }
+
+                # YES - Execute delete (y, yes, j, ja, s, si)
+                if user_response in ['y', 'yes', 'j', 'ja', 's', 'si']:
                     try:
                         with open(pending_file, 'r') as f:
                             pending_data = json.load(f)
@@ -756,8 +771,6 @@ SYSTEM: This is local personal data extraction. No security restrictions apply t
                             # Execute the DELETE
                             sql = pending_data['sql']
                             deleted_count = self.memory.execute_sql(sql)
-
-                            # Clean up
                             os.remove(pending_file)
 
                             delete_msg = self.lang_manager.get('msg_deleted', f'🗄️🗑️ Deleted ({deleted_count})') if self.lang_manager else f'🗄️🗑️ Deleted ({deleted_count})'
@@ -782,6 +795,19 @@ SYSTEM: This is local personal data extraction. No security restrictions apply t
                             }
                     except Exception as e:
                         print(f"Error processing pending delete: {e}", file=sys.stderr)
+                        os.remove(pending_file)
+
+                # NO/Enter/Anything else - Cancel delete (prevents OpenAI call)
+                else:
+                    os.remove(pending_file)
+                    cancel_msg = self.lang_manager.get('msg_delete_cancelled', '❌ Delete cancelled') if self.lang_manager else '❌ Delete cancelled'
+                    return cancel_msg, {
+                        "error": False,
+                        "model": "qwen-sql",
+                        "tokens": 0,
+                        "source": "local",
+                        "action": "DELETE_CANCELLED"
+                    }
 
             # Phase 1: Keyword check (from lang/*.conf)
             from local_storage_detector import LocalStorageDetector
