@@ -84,7 +84,9 @@ Rules:
 4. For SAVE: Extract description for meta field (keep original language!)
 5. For RETRIEVE: Use LIKE for flexible matching
 6. For DELETE: Use LIKE to match both meta and content
-7. For false positives (tutorials, questions about DB): Return "NO_ACTION"
+7. **Multi-word meta labels are NORMAL and EXPECTED** (e.g., "favorite colour", "sisters birthday", "API key", "wifi password")
+8. **FALSE_POSITIVE only for**: tutorials about databases, questions ABOUT the database itself, completely unrelated queries
+9. **If RETRIEVE keywords detected**: ALWAYS generate SQL, even for complex multi-word meta labels!
 
 Examples:
 
@@ -202,6 +204,22 @@ SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%correo%' 
 
 Input: "cuál es mi número de teléfono?"
 SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%teléfono%' OR meta LIKE '%telefono%' OR meta LIKE '%número%' ORDER BY timestamp DESC LIMIT 5;
+
+RETRIEVE (multi-word meta labels - THESE ARE NORMAL!):
+Input: "show my favorite colour"
+SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%favorite%' OR meta LIKE '%colour%' OR meta LIKE '%favorite colour%' ORDER BY timestamp DESC LIMIT 5;
+
+Input: "what is my sisters birthday?"
+SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%sisters%' OR meta LIKE '%birthday%' OR meta LIKE '%sisters birthday%' ORDER BY timestamp DESC LIMIT 5;
+
+Input: "show my wifi password"
+SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%wifi%' OR meta LIKE '%password%' OR meta LIKE '%wifi password%' ORDER BY timestamp DESC LIMIT 5;
+
+Input: "zeig meine Lieblings-Farbe"
+SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%Lieblings%' OR meta LIKE '%Farbe%' OR meta LIKE '%Lieblings-Farbe%' ORDER BY timestamp DESC LIMIT 5;
+
+Input: "muestra mi color favorito"
+SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%color%' OR meta LIKE '%favorito%' OR meta LIKE '%color favorito%' ORDER BY timestamp DESC LIMIT 5;
 
 RETRIEVE (all data):
 Input: "list all my data"
