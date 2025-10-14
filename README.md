@@ -2,7 +2,7 @@
 
 **Privacy-first terminal chat: OpenAI for general queries, local Qwen 2.5 Coder for private data with direct SQL generation.**
 
-[![Version](https://img.shields.io/badge/version-11.0.9-blue.svg)](https://github.com/martinschenk/ai-chat-terminal)
+[![Version](https://img.shields.io/badge/version-11.1.0-blue.svg)](https://github.com/martinschenk/ai-chat-terminal)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](https://github.com/martinschenk/ai-chat-terminal)
 [![Encryption](https://img.shields.io/badge/encryption-AES--256-green.svg)](https://github.com/martinschenk/ai-chat-terminal#encryption)
@@ -262,6 +262,62 @@ chat
 1. Preview shows what will be deleted
 2. Just type `y` to confirm (or `n`/Enter to cancel)
 3. 60-second timeout protection
+
+### Built-in Help (v11.1.0)
+
+Quick access to all commands and shortcuts:
+
+```bash
+👤 You ▶ /help
+
+📖 AI Chat Terminal - Quick Help
+
+Commands:
+  /config - Open settings menu
+  clear   - Clear screen
+  exit    - Quit chat
+
+Keyboard Shortcuts:
+  ↑  - Previous message
+  ↓  - Next message
+  ESC - Quick exit
+
+Database Operations:
+  • save my X - Store data locally
+  • show my X - Retrieve data
+  • delete my X - Remove data
+  • list all - Show all data
+
+Examples:
+  my email is test@example.com
+  what is my email?
+  delete my email
+
+Type anything to ask AI, or use commands above
+```
+
+**Notice:** `/help` is multilingual (EN/DE/ES) and always available. Perfect for quick reference!
+
+### Keyboard Shortcuts (v11.1.0)
+
+Navigate your chat naturally:
+
+```bash
+↑ Arrow Up    - Previous message from history
+↓ Arrow Down  - Next message / Back to current input
+Enter         - Send message
+Backspace     - Delete character
+ESC           - Quick exit from chat
+/help         - Show all commands and shortcuts
+/config       - Open settings menu
+clear         - Clear screen
+```
+
+**History Navigation:**
+- Press ↑ to scroll through your last 50 messages
+- Press ↓ to go forward or return to what you were typing
+- Type anything to exit history mode and resume editing
+- History is loaded from your local database automatically
 
 ## Key Features
 

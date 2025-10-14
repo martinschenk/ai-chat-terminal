@@ -66,6 +66,18 @@ chat_loop() {
 
     # Context window management is now handled in Python chat_system.py
 
+    # v11.1.0: Load chat history for arrow key navigation
+    local HISTORY_ITEMS=()
+    if [[ -f "$SCRIPT_DIR/get_user_history.py" ]]; then
+        while IFS= read -r line; do
+            # Unescape \n back to actual newlines
+            line="${line//\\n/$'\n'}"
+            HISTORY_ITEMS+=("$line")
+        done < <(python3 "$SCRIPT_DIR/get_user_history.py" 50 2>/dev/null)
+    fi
+    local HISTORY_INDEX=-1      # -1 = not in history mode
+    local CURRENT_INPUT=""       # Buffer for user's current typing before history navigation
+
     # Start daemons (Chat + Ollama) - ONCE at chat start
     echo -ne "${DIM}🚀 Starting chat system...${RESET}"
     start_daemons "$SCRIPT_DIR" >/dev/null
@@ -77,7 +89,7 @@ chat_loop() {
     while true; do
         echo -ne "${USER_COLOR}👤 ${LANG_LABEL_YOU} ▶ ${RESET}"
 
-        # Handle ESC key detection
+        # Handle ESC key detection + Arrow keys (v11.1.0)
         if [[ "$ENABLE_ESC" == "true" ]] && [[ -t 0 ]]; then
             # Save current terminal settings
             OLD_STTY=$(stty -g)
@@ -88,14 +100,59 @@ chat_loop() {
                 char=$(dd bs=1 count=1 2>/dev/null)
 
                 if [[ $char == $'\e' ]]; then
-                    # ESC pressed
-                    stty "$OLD_STTY" 2>/dev/null
-                    echo -e "\n\n${YELLOW}👋 ${LANG_MSG_GOODBYE}${RESET}\n"
-                    return
+                    # Could be ESC key OR start of arrow key sequence
+                    # Wait 0.01s to see if more bytes follow
+                    next_chars=""
+                    read -t 0.01 -k 2 next_chars 2>/dev/null || true
+
+                    if [[ -z "$next_chars" ]] || [[ ${#next_chars} -eq 0 ]]; then
+                        # Pure ESC (no following bytes) - EXIT
+                        stty "$OLD_STTY" 2>/dev/null
+                        echo -e "\n\n${YELLOW}👋 ${LANG_MSG_GOODBYE}${RESET}\n"
+                        return
+                    elif [[ "$next_chars" == "[A" ]]; then
+                        # UP ARROW - navigate to older message
+                        if [[ ${#HISTORY_ITEMS[@]} -gt 0 ]]; then
+                            # Save current input if not in history mode yet
+                            if [[ $HISTORY_INDEX -eq -1 ]]; then
+                                CURRENT_INPUT="$INPUT"
+                            fi
+
+                            # Move up in history (towards older messages)
+                            if [[ $HISTORY_INDEX -lt $((${#HISTORY_ITEMS[@]} - 1)) ]]; then
+                                HISTORY_INDEX=$((HISTORY_INDEX + 1))
+                                # Clear line and show history item
+                                printf '\r\033[K'  # Clear entire line
+                                echo -ne "${USER_COLOR}👤 ${LANG_LABEL_YOU} ▶ ${RESET}"
+                                INPUT="${HISTORY_ITEMS[-$((HISTORY_INDEX + 1))]}"
+                                printf '%s' "$INPUT"
+                            fi
+                        fi
+                    elif [[ "$next_chars" == "[B" ]]; then
+                        # DOWN ARROW - navigate to newer message
+                        if [[ $HISTORY_INDEX -gt -1 ]]; then
+                            HISTORY_INDEX=$((HISTORY_INDEX - 1))
+                            # Clear line and show item
+                            printf '\r\033[K'  # Clear entire line
+                            echo -ne "${USER_COLOR}👤 ${LANG_LABEL_YOU} ▶ ${RESET}"
+
+                            if [[ $HISTORY_INDEX -eq -1 ]]; then
+                                # Back to current input (what user was typing before history)
+                                INPUT="$CURRENT_INPUT"
+                            else
+                                INPUT="${HISTORY_ITEMS[-$((HISTORY_INDEX + 1))]}"
+                            fi
+                            printf '%s' "$INPUT"
+                        fi
+                    else
+                        # Unknown escape sequence (could be left/right arrow, etc.) - ignore for now
+                        continue
+                    fi
                 elif [[ $char == $'\r' ]] || [[ $char == $'\n' ]]; then
                     # Enter pressed
                     stty "$OLD_STTY" 2>/dev/null
                     echo
+                    HISTORY_INDEX=-1  # Reset history state
                     break
                 elif [[ $char == $'\177' ]] || [[ $char == $'\b' ]]; then
                     # Backspace
@@ -103,10 +160,12 @@ chat_loop() {
                         INPUT="${INPUT%?}"
                         echo -ne "\b \b"
                     fi
+                    HISTORY_INDEX=-1  # Exit history mode when user edits
                 else
                     # Normal character
                     INPUT="${INPUT}${char}"
                     printf '%s' "$char"  # Use printf instead of echo for safety
+                    HISTORY_INDEX=-1  # Exit history mode when user types new char
                 fi
             done
         else
@@ -151,18 +210,46 @@ chat_loop() {
 
         # Handle commands
         case "$INPUT" in
+            /help|/?)
+                # v11.1.0: Show help screen
+                echo -e "\n${COMMAND_COLOR}${LANG_HELP_TITLE:-📖 AI Chat Terminal - Quick Help}${RESET}\n"
+                echo -e "${BOLD}${LANG_HELP_COMMANDS:-Commands:}${RESET}"
+                echo -e "  ${GREEN}/config${RESET} - ${LANG_HELP_CONFIG:-Open settings menu}"
+                echo -e "  ${GREEN}clear${RESET}   - ${LANG_HELP_CLEAR:-Clear screen}"
+                echo -e "  ${GREEN}exit${RESET}    - ${LANG_HELP_EXIT:-Quit chat}"
+                echo ""
+                echo -e "${BOLD}${LANG_HELP_KEYS:-Keyboard Shortcuts:}${RESET}"
+                echo -e "  ${DIM}↑${RESET}  - ${LANG_HELP_ARROW_UP:-Previous message}"
+                echo -e "  ${DIM}↓${RESET}  - ${LANG_HELP_ARROW_DOWN:-Next message}"
+                echo -e "  ${YELLOW}ESC${RESET} - ${LANG_HELP_ESC:-Quick exit}"
+                echo ""
+                echo -e "${BOLD}${LANG_HELP_DATABASE:-Database Operations:}${RESET}"
+                echo -e "  • ${LANG_HELP_SAVE:-save my X - Store data locally}"
+                echo -e "  • ${LANG_HELP_SHOW:-show my X - Retrieve data}"
+                echo -e "  • ${LANG_HELP_DELETE:-delete my X - Remove data}"
+                echo -e "  • ${LANG_HELP_LIST:-list all - Show all data}"
+                echo ""
+                echo -e "${BOLD}${LANG_HELP_EXAMPLES:-Examples:}${RESET}"
+                echo -e "  ${DIM}${LANG_HELP_EX1:-my email is test@example.com}${RESET}"
+                echo -e "  ${DIM}${LANG_HELP_EX2:-what is my email?}${RESET}"
+                echo -e "  ${DIM}${LANG_HELP_EX3:-delete my email}${RESET}"
+                echo ""
+                echo -e "${DIM}${LANG_HELP_FOOTER:-Type anything to ask AI, or use commands above}${RESET}\n"
+                continue
+                ;;
+
             /config|/settings|/menu|config|settings|menu|cfg)
                 show_config_menu
                 # After config, show header again with updated status
                 clear
-                echo -e "${COMMAND_COLOR}/config${RESET} = ${LANG_CHAT_SETTINGS:-settings} ${DIM}|${RESET} ${YELLOW}ESC${RESET}/${YELLOW}${LANG_CHAT_EXIT:-exit}${RESET} = ${LANG_CHAT_QUIT:-quit}"
+                echo -e "${COMMAND_COLOR}/config${RESET} ${DIM}|${RESET} ${COMMAND_COLOR}/help${RESET} ${DIM}|${RESET} ${DIM}↑↓${RESET} history ${DIM}|${RESET} ${YELLOW}ESC${RESET} quit"
                 echo ""
                 continue
                 ;;
 
             clear|cls)
                 clear
-                echo -e "${COMMAND_COLOR}/config${RESET} = ${LANG_CHAT_SETTINGS:-settings} ${DIM}|${RESET} ${YELLOW}ESC${RESET}/${YELLOW}${LANG_CHAT_EXIT:-exit}${RESET} = ${LANG_CHAT_QUIT:-quit}"
+                echo -e "${COMMAND_COLOR}/config${RESET} ${DIM}|${RESET} ${COMMAND_COLOR}/help${RESET} ${DIM}|${RESET} ${DIM}↑↓${RESET} history ${DIM}|${RESET} ${YELLOW}ESC${RESET} quit"
                 echo ""
                 continue
                 ;;
@@ -231,6 +318,15 @@ FUNCTION ACCESS: Use 'search_personal_data' for ALL questions about stored infor
         fi
 
         # Memory saving is now handled automatically in chat_system.py
+
+        # v11.1.0: Reload history after each message for arrow key navigation
+        HISTORY_ITEMS=()
+        if [[ -f "$SCRIPT_DIR/get_user_history.py" ]]; then
+            while IFS= read -r line; do
+                line="${line//\\n/$'\n'}"
+                HISTORY_ITEMS+=("$line")
+            done < <(python3 "$SCRIPT_DIR/get_user_history.py" 50 2>/dev/null)
+        fi
 
         echo ""
     done

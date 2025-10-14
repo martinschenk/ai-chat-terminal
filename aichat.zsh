@@ -105,7 +105,7 @@ ai_chat_function() {
         fi
 
         # Direct question mode
-        echo -e "\n${COMMAND_COLOR}/config${RESET} = ${LANG_CHAT_SETTINGS:-settings} ${DIM}|${RESET} ${YELLOW}ESC${RESET}/${YELLOW}${LANG_CHAT_EXIT:-exit}${RESET} = ${LANG_CHAT_QUIT:-quit}"
+        echo -e "\n${COMMAND_COLOR}/config${RESET} ${DIM}|${RESET} ${COMMAND_COLOR}/help${RESET} ${DIM}|${RESET} ${DIM}↑↓${RESET} history ${DIM}|${RESET} ${YELLOW}ESC${RESET} quit"
         echo ""
 
         echo -e "${USER_COLOR}👤 ${LANG_LABEL_YOU} ▶${RESET} $*"
@@ -159,7 +159,7 @@ TECHNICAL CONTEXT: You have access to personal information from previous convers
 
     # Instant chat mode
     clear
-    echo -e "${COMMAND_COLOR}/config${RESET} = ${LANG_CHAT_SETTINGS:-settings} ${DIM}|${RESET} ${YELLOW}ESC${RESET}/${YELLOW}${LANG_CHAT_EXIT:-exit}${RESET} = ${LANG_CHAT_QUIT:-quit}"
+    echo -e "${COMMAND_COLOR}/config${RESET} ${DIM}|${RESET} ${COMMAND_COLOR}/help${RESET} ${DIM}|${RESET} ${DIM}↑↓${RESET} history ${DIM}|${RESET} ${YELLOW}ESC${RESET} quit"
     echo ""
 
     chat_loop
