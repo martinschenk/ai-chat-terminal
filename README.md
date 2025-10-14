@@ -202,83 +202,66 @@ source ~/.zshrc
 
 ## Examples from Real Usage
 
-### Save Private Data (Local Only - Never to OpenAI)
-
-```bash
-chat
-👤 You ▶ save my email address test@example.com
-🤖 AI    ✅ Stored 🔒
-
-👤 You ▶ save my sisters birthday 02 July 1998
-🤖 AI    ✅ Stored 🔒
-
-👤 You ▶ save my phone 1234244332
-🤖 AI    ✅ Stored 🔒
-```
-
-**Notice:** All save operations processed by **local Qwen 2.5 Coder**, generates SQL, stores in **encrypted SQLite**. Zero network calls.
-
-### List Your Data (Local DB Query)
-
-```bash
-👤 You ▶ list all my data
-🤖 AI    🔍 Found 3 items:
-           1. test@example.com
-           2. 02 July 1998
-           3. 1234244332
-```
-
-### Retrieve Specific Data (Local DB Search)
-
-```bash
-👤 You ▶ show my email
-🤖 AI    🔍 test@example.com
-
-👤 You ▶ show my sisters birthday
-🤖 AI    🔍 02 July 1998
-```
-
-### Delete Data (2-Stage Confirmation) (Local DB)
-
-```bash
-👤 You ▶ delete my email
-🤖 AI    🗑️  Items to delete:
-           1. test@example.com (email)
-
-         ⚠️  Type "yes delete" to confirm, or anything else to cancel.
-
-👤 You ▶ yes delete
-🤖 AI    🗄️🗑️ Deleted
-
-# Or cancel by typing anything else:
-👤 You ▶ delete my phone
-🤖 AI    🗑️  Items to delete:
-           1. 1234244332 (phone)
-
-         ⚠️  Type "yes delete" to confirm, or anything else to cancel.
-
-👤 You ▶ no
-🤖 AI    [Returns to normal chat, no deletion]
-```
-
-**Notice:** DELETE now uses **2-stage confirmation** (v11.0.9+):
-1. Preview shows what will be deleted
-2. Explicit "yes delete" required to confirm
-3. 60-second timeout protection
-
 ### OpenAI Queries with Context (Cloud)
 
 ```bash
-👤 You ▶ what is the capital of Germany?
-🤖 AI    The capital of Germany is Berlin.
+chat
+👤 You ▶ what is the capital of Spain?
+🤖 AI    The capital of Spain is Madrid.
 
-👤 You ▶ best dish of this country
-🤖 AI    One of the most iconic German dishes is Sauerbraten,
-         a pot roast marinated for days in a mixture of wine,
-         vinegar, and spices...
+👤 You ▶ best food there?
+🤖 AI    Madrid is famous for Cocido Madrileño (chickpea stew),
+         Bocadillo de Calamares (squid sandwich), and Churros con Chocolate!
 ```
 
-**Notice:** OpenAI maintains conversation context ("this country" = Germany from previous message).
+**Notice:** OpenAI maintains conversation context ("there" = Madrid from previous message).
+
+### Save Private Data with Synonym Keywords (Local - Never to OpenAI)
+
+```bash
+👤 You ▶ my email is test@example.com
+🤖 AI    🗄️ Stored 🔒
+
+👤 You ▶ remember my suitcase code 42341
+🤖 AI    🗄️ Stored 🔒
+```
+
+**Notice:** Works with **synonym keywords** (`my X is`, `remember`) and **multi-word labels** (`suitcase code`). All processed by **local Qwen 2.5 Coder**. Zero network calls.
+
+### Retrieve with Different Keywords (Local DB)
+
+```bash
+👤 You ▶ retrieve my email
+🤖 AI    🗄️🔍 test@example.com (email)
+
+👤 You ▶ what is my suitcase code?
+🤖 AI    🗄️🔍 42341 (suitcase code)
+
+👤 You ▶ list all
+🤖 AI    🗄️🔍 Found 2 items:
+           1. test@example.com (email)
+           2. 42341 (suitcase code)
+```
+
+**Notice:** Works with **any synonym** (`retrieve`, `what is`, `list all`) - not limited to `show`!
+
+### Delete with 2-Stage Confirmation (Local DB)
+
+```bash
+👤 You ▶ delete my suitcase code
+🤖 AI    🗑️  Items to delete:
+           1. 42341 (suitcase code)
+
+         ⚠️  Type 'y' to confirm or press Enter to cancel.
+
+👤 You ▶ y
+🤖 AI    🗄️🗑️ Deleted
+```
+
+**Notice:** DELETE uses **2-stage confirmation** (v11.0.9+):
+1. Preview shows what will be deleted
+2. Just type `y` to confirm (or `n`/Enter to cancel)
+3. 60-second timeout protection
 
 ## Key Features
 
