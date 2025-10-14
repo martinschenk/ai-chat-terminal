@@ -500,8 +500,8 @@ if ! command -v python3 &> /dev/null; then
     fi
 fi
 
-# Install OpenAI SDK
-pip3 install --user --quiet openai requests 2>/dev/null || pip3 install --user openai requests
+# Install OpenAI SDK and rich (for markdown rendering)
+pip3 install --user --quiet openai requests rich 2>/dev/null || pip3 install --user openai requests rich
 
 # ═══════════════════════════════════════════════════════════════════
 # MANDATORY: Qwen 2.5 Coder Requirement Check (v11.0.0)
@@ -651,6 +651,7 @@ AI_CHAT_COMMAND="chat"
 AI_CHAT_MODEL="gpt-4o-mini"
 AI_CHAT_ESC_EXIT="true"
 AI_CHAT_CONTEXT_WINDOW="20"
+AI_CHAT_MARKDOWN_RENDER="true"
 OLLAMA_ALWAYS_ON="false"
 EOF
 

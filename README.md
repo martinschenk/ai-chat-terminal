@@ -70,6 +70,136 @@ source ~/.zshrc
 chat
 ```
 
+## What Gets Installed?
+
+The installer sets up two types of components:
+
+### 📁 Local Installation (`~/.aichat/`) - App-Specific
+
+**Python Scripts:**
+- `chat_system.py` - Main orchestrator
+- `qwen_sql_generator.py` - SQL generation via Qwen
+- `memory_system.py` - SQLite database interface
+- `local_storage_detector.py` - Keyword detection
+- `encryption_manager.py` - AES-256 encryption
+- `response_generator.py` - Response formatting
+- `daemon_manager.py` - Background process management
+- `ollama_manager.py` - Ollama integration
+- `action_detector.py` - Intent classification
+- `db_migration.py`, `db_migration_v11.py` - Database migration tools
+- `chat_daemon.py` - Daemon process
+
+**Shell Scripts:**
+- `aichat.zsh` - Main shell integration
+- `modules/` - Functions, config menu, language utilities
+
+**Configuration:**
+- `config` - Settings (language, model, etc.)
+- `.env` - OpenAI API key (optional, Keychain preferred)
+- `lang/` - Language keyword files (EN/DE/ES)
+- `lang_manager/` - Language string management
+
+**Data:**
+- `memory.db` - Your encrypted local database (AES-256)
+
+### 🌍 Global Installation - Shared System Components
+
+**If not already installed, the installer will set up:**
+
+1. **Ollama** (~100MB)
+   - Purpose: Run local AI models
+   - Location: `/opt/homebrew/bin/ollama` (macOS)
+   - Installed via: Homebrew
+   - Used by: This app + any other apps using local AI
+
+2. **Qwen 2.5 Coder (7B)** (~4.5GB)
+   - Purpose: SQL generation for private data
+   - Location: `~/.ollama/models/`
+   - Installed via: Ollama (`ollama pull qwen2.5-coder:7b`)
+   - Used by: This app + any other apps using Qwen via Ollama
+
+3. **Python Packages** (~50MB total)
+   - `openai` - OpenAI API client
+   - `requests` - HTTP library
+   - `rich` - Markdown rendering in terminal
+   - `sqlcipher3-binary` - Database encryption (optional but recommended)
+   - Location: `~/.local/lib/python3.x/site-packages/`
+   - Installed via: pip3 (user install)
+   - Used by: This app + any other Python apps using these libraries
+
+4. **SQLCipher** (~5MB)
+   - Purpose: Database encryption
+   - Location: `/opt/homebrew/bin/sqlcipher`
+   - Installed via: Homebrew
+   - Used by: This app + any other apps using encrypted SQLite
+
+### 📊 Total Disk Space
+
+- **Local (`~/.aichat/`)**: ~5MB (without your data)
+- **Global (first install)**: ~4.7GB (Ollama + Qwen + Python packages + SQLCipher)
+- **Global (if already installed)**: 0 bytes (reuses existing installations)
+
+## What Gets Uninstalled?
+
+When you uninstall AI Chat Terminal:
+
+### ✅ Removed by Uninstaller
+
+- **Local app files** (`~/.aichat/`)
+  - All Python scripts
+  - All shell scripts
+  - Configuration files
+  - **YOUR DATA** (`memory.db`) - ⚠️ **BACKUP FIRST!**
+
+- **Shell integration**
+  - Removed from `~/.zshrc` or `~/.bashrc`
+  - `chat` command alias removed
+
+### ⚠️ NOT Removed (Shared with Other Apps)
+
+- **Ollama** - May be used by other AI apps
+- **Qwen 2.5 Coder model** - May be used by other apps via Ollama
+- **Python packages** (openai, requests, rich, sqlcipher3-binary) - May be used by other Python scripts
+- **SQLCipher** - May be used by other database apps
+
+**Why keep global components?**
+- They're shared system resources (~4.7GB)
+- Other apps might depend on them
+- Homebrew manages global packages - you can remove manually:
+  ```bash
+  # Optional: Remove global components (if you're sure nothing else uses them)
+  brew uninstall ollama
+  brew uninstall sqlcipher
+  ollama stop  # Stop Ollama service first
+  rm -rf ~/.ollama  # Remove all Ollama models (4.5GB+)
+  pip3 uninstall openai requests rich sqlcipher3-binary
+  ```
+
+## Uninstall
+
+**Quick uninstall (keeps your data backup):**
+```bash
+curl -fsSL https://raw.githubusercontent.com/martinschenk/ai-chat-terminal/main/uninstall.sh | zsh
+```
+
+**Manual uninstall:**
+```bash
+# 1. Backup your data first!
+cp ~/.aichat/memory.db ~/ai-chat-backup-$(date +%Y%m%d).db
+
+# 2. Remove app files
+rm -rf ~/.aichat
+
+# 3. Remove shell integration
+# Edit ~/.zshrc and remove these lines:
+# AI Chat Terminal
+# source ~/.aichat/aichat.zsh
+# alias chat='noglob ai_chat_function'
+
+# 4. Reload shell
+source ~/.zshrc
+```
+
 ## Examples from Real Usage
 
 ### Save Private Data (Local Only - Never to OpenAI)
