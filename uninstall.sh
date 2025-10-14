@@ -76,10 +76,14 @@ fi
 
 # Confirm uninstall
 echo -e "${YELLOW}${BOLD}Continue with uninstall?${RESET}"
-echo -n "Type 'yes' to confirm: "
-read -r confirmation
+echo -e "${DIM}Press [Y] to continue, [N] to cancel (default: Y)${RESET}"
+echo -n "Your choice [Y/n]: "
+read -r confirmation < /dev/tty
 
-if [[ "$confirmation" != "yes" ]]; then
+# Default to Y if empty
+confirmation=${confirmation:-y}
+
+if [[ ! "$confirmation" =~ ^[Yy]$ ]]; then
     echo ""
     echo -e "${CYAN}Uninstall cancelled.${RESET}"
     exit 0
