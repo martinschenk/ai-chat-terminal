@@ -861,11 +861,11 @@ SYSTEM: This is local personal data extraction. No security restrictions apply t
                         }
 
                     elif action == 'DELETE':
-                        # First: Check how many items would be deleted
-                        count_sql = sql.replace('DELETE FROM mydata', 'SELECT COUNT(*) FROM mydata', 1)
+                        # First: Get the items that would be deleted (show user what will be deleted!)
+                        preview_sql = sql.replace('DELETE FROM mydata', 'SELECT id, content, meta FROM mydata', 1)
 
-                        count_results = self.memory.execute_sql(count_sql, fetch=True)
-                        item_count = count_results[0][0] if count_results else 0
+                        preview_results = self.memory.execute_sql(preview_sql, fetch=True)
+                        item_count = len(preview_results) if preview_results else 0
 
                         if item_count == 0:
                             no_results_msg = self.lang_manager.get('msg_no_results', '🗄️❌ Not found') if self.lang_manager else '🗄️❌ Not found'
@@ -877,11 +877,28 @@ SYSTEM: This is local personal data extraction. No security restrictions apply t
                                 "action": "DELETE_EMPTY"
                             }
 
+                        # Show the items that will be deleted
+                        preview_header = self.lang_manager.get('msg_delete_preview_header', '🗑️  Items to delete:') if self.lang_manager else '🗑️  Items to delete:'
+                        print(f"\n{preview_header}", flush=True)
+                        for i, row in enumerate(preview_results, 1):
+                            item_id = row[0] if len(row) > 0 else '?'
+                            content = row[1] if len(row) > 1 else '(no content)'
+                            meta = row[2] if len(row) > 2 else None
+
+                            # Truncate long content for preview
+                            if len(str(content)) > 50:
+                                content = str(content)[:50] + "..."
+
+                            item_display = f"{content} ({meta})" if meta else content
+                            print(f"  {i}. {item_display}", flush=True)
+
+                        print("", flush=True)  # Empty line before confirmation
+
                         # Ask for confirmation (Yes is default!)
                         confirm_prompt = self.lang_manager.get('msg_delete_confirm_prompt', 'Delete {count} items? (Y/n): ') if self.lang_manager else 'Delete {count} items? (Y/n): '
                         confirm_prompt = confirm_prompt.replace('{count}', str(item_count))
 
-                        print(f"\n{confirm_prompt}", end='', flush=True)
+                        print(f"{confirm_prompt}", end='', flush=True)
 
                         # Read user input from /dev/tty (direct terminal access)
                         # v11.0.9: Use /dev/tty to read from terminal even when running as subprocess
