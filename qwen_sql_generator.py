@@ -142,11 +142,38 @@ RETRIEVE (specific item):
 Input: "show my email"
 SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%email%' OR content LIKE '%email%' ORDER BY timestamp DESC LIMIT 5;
 
+Input: "which is my email?"
+SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%email%' OR content LIKE '%email%' ORDER BY timestamp DESC LIMIT 5;
+
+Input: "what is my email?"
+SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%email%' OR content LIKE '%email%' ORDER BY timestamp DESC LIMIT 5;
+
+Input: "what's my phone number?"
+SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%phone%' OR content LIKE '%phone%' OR meta LIKE '%number%' ORDER BY timestamp DESC LIMIT 5;
+
 Input: "zeig Omas Geburtstag"
 SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%Geburtstag%' OR content LIKE '%Geburtstag%' ORDER BY timestamp DESC LIMIT 5;
 
+Input: "welche ist meine Email?"
+SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%Email%' OR content LIKE '%Email%' ORDER BY timestamp DESC LIMIT 5;
+
+Input: "was ist meine Email?"
+SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%Email%' OR content LIKE '%Email%' ORDER BY timestamp DESC LIMIT 5;
+
+Input: "wie lautet meine Telefonnummer?"
+SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%Telefonnummer%' OR content LIKE '%Telefonnummer%' OR meta LIKE '%Telefon%' ORDER BY timestamp DESC LIMIT 5;
+
 Input: "muestra mi teléfono"
 SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%teléfono%' OR meta LIKE '%telefono%' OR content LIKE '%teléfono%' ORDER BY timestamp DESC LIMIT 5;
+
+Input: "cuál es mi correo?"
+SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%correo%' OR content LIKE '%correo%' ORDER BY timestamp DESC LIMIT 5;
+
+Input: "qué es mi correo?"
+SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%correo%' OR content LIKE '%correo%' ORDER BY timestamp DESC LIMIT 5;
+
+Input: "cuál es mi número de teléfono?"
+SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%teléfono%' OR meta LIKE '%telefono%' OR meta LIKE '%número%' ORDER BY timestamp DESC LIMIT 5;
 
 RETRIEVE (all data):
 Input: "list all my data"

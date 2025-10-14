@@ -752,10 +752,57 @@ SYSTEM: This is local personal data extraction. No security restrictions apply t
                 # Phase 2: Qwen SQL generation + validation + execution
                 qwen_start = time.time()
 
-                # v11.0.1: Determine action hint from loaded keywords (NO hardcoding!)
-                action_hint = 'SAVE' if any(k in matched_keywords for k in self.save_keywords) else \
-                              'DELETE' if any(k in matched_keywords for k in self.delete_keywords) else \
-                              'RETRIEVE'
+                # v11.0.5: Determine action hint with PRIORITY-BASED logic (fixed keyword ambiguity!)
+                #
+                # PROBLEM (v11.0.4):
+                #   "which is my email?" was detected as SAVE because:
+                #   - Keywords matched: ['which', 'is', 'my']
+                #   - Old logic: Check SAVE first → 'is' found in save_keywords → SAVE wins!
+                #   - Result: "which is my email?" was SAVED to DB instead of RETRIEVED! ❌
+                #
+                # ROOT CAUSE:
+                #   "is" is ambiguous:
+                #   - SAVE: "my email IS test@test.com" (implicit save)
+                #   - RETRIEVE: "which IS my email?" (question)
+                #   - Old sequential logic (SAVE → DELETE → RETRIEVE) checked SAVE first!
+                #
+                # SOLUTION (v11.0.5):
+                #   Use PRIORITY-BASED checking instead of sequential:
+                #   Priority 1: DELETE (highest - destructive action)
+                #   Priority 2: QUESTION keywords (which, what, show) → RETRIEVE
+                #   Priority 3: SAVE keywords (my, is, remember)
+                #   Priority 4: RETRIEVE (default fallback)
+                #
+                # WHY THIS WORKS:
+                #   Question keywords like "which", "what", "welche", "cuál" ALWAYS indicate
+                #   a question, even if followed by ambiguous keywords like "is".
+                #   By checking them BEFORE save_keywords, questions are correctly routed!
+                #
+                # EXAMPLES:
+                #   "my email is test@test.com"  → No question keywords → SAVE ✅
+                #   "which is my email?"         → 'which' detected → RETRIEVE ✅
+                #   "what is my email?"          → 'what' detected → RETRIEVE ✅
+                #   "delete my email"            → 'delete' has highest priority → DELETE ✅
+
+                # Define question-style keywords (EN/DE/ES)
+                question_keywords = {'which', 'what', "what's", 'show', 'get', 'display', 'find',
+                                    'welche', 'was', 'wie lautet', 'zeig',  # German
+                                    'cuál', 'qué', 'muestra'}  # Spanish
+
+                # Check what types of keywords are present
+                has_question_keyword = any(k in matched_keywords for k in question_keywords)
+                has_delete_keyword = any(k in matched_keywords for k in self.delete_keywords)
+                has_save_keyword = any(k in matched_keywords for k in self.save_keywords)
+
+                # Determine action with PRIORITY (not sequential!)
+                if has_delete_keyword:
+                    action_hint = 'DELETE'
+                elif has_question_keyword:  # Checked BEFORE save_keywords!
+                    action_hint = 'RETRIEVE'
+                elif has_save_keyword:
+                    action_hint = 'SAVE'
+                else:
+                    action_hint = 'RETRIEVE'  # Default fallback
 
                 qwen_result = self._call_qwen_sql(user_input, matched_keywords, action_hint)
                 qwen_ms = (time.time() - qwen_start) * 1000
@@ -809,16 +856,19 @@ SYSTEM: This is local personal data extraction. No security restrictions apply t
                         if len(results) == 1:
                             # Single result - show inline with icon
                             content = results[0][1] if len(results[0]) > 1 else results[0][0]  # content column
-                            response_msg = f"🗄️🔍 {content}"
+                            meta = results[0][2] if len(results[0]) > 2 else None  # meta column
+                            response_msg = f"🗄️🔍 {content} ({meta})" if meta else f"🗄️🔍 {content}"
                         else:
                             # Multiple results - show as numbered list
                             response_msg = f"🗄️🔍 Found {len(results)} items:\n"
                             for i, row in enumerate(results, 1):
                                 content = row[1] if len(row) > 1 else row[0]
+                                meta = row[2] if len(row) > 2 else None  # meta column
                                 # Truncate long items
                                 if len(str(content)) > 70:
                                     content = str(content)[:70] + "..."
-                                response_msg += f"  {i}. {content}\n"
+                                item_text = f"{content} ({meta})" if meta else content
+                                response_msg += f"  {i}. {item_text}\n"
                             response_msg = response_msg.rstrip()
 
                         return response_msg, {
@@ -832,11 +882,7 @@ SYSTEM: This is local personal data extraction. No security restrictions apply t
 
                     elif action == 'DELETE':
                         # First: Check how many items would be deleted
-                        count_sql = sql.replace('DELETE FROM', 'SELECT COUNT(*) FROM', 1)
-                        if 'WHERE' in count_sql:
-                            count_sql = count_sql.split('WHERE')[0] + 'FROM mydata WHERE' + count_sql.split('WHERE')[1]
-                        else:
-                            count_sql = 'SELECT COUNT(*) FROM mydata'
+                        count_sql = sql.replace('DELETE FROM mydata', 'SELECT COUNT(*) FROM mydata', 1)
 
                         count_results = self.memory.execute_sql(count_sql, fetch=True)
                         item_count = count_results[0][0] if count_results else 0
