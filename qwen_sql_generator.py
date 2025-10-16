@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Qwen 2.5 Coder SQL Generator (v11.5.0 - Smart LIMIT Logic!)
+Qwen 2.5 Coder SQL Generator (v11.5.1 - Intent-Based Detection!)
 Generates SQL directly for mydata table with SPECIALIZED prompts per action
 
-v11.5.0: Smart LIMIT logic + Optimized prompts!
-- RETRIEVE: Context-aware LIMIT (NO LIMIT when "all", LIMIT 5 for preview)
-- DELETE: Reduced from 155→115 lines, 5 detective questions
-- SAVE: Unchanged (already optimal)
-- Better Qwen reasoning with focused examples!
+v11.5.1: Intent over Pattern Matching (KISS!)
+- Added _get_intent_principle() helper - DRY for all 3 prompts
+- SAVE: Intent block + diverse examples (address, birthday, wifi password)
+- RETRIEVE: Removed ALL LIMIT logic - always show everything (simpler!)
+- DELETE: Intent block + diverse examples
+- "Examples show PATTERNS, not complete list" - works with ANY label!
 """
 
 import subprocess
@@ -37,6 +38,58 @@ class QwenSQLGenerator:
                 raise RuntimeError("❌ Qwen 2.5 Coder not installed. Run: ollama pull qwen2.5-coder:7b")
         except FileNotFoundError:
             raise RuntimeError("❌ Ollama not installed. Install from: https://ollama.ai")
+
+    def _get_intent_principle(self, operation: str) -> str:
+        """
+        Returns intent detection block for SAVE/RETRIEVE/DELETE (v11.5.1)
+
+        Args:
+            operation: 'SAVE', 'RETRIEVE', or 'DELETE'
+
+        Returns:
+            Formatted intent detection block with examples
+        """
+        examples = {
+            'SAVE': [
+                "✅ YES: 'guarda mi dirección Hiruela 3' (wants to store address)",
+                "✅ YES: 'save my license plate ABC-123' (wants to store license)",
+                "✅ YES: 'speichere mein Passwort Secret123' (wants to store password)",
+                "❌ NO: 'how do I save a file?' (tutorial question)",
+                "❌ NO: 'save money for vacation' (idiom, no data)"
+            ],
+            'RETRIEVE': [
+                "✅ YES: 'muestra mi dirección' (wants stored address)",
+                "✅ YES: 'show all emails' (wants stored emails)",
+                "✅ YES: 'zeig meine Notizen' (wants stored notes)",
+                "❌ NO: 'show me how to code' (tutorial request)",
+                "❌ NO: 'find nearest restaurant' (external location search)"
+            ],
+            'DELETE': [
+                "✅ YES: 'borra mi dirección' (wants to delete stored address)",
+                "✅ YES: 'delete test@test.com' (wants to delete that email)",
+                "✅ YES: 'lösche mein Passwort' (wants to delete stored password)",
+                "❌ NO: 'delete files from desktop' (filesystem operation)",
+                "❌ NO: 'how do I delete a record?' (tutorial question)"
+            ]
+        }
+
+        operation_verbs = {
+            'SAVE': 'STORE',
+            'RETRIEVE': 'RETRIEVE',
+            'DELETE': 'DELETE'
+        }
+
+        return f"""
+🎯 CORE PRINCIPLE: Detect "{operation.lower()} intent"
+
+Question: Does user want to {operation_verbs[operation]} data in/from the database?
+{chr(10).join(examples[operation])}
+
+CRITICAL: Works with ANY label (address, birthday, secret, license, wifi, etc.)
+The examples below show PATTERNS, not a complete list of valid types!
+
+YOUR JOB: If {operation.lower()} intent detected → Generate SQL
+"""
 
     def generate_sql(self, user_input: str, action_hint: str) -> dict:
         """
@@ -75,7 +128,7 @@ class QwenSQLGenerator:
         return self._parse_qwen_output(result_text, user_input)
 
     def _build_prompt_save(self, user_input: str) -> str:
-        """Specialized prompt for SAVE - focuses on INSERT with smart VALUE+LABEL extraction"""
+        """Specialized prompt for SAVE - intent-based detection (v11.5.1)"""
         prompt = f"""You are a SQL INSERT specialist for SQLite database 'mydata'.
 
 DATABASE SCHEMA:
@@ -86,6 +139,7 @@ CREATE TABLE mydata (
     lang TEXT,                   -- Language: en, de, es
     timestamp INTEGER            -- Auto-generated
 );
+{self._get_intent_principle('SAVE')}
 
 YOUR JOB: Extract VALUE and LABEL from user input, then generate INSERT statement.
 
@@ -138,6 +192,18 @@ Input: "registra el teléfono de María 123456789"
 Analysis: Verb=registra (ES), VALUE=123456789, LABEL=teléfono de María (context!)
 SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('123456789', 'teléfono de María', 'es');
 
+Input: "save my address Hiruela 3, 7-5"
+Analysis: Verb=save (EN), VALUE=Hiruela 3, 7-5, LABEL=address
+SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('Hiruela 3, 7-5', 'address', 'en');
+
+Input: "guarda mi cumpleaños 15/03/1990"
+Analysis: Verb=guarda (ES), VALUE=15/03/1990, LABEL=cumpleaños
+SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('15/03/1990', 'cumpleaños', 'es');
+
+Input: "note my wifi password MyWifi123"
+Analysis: Verb=note (EN), VALUE=MyWifi123, LABEL=wifi password (multi-word!)
+SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('MyWifi123', 'wifi password', 'en');
+
 FALSE POSITIVES (respond with NO_ACTION):
 
 Input: "how do I save a file in Python?"
@@ -166,7 +232,7 @@ Respond with ONLY the SQL statement or "NO_ACTION". No explanation needed.
         return prompt
 
     def _build_prompt_retrieve(self, user_input: str) -> str:
-        """Specialized prompt for RETRIEVE - smart LIMIT logic (v11.5.0)"""
+        """Specialized prompt for RETRIEVE - intent-based, no LIMIT (v11.5.1)"""
         prompt = f"""You are a SQL SELECT specialist for SQLite database 'mydata'.
 
 DATABASE SCHEMA:
@@ -177,8 +243,9 @@ CREATE TABLE mydata (
     lang TEXT,                   -- Language: en, de, es
     timestamp INTEGER            -- Unix timestamp
 );
+{self._get_intent_principle('RETRIEVE')}
 
-YOUR JOB: Generate SELECT query based on whether user wants ALL matches or just a PREVIEW.
+YOUR JOB: Generate SELECT query to find data. Always return ALL matching records (no LIMIT).
 
 STEP 1 - ANALYZE INPUT:
 Detect language from VERB:
@@ -187,30 +254,20 @@ Detect language from VERB:
 - Spanish verbs: muestra, busca, encuentra, dame, dime, consulta, mira, ve, obtén, saca, lista
 
 Extract SEARCH TERM from text after verb:
-- Can be a LABEL: "email", "phone", "birthday"
+- Can be a LABEL: "email", "phone", "birthday", "address", etc.
 - Can be a VALUE: "test@test.com", "669686832"
 - Can be partial: "maria" should find "maria@test.com"
 - Can be "all"/"todo"/"alle" for complete list
 
-STEP 2 - ⚠️ KEY DECISION: Does user want ALL matches or just a PREVIEW?
-
-Indicators for NO LIMIT (show everything):
-- User says "all" or "todo" or "alles" or "alle" in search context
-- Examples: "show all", "show all emails", "muestra todo", "muestra todos los emails", "zeige alle Emails", "liste alle Daten"
-- Pattern: "[verb] all [optional_type]" or "[verb] [type] all/todos/alle"
-- Also: generic "show all" without type means show entire database
-
-Indicators for LIMIT 5 (preview mode):
-- User asks for type WITHOUT "all" keyword
-- Examples: "show my email", "muestra email", "zeig Telefon", "find maria"
-- Pattern: "[verb] [type]" (no "all")
-- Purpose: Prevent overwhelming output when user just wants to check if something exists
+STEP 2 - DETERMINE QUERY TYPE:
+Case A: "show all" / "list all" → SELECT ... ORDER BY timestamp DESC (no WHERE, no LIMIT)
+Case B: Specific search term → SELECT ... WHERE ... ORDER BY timestamp DESC (no LIMIT)
 
 STEP 3 - GENERATE SQL:
-Format: SELECT id, content, meta, timestamp FROM mydata WHERE ... ORDER BY timestamp DESC [LIMIT 5];
-Note: Include LIMIT 5 ONLY if preview mode detected. Otherwise NO LIMIT.
+Format: SELECT id, content, meta, timestamp FROM mydata WHERE ... ORDER BY timestamp DESC;
+Note: NEVER use LIMIT - always show ALL matching records!
 
-EXAMPLES (NO LIMIT - User wants ALL matches):
+EXAMPLES:
 
 Input: "show all"
 Analysis: Generic "show all" → Show entire database
@@ -220,59 +277,37 @@ Input: "list all"
 Analysis: Generic "list all" → Show entire database
 SQL: SELECT id, content, meta, timestamp FROM mydata ORDER BY timestamp DESC;
 
-Input: "show all emails"
-Analysis: "all emails" → Show ALL email entries, not just preview
+Input: "show my email"
+Analysis: Search for "email" → Show all matching entries
 SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%email%' OR content LIKE '%email%' ORDER BY timestamp DESC;
 
-Input: "show all my emails"
-Analysis: "all my emails" → Show ALL, not preview
+Input: "show all emails"
+Analysis: Search for "email" → Show all matching entries
 SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%email%' OR content LIKE '%email%' ORDER BY timestamp DESC;
 
 Input: "muestra todo"
 Analysis: Generic "muestra todo" (ES) → Show entire database
 SQL: SELECT id, content, meta, timestamp FROM mydata ORDER BY timestamp DESC;
 
-Input: "lista todo"
-Analysis: Generic "lista todo" (ES) → Show entire database
-SQL: SELECT id, content, meta, timestamp FROM mydata ORDER BY timestamp DESC;
+Input: "muestra mi dirección"
+Analysis: Search for "dirección" (ES) → Show all matching entries
+SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%dirección%' OR content LIKE '%dirección%' ORDER BY timestamp DESC;
 
-Input: "muestra todos los emails"
-Analysis: "todos los emails" (ES) → Show ALL emails
-SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%email%' OR content LIKE '%email%' ORDER BY timestamp DESC;
+Input: "muestra mi cumpleaños"
+Analysis: Search for "cumpleaños" (ES) → Show all matching entries
+SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%cumpleaños%' OR content LIKE '%cumpleaños%' ORDER BY timestamp DESC;
 
 Input: "zeig alles"
 Analysis: Generic "zeig alles" (DE) → Show entire database
 SQL: SELECT id, content, meta, timestamp FROM mydata ORDER BY timestamp DESC;
 
-Input: "zeige alles"
-Analysis: Generic "zeige alles" (DE) → Show entire database
-SQL: SELECT id, content, meta, timestamp FROM mydata ORDER BY timestamp DESC;
-
-Input: "liste alle Daten"
-Analysis: "alle Daten" (DE) → Show entire database
-SQL: SELECT id, content, meta, timestamp FROM mydata ORDER BY timestamp DESC;
-
-Input: "zeige alle Emails"
-Analysis: "alle Emails" (DE) → Show ALL emails
-SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%Email%' OR content LIKE '%Email%' ORDER BY timestamp DESC;
-
-EXAMPLES (LIMIT 5 - Preview mode):
-
-Input: "show my email"
-Analysis: No "all" keyword → Preview mode, show max 5 entries
-SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%email%' OR content LIKE '%email%' ORDER BY timestamp DESC LIMIT 5;
-
-Input: "muestra email"
-Analysis: No "todos" keyword (ES) → Preview mode
-SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%email%' OR content LIKE '%email%' ORDER BY timestamp DESC LIMIT 5;
-
 Input: "zeig meine Telefonnummer"
-Analysis: No "alle" keyword (DE) → Preview mode
-SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%Telefonnummer%' OR content LIKE '%Telefonnummer%' ORDER BY timestamp DESC LIMIT 5;
+Analysis: Search for "Telefonnummer" (DE) → Show all matching entries
+SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%Telefonnummer%' OR content LIKE '%Telefonnummer%' ORDER BY timestamp DESC;
 
 Input: "find maria"
-Analysis: Specific search, no "all" → Preview mode
-SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%maria%' OR content LIKE '%maria%' ORDER BY timestamp DESC LIMIT 5;
+Analysis: Search for "maria" → Show all matching entries
+SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%maria%' OR content LIKE '%maria%' ORDER BY timestamp DESC;
 
 FALSE POSITIVES (respond with NO_ACTION):
 
@@ -302,16 +337,15 @@ Now analyze this input:
 Think step-by-step:
 1. What is the VERB and language?
 2. What is the SEARCH TERM?
-3. ⚠️ KEY: Does user say "all"/"todo"/"alles"/"alle" in search context?
-4. LIMIT decision: NO LIMIT (show all) or LIMIT 5 (preview)?
-5. Is this a false positive?
+3. Is this "show all" (no WHERE) or specific search (with WHERE)?
+4. Is this a false positive?
 
 Respond with ONLY the SQL statement or "NO_ACTION". No explanation needed.
 """
         return prompt
 
     def _build_prompt_delete(self, user_input: str) -> str:
-        """SMART DELETE Prompt - detects VALUE vs LABEL (v11.5.0 - optimized)"""
+        """SMART DELETE Prompt - intent-based, VALUE vs LABEL (v11.5.1)"""
         prompt = f"""You are a SMART SQL DELETE specialist for SQLite database 'mydata'.
 
 DATABASE SCHEMA:
@@ -322,6 +356,7 @@ CREATE TABLE mydata (
     lang TEXT,
     timestamp INTEGER
 );
+{self._get_intent_principle('DELETE')}
 
 YOUR JOB: Detect if user wants to delete by VALUE (specific data) or LABEL (category), then generate precise DELETE.
 
@@ -380,6 +415,12 @@ SQL: DELETE FROM mydata WHERE meta LIKE '%teléfono%';
 
 Input: "lösche alle Emails"
 SQL: DELETE FROM mydata WHERE meta LIKE '%Email%';
+
+Input: "delete my address"
+SQL: DELETE FROM mydata WHERE meta LIKE '%address%';
+
+Input: "borra mi cumpleaños"
+SQL: DELETE FROM mydata WHERE meta LIKE '%cumpleaños%';
 
 EXAMPLES (Special - Delete all):
 
@@ -557,18 +598,19 @@ Respond with ONLY the SQL statement or "NO_ACTION". No explanation needed.
 if __name__ == '__main__':
     generator = QwenSQLGenerator()
 
-    print("🧪 Testing Qwen 2.5 Coder SQL Generator (Smart LIMIT! v11.5.0)\n")
+    print("🧪 Testing Qwen 2.5 Coder SQL Generator (Intent-Based! v11.5.1)\n")
 
     # Test cases
     tests = [
         ("save my email test@test.com", "SAVE", "en"),
+        ("guarda mi dirección Hiruela 3, 7-5", "SAVE", "es"),  # NEW: address test!
         ("guarda mi email mschenk.pda@gmail.com", "SAVE", "es"),  # Mixed ES+EN!
         ("speichere meine Email test@test.de", "SAVE", "de"),
         ("show my email", "RETRIEVE", "en"),
-        ("muestra mi email test@test.com", "RETRIEVE", "es"),  # Problem case 2!
+        ("muestra mi dirección", "RETRIEVE", "es"),  # NEW: address retrieval!
         ("zeig alle Daten", "RETRIEVE", "de"),
         ("delete my email", "DELETE", "en"),
-        ("borra mi email test@test.com", "DELETE", "es"),  # Problem case 1!
+        ("borra mi email test@test.com", "DELETE", "es"),
         ("borra mi email", "DELETE", "es"),  # Should delete ALL emails
         ("borra test@test.com", "DELETE", "es"),  # Should delete ONLY test@test.com
         ("how do I save a file in Python?", "SAVE", "en"),  # False positive

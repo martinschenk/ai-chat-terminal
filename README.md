@@ -4,7 +4,7 @@
 
 Smart keyword detection routes sensitive data to local AI instantly. Zero cloud exposure for passwords, emails, or personal info.
 
-[![Version](https://img.shields.io/badge/version-11.4.0-blue.svg)](https://github.com/martinschenk/ai-chat-terminal)
+[![Version](https://img.shields.io/badge/version-11.5.1-blue.svg)](https://github.com/martinschenk/ai-chat-terminal)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](https://github.com/martinschenk/ai-chat-terminal)
 [![Encryption](https://img.shields.io/badge/encryption-AES--256-green.svg)](https://github.com/martinschenk/ai-chat-terminal#encryption)
