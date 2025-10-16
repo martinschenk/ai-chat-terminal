@@ -1,15 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Qwen 2.5 Coder SQL Generator (v11.4.0 - Specialized Prompts!)
+Qwen 2.5 Coder SQL Generator (v11.5.0 - Smart LIMIT Logic!)
 Generates SQL directly for mydata table with SPECIALIZED prompts per action
 
-v11.4.0: Specialized prompts for SAVE/RETRIEVE/DELETE!
-- 3 focused prompts instead of 1 universal
-- SAVE: Smart VALUE+LABEL extraction
-- RETRIEVE: Fuzzy search with LIKE
-- DELETE: VALUE vs LABEL detection (NO MORE OR!)
-- Much better Qwen reasoning!
+v11.5.0: Smart LIMIT logic + Optimized prompts!
+- RETRIEVE: Context-aware LIMIT (NO LIMIT when "all", LIMIT 5 for preview)
+- DELETE: Reduced from 155→115 lines, 5 detective questions
+- SAVE: Unchanged (already optimal)
+- Better Qwen reasoning with focused examples!
 """
 
 import subprocess
@@ -167,7 +166,7 @@ Respond with ONLY the SQL statement or "NO_ACTION". No explanation needed.
         return prompt
 
     def _build_prompt_retrieve(self, user_input: str) -> str:
-        """Specialized prompt for RETRIEVE - focuses on SELECT with fuzzy search"""
+        """Specialized prompt for RETRIEVE - smart LIMIT logic (v11.5.0)"""
         prompt = f"""You are a SQL SELECT specialist for SQLite database 'mydata'.
 
 DATABASE SCHEMA:
@@ -179,13 +178,13 @@ CREATE TABLE mydata (
     timestamp INTEGER            -- Unix timestamp
 );
 
-YOUR JOB: Generate SELECT query to find data based on user's search term.
+YOUR JOB: Generate SELECT query based on whether user wants ALL matches or just a PREVIEW.
 
 STEP 1 - ANALYZE INPUT:
 Detect language from VERB:
-- English verbs: show, get, find, display, tell, check, lookup, retrieve, fetch, read, view, see
-- German verbs: zeige, zeig, hole, finde, sag, schau, prüf, lies, gib aus, ruf ab, such
-- Spanish verbs: muestra, busca, encuentra, dame, dime, consulta, mira, ve, obtén, saca
+- English verbs: show, get, find, display, tell, check, lookup, retrieve, fetch, read, view, see, list
+- German verbs: zeige, zeig, hole, finde, sag, schau, prüf, lies, gib aus, ruf ab, such, liste
+- Spanish verbs: muestra, busca, encuentra, dame, dime, consulta, mira, ve, obtén, saca, lista
 
 Extract SEARCH TERM from text after verb:
 - Can be a LABEL: "email", "phone", "birthday"
@@ -193,80 +192,96 @@ Extract SEARCH TERM from text after verb:
 - Can be partial: "maria" should find "maria@test.com"
 - Can be "all"/"todo"/"alle" for complete list
 
-STEP 2 - DETERMINE QUERY TYPE:
-Case A: "show all" / "list all" variations (VALID - not false positives!)
-→ English: "show all", "list all"
-→ Spanish: "muestra todo", "lista todo"
-→ German: "zeig alles", "zeige alles", "liste alles", "liste alle Daten"
-→ Return ALL records, ordered by newest first
+STEP 2 - ⚠️ KEY DECISION: Does user want ALL matches or just a PREVIEW?
 
-Case B: Specific search term
-→ Search in BOTH meta AND content (user might not know which field)
-→ Use LIKE with % wildcards for flexible matching
-→ Order by timestamp DESC
-→ LIMIT 5 (prevent overwhelming output)
+Indicators for NO LIMIT (show everything):
+- User says "all" or "todo" or "alles" or "alle" in search context
+- Examples: "show all", "show all emails", "muestra todo", "muestra todos los emails", "zeige alle Emails", "liste alle Daten"
+- Pattern: "[verb] all [optional_type]" or "[verb] [type] all/todos/alle"
+- Also: generic "show all" without type means show entire database
+
+Indicators for LIMIT 5 (preview mode):
+- User asks for type WITHOUT "all" keyword
+- Examples: "show my email", "muestra email", "zeig Telefon", "find maria"
+- Pattern: "[verb] [type]" (no "all")
+- Purpose: Prevent overwhelming output when user just wants to check if something exists
 
 STEP 3 - GENERATE SQL:
-Format: SELECT id, content, meta, timestamp FROM mydata WHERE ... ORDER BY timestamp DESC;
+Format: SELECT id, content, meta, timestamp FROM mydata WHERE ... ORDER BY timestamp DESC [LIMIT 5];
+Note: Include LIMIT 5 ONLY if preview mode detected. Otherwise NO LIMIT.
 
-EXAMPLES:
-
-Input: "show my email"
-Analysis: Verb=show (EN), Search term=email
-SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%email%' OR content LIKE '%email%' ORDER BY timestamp DESC LIMIT 5;
-
-Input: "muestra el email de maria"
-Analysis: Verb=muestra (ES), Search term=maria (context: email)
-SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%maria%' OR content LIKE '%maria%' ORDER BY timestamp DESC LIMIT 5;
-
-Input: "zeig meine Telefonnummer"
-Analysis: Verb=zeig (DE), Search term=Telefonnummer
-SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%Telefonnummer%' OR content LIKE '%Telefonnummer%' ORDER BY timestamp DESC LIMIT 5;
-
-Input: "find test@test.com"
-Analysis: Verb=find (EN), Search term=test@test.com (VALUE!)
-SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%test@test.com%' OR content LIKE '%test@test.com%' ORDER BY timestamp DESC LIMIT 5;
+EXAMPLES (NO LIMIT - User wants ALL matches):
 
 Input: "show all"
-Analysis: Special case - list everything
+Analysis: Generic "show all" → Show entire database
 SQL: SELECT id, content, meta, timestamp FROM mydata ORDER BY timestamp DESC;
 
 Input: "list all"
-Analysis: Special case - list everything
+Analysis: Generic "list all" → Show entire database
 SQL: SELECT id, content, meta, timestamp FROM mydata ORDER BY timestamp DESC;
 
+Input: "show all emails"
+Analysis: "all emails" → Show ALL email entries, not just preview
+SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%email%' OR content LIKE '%email%' ORDER BY timestamp DESC;
+
+Input: "show all my emails"
+Analysis: "all my emails" → Show ALL, not preview
+SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%email%' OR content LIKE '%email%' ORDER BY timestamp DESC;
+
 Input: "muestra todo"
-Analysis: Special case - list everything (Spanish - VALID, not false positive!)
+Analysis: Generic "muestra todo" (ES) → Show entire database
 SQL: SELECT id, content, meta, timestamp FROM mydata ORDER BY timestamp DESC;
 
 Input: "lista todo"
-Analysis: Special case - list everything (Spanish)
+Analysis: Generic "lista todo" (ES) → Show entire database
 SQL: SELECT id, content, meta, timestamp FROM mydata ORDER BY timestamp DESC;
 
+Input: "muestra todos los emails"
+Analysis: "todos los emails" (ES) → Show ALL emails
+SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%email%' OR content LIKE '%email%' ORDER BY timestamp DESC;
+
 Input: "zeig alles"
-Analysis: Special case - list everything (German - VALID, not false positive!)
+Analysis: Generic "zeig alles" (DE) → Show entire database
 SQL: SELECT id, content, meta, timestamp FROM mydata ORDER BY timestamp DESC;
 
 Input: "zeige alles"
-Analysis: Special case - list everything (German)
-SQL: SELECT id, content, meta, timestamp FROM mydata ORDER BY timestamp DESC;
-
-Input: "liste alles"
-Analysis: Special case - list everything (German)
+Analysis: Generic "zeige alles" (DE) → Show entire database
 SQL: SELECT id, content, meta, timestamp FROM mydata ORDER BY timestamp DESC;
 
 Input: "liste alle Daten"
-Analysis: Special case - list everything (German, verbose)
+Analysis: "alle Daten" (DE) → Show entire database
 SQL: SELECT id, content, meta, timestamp FROM mydata ORDER BY timestamp DESC;
 
-Input: "check if I have 669686832"
-Analysis: Verb=check (EN), Search term=669686832 (phone number)
-SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%669686832%' OR content LIKE '%669686832%' ORDER BY timestamp DESC LIMIT 5;
+Input: "zeige alle Emails"
+Analysis: "alle Emails" (DE) → Show ALL emails
+SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%Email%' OR content LIKE '%Email%' ORDER BY timestamp DESC;
+
+EXAMPLES (LIMIT 5 - Preview mode):
+
+Input: "show my email"
+Analysis: No "all" keyword → Preview mode, show max 5 entries
+SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%email%' OR content LIKE '%email%' ORDER BY timestamp DESC LIMIT 5;
+
+Input: "muestra email"
+Analysis: No "todos" keyword (ES) → Preview mode
+SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%email%' OR content LIKE '%email%' ORDER BY timestamp DESC LIMIT 5;
+
+Input: "zeig meine Telefonnummer"
+Analysis: No "alle" keyword (DE) → Preview mode
+SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%Telefonnummer%' OR content LIKE '%Telefonnummer%' ORDER BY timestamp DESC LIMIT 5;
+
+Input: "find maria"
+Analysis: Specific search, no "all" → Preview mode
+SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%maria%' OR content LIKE '%maria%' ORDER BY timestamp DESC LIMIT 5;
 
 FALSE POSITIVES (respond with NO_ACTION):
 
 Input: "show me how to code in Python"
 Reason: Tutorial request, not database search
+SQL: NO_ACTION
+
+Input: "call my mom"
+Reason: Idiom/reminder (even though contains "call" - not a search verb!)
 SQL: NO_ACTION
 
 Input: "display system settings"
@@ -277,21 +292,26 @@ Input: "find the nearest restaurant"
 Reason: Location search, not database query
 SQL: NO_ACTION
 
+Input: "remember to check email later"
+Reason: Reminder/todo, not retrieval query
+SQL: NO_ACTION
+
 Now analyze this input:
 "{user_input}"
 
 Think step-by-step:
 1. What is the VERB and language?
 2. What is the SEARCH TERM?
-3. Is this "show all" or specific search?
-4. Is this a false positive?
+3. ⚠️ KEY: Does user say "all"/"todo"/"alles"/"alle" in search context?
+4. LIMIT decision: NO LIMIT (show all) or LIMIT 5 (preview)?
+5. Is this a false positive?
 
 Respond with ONLY the SQL statement or "NO_ACTION". No explanation needed.
 """
         return prompt
 
     def _build_prompt_delete(self, user_input: str) -> str:
-        """SMART DELETE Prompt - detects VALUE vs LABEL!"""
+        """SMART DELETE Prompt - detects VALUE vs LABEL (v11.5.0 - optimized)"""
         prompt = f"""You are a SMART SQL DELETE specialist for SQLite database 'mydata'.
 
 DATABASE SCHEMA:
@@ -303,146 +323,95 @@ CREATE TABLE mydata (
     timestamp INTEGER
 );
 
-YOUR JOB: Intelligently detect if user wants to delete by VALUE or by LABEL, then generate precise DELETE.
+YOUR JOB: Detect if user wants to delete by VALUE (specific data) or LABEL (category), then generate precise DELETE.
 
-⚠️ CRITICAL RULE: NEVER use OR in WHERE clause! Choose ONE: either content or meta!
+⚠️ CRITICAL RULE: NEVER use OR in WHERE clause! Choose ONE field: either content or meta!
 
 STEP 1 - ANALYZE INPUT:
 Detect language from VERB:
-- English verbs: delete, remove, forget, clear, erase, drop, wipe, purge
-- German verbs: lösche, entferne, vergiss, tilg, raum auf, wirf weg, streich
-- Spanish verbs: borra, elimina, olvida, quita, suprime, limpia, remueve
+- English: delete, remove, forget, clear, erase, drop, wipe, purge
+- German: lösche, entferne, vergiss, tilg, raum auf, wirf weg, streich
+- Spanish: borra, elimina, olvida, quita, suprime, limpia, remueve
 
 Extract text after verb and DETECT TYPE:
 
-TYPE A: VALUE (specific data to delete)
-Indicators:
-- Email format: contains @ and domain (test@test.com, maria@example.es)
-- Phone format: only digits, 6+ chars (669686832, 123456789)
-- Date format: contains / or - with numbers (15/03/1990, 1990-03-15)
-- API key format: contains hyphens or long alphanumeric (sk-abc123, api_key_xyz)
-- Name with context: "María", "Martin" when mentioned as VALUE
+TYPE A - VALUE (specific data): Email format (@+domain), phone (digits 6+), date (/or-), API key (hyphens/long)
+TYPE B - LABEL (category): Generic words without specific format (email, phone, birthday, name, etc.)
 
-TYPE B: LABEL (category/type to delete)
-Indicators:
-- Generic words: email, phone, telefono, birthday, name, API key, password
-- With possessives: mi email, my phone, meine Email
-- Without specific value: just the category
+STEP 2 - DELETE STRATEGY:
+Strategy A (VALUE): DELETE FROM mydata WHERE content = '<exact_value>';  ← Use = for precision!
+Strategy B (LABEL): DELETE FROM mydata WHERE meta LIKE '%<label>%';     ← Use LIKE for variations
+Strategy C (BOTH mentioned): Prefer VALUE (more specific!)
 
-STEP 2 - DETERMINE DELETE STRATEGY:
-
-Strategy A: VALUE detected → Delete ONLY that specific content
-SQL Pattern: DELETE FROM mydata WHERE content = '<exact_value>';
-Note: Use = for exact match, NOT LIKE! We want precision.
-
-Strategy B: LABEL detected → Delete ALL entries with that meta
-SQL Pattern: DELETE FROM mydata WHERE meta LIKE '%<label>%';
-Note: Use LIKE because meta might have variations (email, Email, my email)
-
-Strategy C: BOTH mentioned BUT value is specific → Prefer VALUE (more precise!)
-Example: "borra mi email test@test.com" → Delete ONLY test@test.com, not all emails!
-
-⚠️ NEVER NEVER NEVER: DELETE WHERE meta LIKE ... OR content LIKE ...
-This would delete too much! Always choose ONE field!
-
-STEP 3 - SPECIAL CASES:
-
-Case: "delete all" / "borra todo" / "lösche alle"
-SQL: DELETE FROM mydata;
+Special: "delete all"/"borra todo"/"lösche alle" → DELETE FROM mydata;
 
 EXAMPLES (VALUE - Delete specific data):
 
 Input: "borra test@test.com"
-Detection: VALUE (email format with @)
-Strategy: Delete this specific email only
 SQL: DELETE FROM mydata WHERE content = 'test@test.com';
 
 Input: "delete 669686832"
-Detection: VALUE (phone format - only digits)
-Strategy: Delete this specific phone only
 SQL: DELETE FROM mydata WHERE content = '669686832';
 
 Input: "elimina maria@test.com"
-Detection: VALUE (email format)
-Strategy: Delete this specific email
 SQL: DELETE FROM mydata WHERE content = 'maria@test.com';
 
 Input: "lösche sk-abc123xyz"
-Detection: VALUE (API key format)
-Strategy: Delete this specific API key
 SQL: DELETE FROM mydata WHERE content = 'sk-abc123xyz';
 
 Input: "borra el email test@test.com"
-Detection: BOTH mentioned (label="email", value="test@test.com")
-Strategy: VALUE is more specific → prefer it!
+Note: BOTH mentioned but VALUE is specific → prefer VALUE!
 SQL: DELETE FROM mydata WHERE content = 'test@test.com';
 
 Input: "borra mi email test@test.com"
-Detection: BOTH mentioned (label="mi email", value="test@test.com")
-Strategy: VALUE is more specific → prefer it!
+Note: BOTH mentioned but VALUE is specific → prefer VALUE!
 SQL: DELETE FROM mydata WHERE content = 'test@test.com';
 
-EXAMPLES (LABEL - Delete all entries of type):
+EXAMPLES (LABEL - Delete all of type):
 
 Input: "borra mi email"
-Detection: LABEL (generic word "email", no specific value)
-Strategy: Delete ALL emails
 SQL: DELETE FROM mydata WHERE meta LIKE '%email%';
 
 Input: "delete my phone"
-Detection: LABEL (generic word "phone", no number given)
-Strategy: Delete ALL phone entries
 SQL: DELETE FROM mydata WHERE meta LIKE '%phone%';
 
 Input: "elimina el teléfono"
-Detection: LABEL (generic word, no specific number)
-Strategy: Delete ALL phone entries
 SQL: DELETE FROM mydata WHERE meta LIKE '%teléfono%';
 
 Input: "lösche alle Emails"
-Detection: LABEL (plural "Emails", no specific address)
-Strategy: Delete ALL email entries
 SQL: DELETE FROM mydata WHERE meta LIKE '%Email%';
 
-EXAMPLES (Special Cases):
+EXAMPLES (Special - Delete all):
 
 Input: "borra todo"
-Detection: Delete everything
 SQL: DELETE FROM mydata;
 
 Input: "delete all"
-Detection: Delete everything
 SQL: DELETE FROM mydata;
 
 Input: "lösche alle Daten"
-Detection: Delete everything
 SQL: DELETE FROM mydata;
 
-FALSE POSITIVES (respond with NO_ACTION):
+FALSE POSITIVES:
 
 Input: "delete all files from desktop"
-Reason: Filesystem operation, not database
 SQL: NO_ACTION
 
 Input: "how do I delete a record?"
-Reason: Tutorial question
 SQL: NO_ACTION
 
 Input: "remove the background"
-Reason: Image editing, not database
 SQL: NO_ACTION
 
 Now analyze this input:
 "{user_input}"
 
-Think step-by-step like a detective:
+Think step-by-step:
 1. What is the VERB and language?
-2. What comes after the verb?
-3. Is it a VALUE (specific data with format) or LABEL (generic category)?
-4. If VALUE: what is the exact content to delete?
-5. If LABEL: what is the meta category?
-6. If both: which is more specific? (usually VALUE!)
-7. Is this a false positive?
+2. Is there a VALUE (specific format) or LABEL (generic category)?
+3. If BOTH: which is more specific?
+4. Is this a false positive?
+5. What SQL to generate?
 
 Respond with ONLY the SQL statement or "NO_ACTION". No explanation needed.
 """
@@ -588,7 +557,7 @@ Respond with ONLY the SQL statement or "NO_ACTION". No explanation needed.
 if __name__ == '__main__':
     generator = QwenSQLGenerator()
 
-    print("🧪 Testing Qwen 2.5 Coder SQL Generator (Specialized Prompts! v11.4.0)\n")
+    print("🧪 Testing Qwen 2.5 Coder SQL Generator (Smart LIMIT! v11.5.0)\n")
 
     # Test cases
     tests = [
