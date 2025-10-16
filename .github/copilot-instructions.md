@@ -1,112 +1,145 @@
 # AI Chat Terminal - Copilot Instructions
 
-> **⚠️ Active Development Notice (September 2025)**  
+> **⚠️ Active Development Notice (October 2025)**
 > This project is currently being actively developed with Claude Code. Architecture and implementation details may change frequently. Always verify current code structure before making assumptions.
 
-## 🧠 Dual AI Architecture (Critical Understanding)
+## 🧠 KISS SQL Architecture (v11.3.0)
 
-This project uses **two separate AI models** for different purposes:
+This project uses **keyword-based routing + Qwen 2.5 Coder** for local data operations:
 
-1. **Privacy Classifier** (`privacy_classifier_fast.py`): `all-MiniLM-L6-v2` for ultra-fast privacy detection (40% faster)
-2. **Memory System** (`memory_system.py`): `multilingual-e5-small` for semantic search in local SQLite database
+1. **Keyword Detection** (`local_storage_detector.py`): Pattern-based matching with `verb {x}` syntax
+2. **SQL Generation** (`qwen_sql_generator.py`): Qwen 2.5 Coder 7B via Ollama for natural language → SQL
+3. **OpenAI Integration** (`chat_system.py`): Routes non-DB queries to GPT-4o with conversation history
 
-**Key Pattern**: Privacy-sensitive data (SENSITIVE/PROPRIETARY/PERSONAL) routes to local processing, while PUBLIC queries go to OpenAI.
+**Key Pattern**: Keywords (save/show/delete + 30+ synonyms) route to local SQLite database, everything else goes to OpenAI with context history.
 
 ## 📁 Core Architecture
 
 - **`aichat.zsh`**: Main entry point, loads modular components from `modules/`
-- **`chat_system.py`**: Core Python orchestrator with OpenAI API integration
-- **`privacy_classifier_fast.py`**: AI-based privacy classification using sentence transformers
-- **`memory_system.py`**: Vector embeddings + SQLite for semantic memory
-- **`response_generator.py`**: Template-based responses with optional Phi-3 support
+- **`chat_system.py`**: Core Python orchestrator with OpenAI API integration + context history
+- **`local_storage_detector.py`**: Pattern-based keyword detection from `lang/*.conf` files
+- **`qwen_sql_generator.py`**: Qwen 2.5 Coder for natural language → SQL generation
+- **`memory_system.py`**: Simple SQLite database with `mydata` and `chat_history` tables
+- **`response_generator.py`**: Phi-3 via Ollama for natural DB responses (optional, template fallback)
 - **`modules/`**: Modular zsh components (functions, config, language utils)
-- **`lang/`**: 19 language configurations with UI strings and templates
+- **`lang/`**: 3 language configurations (EN/DE/ES) with ultra-flexible pattern keywords
 
-## 🔑 Privacy Routing System
+## 🔑 Keyword-Based Routing System
 
 ```python
-# Core routing logic in privacy_classifier_fast.py
-route_locally = category in ['SENSITIVE', 'PROPRIETARY', 'PERSONAL']
-# Categories determined by AI classification, not hardcoded keywords
+# Core routing logic in local_storage_detector.py
+if self._matches_keywords(user_input, save_keywords):
+    return 'SAVE'
+elif self._matches_keywords(user_input, retrieve_keywords):
+    return 'RETRIEVE'
+elif self._matches_keywords(user_input, delete_keywords):
+    return 'DELETE'
+else:
+    return None  # Route to OpenAI
 ```
 
-**Critical**: No hardcoded keyword matching. The system uses semantic similarity with 160+ training examples across 4 categories.
+**Critical**: Ultra-flexible pattern keywords using `verb {x}` syntax:
+- `save {x}` matches "save my email", "save the email", "save email" identically
+- 30+ verb synonyms per language (save/note/record/add/log/write/register/put/set...)
+- NO possessive requirements - works with ANY possessive or none at all
 
 ## 🛠️ Development Workflows
 
-### Testing Privacy Classification
+### Testing SQL Generation
 ```bash
-# Test PII detection with comprehensive examples
-python3 test_pii.py
+# Test Qwen SQL generation with multilingual examples
+python3 qwen_sql_generator.py
+
+# Test keyword detection
+python3 local_storage_detector.py
+
+# Check database contents
+sqlite3 ~/.aichat/memory.db "SELECT * FROM mydata;"
+sqlite3 ~/.aichat/memory.db "SELECT COUNT(*) FROM chat_history;"
 ```
 
 ### Running the System
 ```bash
-# Install and configure
+# Install and configure (requires Ollama + Qwen 2.5 Coder)
 ./install.sh
 # Start chat (after adding to shell profile)
 ai
 ```
 
 ### Configuration Menu
-Access via `/config` in chat or `ai config` command. Handles OpenAI API keys, language selection, and privacy settings.
+Access via `/config` in chat or `ai config` command. Handles OpenAI API keys, language selection, and model settings.
 
 ## 🌍 Multilingual Architecture
 
-- **Language configs**: `lang/{code}.conf` (en, de, es, fr, etc.)
-- **Regional variants**: `lang/de-bayerisch.conf`, `lang/es-mexicano.conf`
-- **Cross-language memory**: Query in German, find English content seamlessly
-- **E5 prefixes**: Use "query:" and "passage:" prefixes for optimal multilingual embeddings
+- **Language configs**: `lang/en.conf`, `lang/de.conf`, `lang/es.conf`
+- **Pattern keywords per language**: 30+ verb synonyms for each action (SAVE/RETRIEVE/DELETE)
+- **Language detection**: Qwen auto-detects language from verb (guarda→ES, save→EN, speichere→DE)
+- **Mixed languages supported**: "guarda mi email" (ES verb + EN noun) extracts "email" as meta
 
 ## 📦 Dependencies & Installation
 
 ### Core Dependencies
-- `sentence-transformers`: For both AI models
-- `sqlite-vec`: Vector similarity search
-- `requests`: OpenAI API calls
+- **Ollama**: Local AI runtime (required)
+- **Qwen 2.5 Coder 7B**: SQL generation model via Ollama
+- **requests**: OpenAI API calls
+- **SQLite**: Database for mydata + chat_history
 
 ### Optional Dependencies
-- **Presidio**: Enhanced PII detection (graceful fallback to regex)
-- **Phi-3**: Natural response generation (2GB model, user choice)
-- **spaCy models**: Multilingual NER support
+- **Phi-3 via Ollama**: Natural response generation (user choice, template fallback)
+- **SQLCipher**: Database encryption (optional)
 
 ### Installation Pattern
 ```bash
-# Smart dependency installation in install.sh
-# Checks for existing installations, offers reinstall/fresh install
-# Downloads models only if needed, caches for performance
+# Install script checks for Ollama and Qwen 2.5 Coder
+./install.sh
+# Prompts user to install missing dependencies
+# No Python ML models needed - uses Ollama for everything
 ```
 
 ## 🔒 Privacy-First Patterns
 
-### Local Processing Flow
+### Local DB Flow (Never Sent to OpenAI!)
 ```python
-# Pattern for sensitive data handling
-if privacy_category in ['SENSITIVE', 'PROPRIETARY', 'PERSONAL']:
-    # Store in local SQLite with vector embeddings
-    memory_system.store_private_data(text, metadata)
-    # Generate template response (never sends to OpenAI)
-    response = response_generator.generate_local_response(intent, category)
+# Pattern for keyword-detected data
+action = detector.detect_action(user_input)  # Returns SAVE/RETRIEVE/DELETE or None
+if action:
+    # Generate SQL with Qwen (local Ollama)
+    result = qwen_generator.generate_sql(user_input, action)
+    # Execute locally
+    cursor.execute(result['sql'])
+    # Generate response with Phi-3 or template (never sends to OpenAI)
+    response = response_generator.generate(action, data)
 ```
 
-### Memory Storage Schema
+### Database Schema (Two Tables, One File)
 ```sql
--- Enhanced schema with privacy categories and vector embeddings
-CREATE TABLE conversations (
+-- Table 1: Private data storage (NEVER sent to OpenAI)
+CREATE TABLE mydata (
     id INTEGER PRIMARY KEY,
-    created_at TIMESTAMP,
-    updated_at TIMESTAMP,
-    content TEXT,
-    metadata JSON  -- Includes privacy_category, language, importance
+    content TEXT NOT NULL,      -- Actual data (email, phone, etc.)
+    meta TEXT,                   -- Label (email, phone, birthday, etc.)
+    lang TEXT,                   -- Language: en, de, es
+    timestamp INTEGER,           -- Unix timestamp
+    UNIQUE(content, meta)        -- Prevent duplicates
+);
+
+-- Table 2: OpenAI conversation history (IS sent for context)
+CREATE TABLE chat_history (
+    id INTEGER PRIMARY KEY,
+    session_id TEXT NOT NULL,
+    role TEXT NOT NULL,          -- "user" or "assistant"
+    content TEXT NOT NULL,       -- The message
+    timestamp INTEGER NOT NULL,
+    metadata TEXT                -- Optional JSON metadata
 );
 ```
 
 ## 🚀 Performance Considerations
 
-- **Model caching**: AI models lazy-load and cache embeddings in `~/.aichat/`
-- **Fast classification**: MiniLM model processes queries in ~31ms
-- **Vector search**: Uses sqlite-vec extension for efficient similarity search
-- **Graceful degradation**: Falls back to keyword-based classification if AI models unavailable
+- **Fast keyword matching**: Regex-based detection with `\b` word boundaries for short keywords
+- **Qwen SQL generation**: ~15s timeout (Qwen 2.5 Coder is specialized for SQL/code)
+- **Context window**: Last 20 messages from chat_history (hardcoded)
+- **Cleanup**: Keep only last 100 messages total (runs on startup)
 
 ## 🔧 Configuration Management
 
@@ -120,51 +153,65 @@ OPENAI_API_KEY="sk-..."
 
 ### Language Configuration
 ```bash
-# lang/en.conf pattern - shell variables for UI strings
+# lang/en.conf pattern - shell variables for UI strings + pattern keywords
 LANG_LABEL_YOU="You"
 LANG_LABEL_AI="AI"
 LANG_DB_SOURCE="🗄️ Source: Local database"
+
+# Ultra-flexible pattern keywords (v11.3.0)
+KEYWORDS_SAVE="save {x},note {x},record {x},add {x},log {x},write {x}..."
+KEYWORDS_RETRIEVE="show {x},get {x},find {x},display {x},tell {x}..."
+KEYWORDS_DELETE="delete {x},remove {x},forget {x},clear {x},erase {x}..."
 ```
 
 ## 🧪 Testing Patterns
 
-- **`test_pii.py`**: Comprehensive test suite for privacy classification
-- **Multilingual test cases**: Credit cards, passwords, business data across languages
-- **Performance benchmarks**: <200ms targets for all operations
-- **Fallback testing**: Ensures graceful degradation without AI models
+- **`qwen_sql_generator.py`**: Run standalone to test SQL generation with multilingual examples
+- **`local_storage_detector.py`**: Test keyword detection and pattern matching
+- **Database inspection**: `sqlite3 ~/.aichat/memory.db` to verify data storage
+- **Multilingual tests**: EN/DE/ES examples with flexible possessive structures
 
 ## ⚠️ Common Pitfalls
 
-1. **Model Paths**: Always use `Path.home() / '.aichat'` for consistent config directory
-2. **E5 Prefixes**: Memory system requires "query:"/"passage:" prefixes for optimal results
-3. **Privacy Categories**: Use exact strings: `['SENSITIVE', 'PROPRIETARY', 'PERSONAL', 'PUBLIC']`
-4. **Zsh Integration**: Main function must be `ai_chat_function` in global scope
-5. **Error Handling**: Always provide fallback mechanisms for missing AI models
+1. **Keyword Loading Bug**: Use `^KEYWORDS_SAVE` (line-start anchor) not just `KEYWORDS_SAVE` in regex to avoid matching `LANG_KEYWORDS_SAVE` first
+2. **Pattern Syntax**: Keywords use `verb {x}` where `{x}` is regex placeholder, not literal `{x}` string
+3. **Database Tables**: `mydata` (private) vs `chat_history` (OpenAI context) - completely different purposes!
+4. **Ollama Required**: System won't work without Ollama + Qwen 2.5 Coder installed
+5. **DB Visibility**: MUST always show 🗄️ icon when data comes from/goes to local DB (transparency requirement!)
 
-## 🔄 Migration Patterns
+## 🔄 Version History
 
-When upgrading models or schemas, provide migration scripts (see `migrate_to_e5_base.py`) that:
-- Preserve existing user data
-- Re-encode embeddings with new models
-- Update database schema incrementally
-- Provide progress indicators for large migrations
+### v11.3.0 (Current) - Ultra-Flexible Keywords
+- Pattern-based keywords: `verb {x}` matches ANY text
+- No possessive requirements (my/the/his/meine/die/mi/la all work OR omit entirely)
+- 30+ verb synonyms per language
+- Fixed ChatSystem regex bug (^ anchor + re.MULTILINE)
+
+### v11.0.4 - OpenAI Context History
+- Save messages to chat_history after OpenAI
+- Load last 20 messages for context
+- Cleanup on startup (keep 100 messages)
+
+### v11.0.0 - KISS SQL Architecture
+- Qwen 2.5 Coder for direct SQL generation
+- Simple mydata table (no vector embeddings)
+- Keyword-based routing (no ML classifier)
 
 ## 🚧 Development Status & Future Changes
 
-**Current Development Environment**: Claude Code (September 2025)
+**Current Development Environment**: Claude Code (October 2025)
 
-**Expected Changes**:
-- Architecture modifications may be in progress
-- New features and components may be added
-- Performance optimizations and refactoring ongoing
+**Known Issues**:
+- DELETE prompt ambiguity - Qwen may hallucinate content values when user only provides label
+- Need to separate DELETE by label vs DELETE by value in prompt examples
 
 **Before Making Changes**:
-1. Check current file structure with `ls -la` and `find . -name "*.py"`
-2. Verify imports and dependencies are up to date
-3. Run `python3 test_pii.py` to ensure privacy classification still works
-4. Test installation flow with `./install.sh` if modifying core components
+1. Test SQL generation: `python3 qwen_sql_generator.py`
+2. Test keyword detection: `python3 local_storage_detector.py`
+3. Verify both databases: `sqlite3 ~/.aichat/memory.db "SELECT * FROM mydata; SELECT COUNT(*) FROM chat_history;"`
+4. Copy to test environment: `cp *.py ~/.aichat/ && pkill -f "python.*chat_daemon"`
 
 **Integration Notes**:
-- Always maintain backward compatibility for existing user configurations
-- Preserve the dual AI model architecture principle
-- Keep privacy-first routing as the core design pattern
+- Always maintain keyword-based routing (no ML models!)
+- Preserve two-table architecture (mydata vs chat_history)
+- Keep DB visibility requirement (🗄️ icon mandatory for transparency)

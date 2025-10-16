@@ -1,95 +1,113 @@
-# AI Chat Terminal - Development Guidelines
+# AI Chat Terminal - Project Context for Claude Code
 
-## Project Overview
-Privacy-focused AI terminal that routes sensitive data locally while using OpenAI for general queries.
+## Project Purpose
 
-**GitHub**: https://github.com/martinschenk/ai-chat-terminal
-**Current Version**: 6.1.0
+Privacy-first terminal chat that intelligently routes queries:
+- **General questions** → OpenAI (GPT-4o)
+- **Private data** (detected by keywords) → Local Qwen 2.5 Coder → Encrypted SQLite
 
-## Core Architecture
+User's sensitive data NEVER leaves their Mac.
 
-### Dual AI Models
-1. **Privacy Classifier** (`privacy_classifier_fast.py`)
-   - Model: `all-MiniLM-L6-v2` (22MB)
-   - Routes SENSITIVE/PROPRIETARY/PERSONAL → Local
-   - Routes PUBLIC → OpenAI
+## Current Version
 
-2. **Memory System** (`memory_system.py`)
-   - Model: `multilingual-e5-base` (278MB)
-   - Semantic search in SQLite with vector embeddings
-   - Uses E5 prefixes: "query:" for search, "passage:" for storage
+v11.3.0 - Ultra-flexible keywords with 30+ verb synonyms per language
 
-3. **PII Detector** (`pii_detector.py`)
-   - Microsoft Presidio integration (optional)
-   - Fallback to regex patterns
-   - Detects credit cards, API keys, passwords, etc.
+## Key Architecture
 
-4. **Response Generator** (`response_generator.py`)
-   - Phi-3 via Ollama for natural responses (optional)
-   - Template fallback system
+### Routing System
+1. **Keyword Detection** (<1ms) - Checks for save/show/delete verbs in EN/DE/ES
+2. **Match** → Local Qwen 2.5 Coder generates SQL → Encrypted SQLite
+3. **No match** → OpenAI (cloud) for general queries
 
-## Key Files
-- `chat_system.py` - Main routing logic with OpenAI integration
-- `install.sh` - Installation with optional Presidio/Phi-3
-- `memory_system.py` - Database with enhanced private data methods
-- `test_pii.py` - Comprehensive test suite
+### Core Files
+- `chat_system.py` - Main orchestrator with keyword routing
+- `qwen_sql_generator.py` - SQL generation via Qwen 2.5 Coder (7B)
+- `memory_system.py` - SQLite interface with AES-256 encryption
+- `local_storage_detector.py` - Keyword detection with pattern matching
+- `lang/*.conf` - Language-specific keywords (EN/DE/ES)
+
+### Database Schema
+```sql
+CREATE TABLE mydata (
+    id INTEGER PRIMARY KEY,
+    content TEXT NOT NULL,  -- The actual data
+    meta TEXT,              -- Label: "email", "password", etc.
+    lang TEXT,              -- Language: en, de, es
+    timestamp INTEGER       -- Unix timestamp
+);
+```
+
+## Critical Requirements
+
+### 1. DB Visibility (MANDATORY!)
+User MUST ALWAYS see when data comes from/goes to local DB:
+- **SAVE:** Show icon "🗄️ Stored 🔒"
+- **RETRIEVE:** Show icon "🗄️🔍 [data] ([label])"
+- **DELETE:** Show preview + "🗑️ Deleted (count)"
+- Icons ensure transparency: local vs cloud data
+
+### 2. Keyword Flexibility (v11.3.0)
+Keywords use pattern `verb {x}` where {x} matches ANY text:
+```bash
+# All work identically:
+save my email test@test.com      ✅
+save the email test@test.com     ✅
+save email test@test.com         ✅
+```
+
+**30+ verb synonyms per language:**
+- SAVE: save/note/record/add/log/write/register (EN)
+- RETRIEVE: show/get/find/check/tell/lookup (EN)
+- DELETE: delete/remove/forget/erase/clear (EN)
+- Similar coverage in DE/ES
+
+### 3. No Hardcoded Keywords
+ALL keywords loaded from `lang/*.conf` files dynamically.
 
 ## Development Workflow
 
-### Testing
-```bash
-# Run tests
-python3 test_pii.py
-
-# Test classifier
-python3 privacy_classifier_fast.py
-```
-
-### After Changes
+### Testing Changes
 ```bash
 # Copy to test environment
 cp *.py /Users/martin/.aichat/
-cp modules/*.zsh /Users/martin/.aichat/modules/
+cp lang/*.conf /Users/martin/.aichat/lang/
 
-# Retrain if needed
-cd /Users/martin/.aichat
-python3 -c "from privacy_classifier_fast import FastPrivacyClassifier; c = FastPrivacyClassifier(); c.train_fast()"
+# Restart daemon
+pkill -9 -f chat_daemon.py
 ```
 
+### Running Tests
+```bash
+# Test Qwen SQL generation
+python3 qwen_sql_generator.py
+
+# Test keyword detection
+python3 local_storage_detector.py
+```
+
+## Common Tasks
+
+### Adding New Keywords
+1. Edit `lang/en.conf`, `lang/de.conf`, `lang/es.conf`
+2. Add to `KEYWORDS_SAVE`, `KEYWORDS_RETRIEVE`, or `KEYWORDS_DELETE`
+3. Use pattern: `verb {x}` for flexibility
+4. Copy to `.aichat/lang/` and restart daemon
+
+### Modifying SQL Generation
+1. Edit `qwen_sql_generator.py` `_build_prompt()` method
+2. Update pattern examples to teach Qwen new behaviors
+3. Keep examples generic with placeholders like `<TEXT>`
+4. Test with various inputs before committing
+
+### Updating Language Strings
+1. Edit lang files: `lang/[language].conf`
+2. Keys like `msg_stored`, `msg_no_results`, etc.
+3. Icons are mandatory in responses!
+
 ## Important Notes
-- Privacy categories stored in `chat_history.metadata` JSON field
-- No separate private_data table needed
-- Presidio and Phi-3 are optional with fallbacks
-- System works without any optional dependencies
 
-## ⚠️ CRITICAL REQUIREMENT - LOCAL DB VISIBILITY (PFLICHTENHEFT)
-
-**MANDATORY:** User MUST ALWAYS see when data comes from or goes to local DB!
-
-### Requirements:
-1. **SAVE Operations:** MUST show friendly notification that data was saved to local DB
-   - Example: "💾 In lokaler DB gespeichert!"
-   - Example: "🔒 Sicher in DB abgelegt!"
-
-2. **RETRIEVE Operations:** MUST show 🔍 icon + friendly message that data comes from DB
-   - Example: "🔍 Aus DB geholt: mschenk.pda@gmail.com"
-   - Example: "🔍 In lokaler DB gefunden: 669686832"
-
-3. **DELETE Operations:** MUST show confirmation with count
-   - Example: "🗑️ 3 Einträge aus DB gelöscht!"
-
-4. **LIST Operations:** MUST show header that this is DB data
-   - Example: "📊 Hier sind deine lokalen Daten:"
-
-### Implementation:
-- **Phi-3 generates varied, playful responses** (NOT hardcoded!)
-- **Icon MUST be in EVERY response** (🔍 for retrieve, 💾 for save, etc.)
-- **User must NEVER be confused** if data comes from DB or OpenAI
-- **Response format:** `[ICON] [Friendly message]: [Data]`
-
-### Why This Matters:
-- User needs transparency about local vs. cloud data
-- Privacy awareness is core feature
-- Without indicator, user can't trust the system
-
-**THIS IS NON-NEGOTIABLE AND MUST NEVER BE REMOVED OR FORGOTTEN!**
+- Keywords are checked BEFORE any cloud API call
+- Qwen runs locally via Ollama (no network)
+- SQLite is encrypted with AES-256 via SQLCipher
+- All 3 languages (EN/DE/ES) must stay in sync
+- Never remove DB visibility icons from responses

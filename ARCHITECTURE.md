@@ -4,7 +4,7 @@
 
 Privacy-focused AI terminal that routes sensitive data locally while using OpenAI for general queries.
 
-**Version:** 11.0.4
+**Version:** 11.3.0
 **Repository:** https://github.com/martinschenk/ai-chat-terminal
 
 ---
@@ -149,10 +149,23 @@ OpenAI understands "there" = Paris! ✅
 **Purpose:** Fast keyword matching to detect DB intent
 **Keywords loaded from:** `~/.aichat/lang/*.conf` files
 
+**Ultra-flexible pattern keywords (v11.3.0):**
+- Keywords use `verb {x}` pattern where `{x}` matches ANY text
+- No possessive requirements - works with my/the/his/meine/die/mi/la OR without any possessive
+- 30+ verb synonyms per language per action
+
 **Example keywords:**
-- EN: save, remember, store, my, is, show, delete
-- DE: speichere, merke, mein, ist, zeig, lösche
-- ES: guarda, recuerda, mi, es, muestra, borra
+- EN SAVE: `save {x}, note {x}, record {x}, add {x}, log {x}, write {x}, register {x}, put {x}, set {x}` (12 verbs)
+- DE SAVE: `speichere {x}, merke {x}, notiere {x}, trag {x} ein, schreib {x} auf` (10 verbs)
+- ES SAVE: `guarda {x}, recuerda {x}, anota {x}, registra {x}, apunta {x}, graba {x}` (10 verbs)
+
+**All variations work identically:**
+```bash
+save my email test@test.com     ✅
+save the email test@test.com    ✅
+save email test@test.com        ✅
+note phone 123456               ✅
+```
 
 **Word boundary matching (v11.0.2):**
 - Short keywords (≤2 chars) use regex `\b` to avoid false positives
@@ -167,10 +180,15 @@ OpenAI understands "there" = Paris! ✅
 **Model:** Qwen 2.5 Coder 7B via Ollama
 **Purpose:** Generate SQL from natural language
 
+**Pattern-based examples (v11.3.0):**
+- Prompt uses `<TEXT>` placeholder instead of rigid structure
+- Shows flexible possessive handling: "mi email test@test.com", "email test@test.com", "the email test@test.com"
+- Extracts TWO things: content (VALUE) and meta (LABEL) from flexible input
+
 **Language-agnostic (v11.0.3):**
 - Receives ALL language examples (EN/DE/ES) in prompt
-- Auto-detects language from input
-- Mixed languages work: "my email ist..." → extracts "email" (not "email ist")
+- Auto-detects language from verb (guarda→ES, save→EN, speichere→DE)
+- Mixed languages work: "guarda mi email" (ES verb + EN noun) → extracts "email" as meta
 
 **Duplicate prevention:**
 - Uses `INSERT OR REPLACE`
@@ -266,7 +284,15 @@ if metadata.get('privacy_category'):
 
 ## Version History
 
-### v11.0.4 (Current) - OpenAI Context History
+### v11.3.0 (Current) - Ultra-Flexible Keywords
+- ✅ Pattern-based keywords: `verb {x}` matches ANY text
+- ✅ No possessive requirements: "my/the/his/meine/die/mi/la" all work OR omit entirely
+- ✅ 30+ verb synonyms per language (12 SAVE, 14 RETRIEVE, 12 DELETE for EN)
+- ✅ Simplified Qwen prompt with `<TEXT>` placeholder
+- ✅ Flexible text extraction from any possessive structure
+- ✅ Fixed ChatSystem regex bug (^ anchor + re.MULTILINE)
+
+### v11.0.4 - OpenAI Context History
 - ✅ Save messages to `chat_history` after OpenAI
 - ✅ Load last 20 messages before OpenAI
 - ✅ Cleanup on startup (keep 100 messages)
@@ -345,5 +371,5 @@ sqlite3 ~/.aichat/memory.db "SELECT COUNT(*) FROM chat_history;"
 
 ---
 
-**Last Updated:** 2025-10-13
+**Last Updated:** 2025-10-16
 **Maintainer:** Martin Schenk
