@@ -66,17 +66,10 @@ chat_loop() {
 
     # Context window management is now handled in Python chat_system.py
 
-    # v11.1.0: Load chat history for arrow key navigation
-    local HISTORY_ITEMS=()
-    if [[ -f "$SCRIPT_DIR/get_user_history.py" ]]; then
-        while IFS= read -r line; do
-            # Unescape \n back to actual newlines
-            line="${line//\\n/$'\n'}"
-            HISTORY_ITEMS+=("$line")
-        done < <(python3 "$SCRIPT_DIR/get_user_history.py" 50 2>/dev/null)
-    fi
+    # v11.1.0: Arrow key history navigation (RAM only - current chat session)
+    local HISTORY_ITEMS=()      # Stores user prompts during this chat
     local HISTORY_INDEX=-1      # -1 = not in history mode
-    local CURRENT_INPUT=""       # Buffer for user's current typing before history navigation
+    local CURRENT_INPUT=""      # Buffer for user's current typing before history navigation
 
     # Start daemons (Chat + Ollama) - ONCE at chat start
     echo -ne "${DIM}🚀 Starting chat system...${RESET}"
@@ -319,14 +312,8 @@ FUNCTION ACCESS: Use 'search_personal_data' for ALL questions about stored infor
 
         # Memory saving is now handled automatically in chat_system.py
 
-        # v11.1.0: Reload history after each message for arrow key navigation
-        HISTORY_ITEMS=()
-        if [[ -f "$SCRIPT_DIR/get_user_history.py" ]]; then
-            while IFS= read -r line; do
-                line="${line//\\n/$'\n'}"
-                HISTORY_ITEMS+=("$line")
-            done < <(python3 "$SCRIPT_DIR/get_user_history.py" 50 2>/dev/null)
-        fi
+        # v11.1.0: Add user input to history (RAM only - current session)
+        HISTORY_ITEMS+=("$INPUT")
 
         echo ""
     done

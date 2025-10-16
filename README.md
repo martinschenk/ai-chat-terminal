@@ -4,7 +4,7 @@
 
 Smart keyword detection routes sensitive data to local AI instantly. Zero cloud exposure for passwords, emails, or personal info.
 
-[![Version](https://img.shields.io/badge/version-11.3.0-blue.svg)](https://github.com/martinschenk/ai-chat-terminal)
+[![Version](https://img.shields.io/badge/version-11.4.0-blue.svg)](https://github.com/martinschenk/ai-chat-terminal)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](https://github.com/martinschenk/ai-chat-terminal)
 [![Encryption](https://img.shields.io/badge/encryption-AES--256-green.svg)](https://github.com/martinschenk/ai-chat-terminal#encryption)
@@ -698,120 +698,11 @@ MIT License - see [LICENSE](LICENSE) file for details.
 - **SQLite Encryption:** SQLCipher with AES-256
 - **OpenAI:** GPT-4o/GPT-4o-mini for general queries
 
-## Version History
-
-### v11.3.0 (Current) - Ultra-Flexible Keywords + 30+ Verb Synonyms
-
-**🚀 Natural language freedom - type how YOU speak!**
-
-**What's New:**
-- ✅ **Flexible possessives:** "my/the/his/her/meine/die/mi/la" all work - or omit entirely!
-- ✅ **30+ verb synonyms per language:**
-  - EN: save/note/record/add/log/write/register/put/set... (12 SAVE verbs)
-  - DE: speichere/merke/notiere/trag ein/schreib auf... (10 SAVE verbs)
-  - ES: guarda/anota/registra/apunta/agrega/añade... (10 SAVE verbs)
-- ✅ **Simplified patterns:** `verb {x}` instead of `verb possessive {x}`
-- ✅ **Qwen prompt updated:** Flexible text extraction from ANY possessive structure
-- ✅ **12-14 RETRIEVE verbs:** show/get/find/check/tell/lookup/view/read/...
-- ✅ **10-12 DELETE verbs:** delete/remove/forget/erase/clear/drop/wipe/...
-
-**Examples:**
-```bash
-# All work identically!
-"save my email test@test.com"     ✅
-"save the email test@test.com"    ✅
-"save email test@test.com"        ✅
-
-# Spanish - todas funcionan!
-"guarda mi email"                 ✅
-"guarda la email"                 ✅
-"guarda email"                    ✅
-
-# New verbs - never before supported!
-"note password 123"               ✅ (English)
-"registra email test@test.com"    ✅ (Spanish)
-"notiere Telefon 123456"          ✅ (German)
-```
-
-**Benefits:**
-- 🗣️ **Natural:** Type how you naturally speak
-- 🧠 **Smart:** Qwen extracts meaning from flexible text
-- 🌍 **Consistent:** Same flexibility in all 3 languages
-- 🚀 **More coverage:** 3x more verb synonyms than before
-
-### v11.0.9 - Smart Pattern Keywords + Safe DELETE
-
-**🎯 Intelligent keyword matching with {x} placeholders!**
-
-**What's New:**
-- ✅ **Pattern keywords:** `my {x} is`, `what is my {x}`, `delete my {x}` → works for ANY data type
-- ✅ **Solves ambiguity:** "what is my email?" vs "my email is test@test.com" now correctly identified
-- ✅ **Future-proof:** New data types (API keys, crypto wallets, etc.) automatically supported
-- ✅ **Maintains single words:** Good generic keywords (save, show, delete) still work
-- ✅ **Multilingual patterns:** EN/DE/ES all use same flexible system
-- ✅ **2-stage DELETE:** Preview items + explicit "yes delete" confirmation required
-- ✅ **60-second timeout:** Pending deletes expire automatically for safety
-
-**Examples:**
-```
-"my API key is sk-123"        → SAVE (pattern: my {x} is)
-"what is my crypto wallet?"   → RETRIEVE (pattern: what is my {x})
-"delete my password"          → DELETE (shows preview, waits for "yes delete")
-```
-
-**2-Stage DELETE Flow:**
-```
-1. User: "delete my email"
-   → Shows preview of items to delete
-   → Stores pending delete for 60 seconds
-   → Waits for confirmation
-
-2. User: "yes delete"  (or "ja löschen" / "si borrar")
-   → Executes the delete
-   → Cleans up pending file
-
-3. User types anything else OR waits >60s
-   → Cancels delete automatically
-```
-
-### v11.0.0 - KISS SQL Architecture
-
-**🚀 RADICAL SIMPLIFICATION - 1528 lines removed!**
-
-**Major Changes:**
-- ✅ **Qwen 2.5 Coder** replaces Llama 3.2 - generates SQL directly!
-- ✅ **96% faster queries** - Direct SQL vs vector search
-- ✅ **90-95% SQL accuracy** - Up from 70% in v10
-- ✅ **1528 lines removed** - Much simpler codebase
-- ✅ **No vector DB** - Removed sentence-transformers, sqlite-vec
-- ✅ **Simple schema** - 5 fields instead of complex metadata
-
-**Performance:**
-- **SAVE:** 1500ms → 800ms (47% faster)
-- **RETRIEVE:** 1200ms → 50ms (96% faster!)
-- **DELETE:** 1000ms → 80ms (92% faster)
-
-**Removed:**
-- ❌ Vector database (sentence-transformers, E5 embeddings)
-- ❌ PII classification system (~400 lines)
-- ❌ Llama data extraction (~340 lines)
-- ❌ Complex action handlers (~300 lines)
-
-### v10.3.0 - KISS Architecture Simplification
-- Merged LIST into RETRIEVE
-- Extended keywords (3x more variations)
-- FALSE_POSITIVE routing to OpenAI
-
-### v10.1.0 - Llama 3.2 Migration
-- Migrated from Phi-3 to Llama 3.2 (3B)
-- Simplified to 3 languages (EN, DE, ES)
-- Context-aware prompts
-
 ---
 
 **Questions?** Open an issue on [GitHub](https://github.com/martinschenk/ai-chat-terminal/issues)
 
-**Ready to try v11.0.0?**
+**Ready to try it?**
 ```bash
 curl -fsSL https://raw.githubusercontent.com/martinschenk/ai-chat-terminal/main/install.sh | zsh
 ```

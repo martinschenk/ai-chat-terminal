@@ -9,11 +9,12 @@ import sqlite3
 import sys
 import os
 
-def get_user_history(limit=50):
+def get_user_history(session_id=None, limit=50):
     """
     Get last N user inputs from chat history (for arrow key navigation)
 
     Args:
+        session_id: Optional session ID to filter by current chat session
         limit: Maximum number of history items to return
 
     Returns:
@@ -36,20 +37,30 @@ def get_user_history(limit=50):
 
         # Get last N user messages from chat_history table
         # We only want user messages (role='user'), not assistant responses
-        cursor.execute("""
-            SELECT DISTINCT content
-            FROM chat_history
-            WHERE role = 'user'
-            ORDER BY timestamp DESC
-            LIMIT ?
-        """, (limit,))
+        # Filter by session_id if provided (current chat only)
+        if session_id:
+            cursor.execute("""
+                SELECT DISTINCT content
+                FROM chat_history
+                WHERE role = 'user' AND session_id = ?
+                ORDER BY timestamp DESC
+                LIMIT ?
+            """, (session_id, limit))
+        else:
+            cursor.execute("""
+                SELECT DISTINCT content
+                FROM chat_history
+                WHERE role = 'user'
+                ORDER BY timestamp DESC
+                LIMIT ?
+            """, (limit,))
 
         results = [row[0] for row in cursor.fetchall()]
         conn.close()
 
-        # Return as-is (newest first from DESC order)
-        # Arrow UP shows most recent messages first
-        return results
+        # SQL gives DESC order (newest first)
+        # But we need to reverse so arrow UP shows newest (at index 0)
+        return list(reversed(results))
 
     except Exception as e:
         print(f"Error loading history: {e}", file=sys.stderr)
