@@ -91,71 +91,89 @@ Rules:
 
 Pattern Examples:
 
-SAVE - English (verb synonyms: save, remember, store, keep):
-Input: "save my <ITEM> <VALUE>"
-SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('<VALUE>', '<ITEM>', 'en');
+SAVE - English (verbs: save, store, keep, note, record, add, log, write, register, put, set):
+Input: "save <TEXT>"              # e.g., "save my email test@test.com" or "save email test@test.com"
+SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('test@test.com', 'email', 'en');
 
-Input: "remember my <ITEM> <VALUE>"
-SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('<VALUE>', '<ITEM>', 'en');
+Input: "note <TEXT>"               # e.g., "note the phone 123456" or "note phone 123456"
+SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('123456', 'phone', 'en');
 
-Input: "my <ITEM> is <VALUE>"
-SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('<VALUE>', '<ITEM>', 'en');
+Input: "add <TEXT>"                # e.g., "add API key abc123"
+SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('abc123', 'API key', 'en');
 
-SAVE - German (verb synonyms: speichere, merke):
-Input: "speichere meine <ITEM> <WERT>"
-SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('<WERT>', '<ITEM>', 'de');
+SAVE - German (verbs: speichere, merke, notiere, trag ein, halt fest, schreib auf, füg hinzu, registrier, leg ab, setz):
+Input: "speichere <TEXT>"          # e.g., "speichere meine Email test@test.de" or "speichere Email test@test.de"
+SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('test@test.de', 'Email', 'de');
 
-Input: "meine <ITEM> ist <WERT>"
-SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('<WERT>', '<ITEM>', 'de');
+Input: "notiere <TEXT>"            # e.g., "notiere die Telefonnummer 123456"
+SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('123456', 'Telefonnummer', 'de');
 
-SAVE - Spanish (verb synonyms: guarda, recuerda, almacena):
-Input: "guarda mi <ITEM> <VALOR>"
-SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('<VALOR>', '<ITEM>', 'es');
+SAVE - Spanish (verbs: guarda, recuerda, almacena, anota, registra, apunta, agrega, añade, pon, graba):
+Input: "guarda <TEXT>"             # e.g., "guarda mi email test@test.es" or "guarda email test@test.es"
+SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('test@test.es', 'email', 'es');
 
-Input: "recuerda mi <ITEM> <VALOR>"
-SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('<VALOR>', '<ITEM>', 'es');
+Input: "anota <TEXT>"              # e.g., "anota el teléfono 123456"
+SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('123456', 'teléfono', 'es');
 
-Input: "mi <ITEM> es <VALOR>"
-SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('<VALOR>', '<ITEM>', 'es');
+RETRIEVE - English (verbs: show, get, find, display, tell, check, lookup, retrieve, fetch, read, view, see):
+Input: "show <TEXT>"               # e.g., "show my email" or "show email"
+SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%email%' OR content LIKE '%email%' ORDER BY timestamp DESC LIMIT 5;
 
-RETRIEVE - English (synonyms: show, what is, get, find, display):
-Input: "show my <ITEM>"
-SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%<ITEM>%' OR content LIKE '%<ITEM>%' ORDER BY timestamp DESC LIMIT 5;
+Input: "check <TEXT>"              # e.g., "check the phone"
+SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%phone%' OR content LIKE '%phone%' ORDER BY timestamp DESC LIMIT 5;
 
-Input: "what is my <ITEM>"
-SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%<ITEM>%' OR content LIKE '%<ITEM>%' ORDER BY timestamp DESC LIMIT 5;
-
-Input: "list all"
+Input: "list all" or "show all"
 SQL: SELECT id, content, meta, timestamp FROM mydata ORDER BY timestamp DESC;
 
-RETRIEVE - German (synonyms: zeig, was ist, hole, finde):
-Input: "zeig meine <ITEM>"
-SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%<ITEM>%' OR content LIKE '%<ITEM>%' ORDER BY timestamp DESC LIMIT 5;
+RETRIEVE - German (verbs: zeige, zeig, hole, finde, sag, schau, prüf, lies, gib aus, ruf ab, such):
+Input: "zeig <TEXT>"               # e.g., "zeig meine Email" or "zeig Email"
+SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%Email%' OR content LIKE '%Email%' ORDER BY timestamp DESC LIMIT 5;
 
-Input: "was ist meine <ITEM>"
-SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%<ITEM>%' OR content LIKE '%<ITEM>%' ORDER BY timestamp DESC LIMIT 5;
+Input: "prüf <TEXT>"               # e.g., "prüf die Telefonnummer"
+SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%Telefonnummer%' OR content LIKE '%Telefonnummer%' ORDER BY timestamp DESC LIMIT 5;
 
-RETRIEVE - Spanish (synonyms: muestra, qué es, cuál es):
-Input: "muestra mi <ITEM>"
-SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%<ITEM>%' OR content LIKE '%<ITEM>%' ORDER BY timestamp DESC LIMIT 5;
+Input: "liste alle" or "zeig alle"
+SQL: SELECT id, content, meta, timestamp FROM mydata ORDER BY timestamp DESC;
 
-Input: "qué es mi <ITEM>"
-SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%<ITEM>%' OR content LIKE '%<ITEM>%' ORDER BY timestamp DESC LIMIT 5;
+RETRIEVE - Spanish (verbs: muestra, busca, encuentra, dame, dime, consulta, mira, ve, obtén, saca):
+Input: "muestra <TEXT>"            # e.g., "muestra mi email" or "muestra email"
+SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%email%' OR content LIKE '%email%' ORDER BY timestamp DESC LIMIT 5;
 
-DELETE - English (synonyms: delete, remove, forget):
-Input: "delete my <ITEM>"
-SQL: DELETE FROM mydata WHERE meta LIKE '%<ITEM>%' OR content LIKE '%<ITEM>%';
+Input: "consulta <TEXT>"           # e.g., "consulta el teléfono"
+SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%teléfono%' OR content LIKE '%teléfono%' ORDER BY timestamp DESC LIMIT 5;
 
-Input: "delete all"
+Input: "lista todo" or "muestra todo"
+SQL: SELECT id, content, meta, timestamp FROM mydata ORDER BY timestamp DESC;
+
+DELETE - English (verbs: delete, remove, forget, clear, erase, drop, wipe, purge):
+Input: "delete <TEXT>"             # e.g., "delete my email" or "delete email" or "delete test@test.com"
+SQL: DELETE FROM mydata WHERE meta LIKE '%email%' OR content LIKE '%test@test.com%';
+
+Input: "erase <TEXT>"              # e.g., "erase the phone"
+SQL: DELETE FROM mydata WHERE meta LIKE '%phone%' OR content LIKE '%phone%';
+
+Input: "delete all" or "remove all" or "clear all"
 SQL: DELETE FROM mydata;
 
-DELETE - German (synonyms: lösche, entferne, vergiss):
-Input: "lösche meine <ITEM>"
-SQL: DELETE FROM mydata WHERE meta LIKE '%<ITEM>%' OR content LIKE '%<ITEM>%';
+DELETE - German (verbs: lösche, entferne, vergiss, tilg, raum auf, wirf weg, streich, lösch aus, wisch weg):
+Input: "lösche <TEXT>"             # e.g., "lösche meine Email" or "lösche Email"
+SQL: DELETE FROM mydata WHERE meta LIKE '%Email%' OR content LIKE '%Email%';
 
-DELETE - Spanish (synonyms: borra, elimina, olvida):
-Input: "borra mi <ITEM>"
-SQL: DELETE FROM mydata WHERE meta LIKE '%<ITEM>%' OR content LIKE '%<ITEM>%';
+Input: "entferne <TEXT>"           # e.g., "entferne die Telefonnummer"
+SQL: DELETE FROM mydata WHERE meta LIKE '%Telefonnummer%' OR content LIKE '%Telefonnummer%';
+
+Input: "lösche alle" or "entferne alle"
+SQL: DELETE FROM mydata;
+
+DELETE - Spanish (verbs: borra, elimina, olvida, quita, suprime, limpia, remueve):
+Input: "borra <TEXT>"              # e.g., "borra mi email" or "borra email" or "borra test@test.es"
+SQL: DELETE FROM mydata WHERE meta LIKE '%email%' OR content LIKE '%test@test.es%';
+
+Input: "quita <TEXT>"              # e.g., "quita el teléfono"
+SQL: DELETE FROM mydata WHERE meta LIKE '%teléfono%' OR content LIKE '%teléfono%';
+
+Input: "borra todo" or "elimina todo" or "quita todo"
+SQL: DELETE FROM mydata;
 
 FALSE POSITIVE:
 Input: "how do I save a file?"
@@ -167,9 +185,13 @@ Input: "{user_input}"
 
 IMPORTANT:
 - Detect language automatically from verb
-- Extract <ITEM> from input (any word(s) between verb and value)
-- <ITEM> can be ANY word: email, correo, Email, teléfono, API key, etc.
-- Mixed languages OK: "guarda mi email" → use "email" as meta
+- Extract TWO things from <TEXT>:
+  1. Content (VALUE): The actual data (email address, phone number, API key value, etc.)
+  2. Meta (LABEL): The type/description (email, phone, "API key", etc.)
+- <TEXT> can contain ANY possessive: mi/my/meine, la/the/die, su/his/seine, etc.
+- <TEXT> structure is flexible: "mi email test@test.com", "email test@test.com", "the email test@test.com" all work!
+- Meta extraction is smart: extract from possessive + noun OR just noun ("mi email" → "email", "email" → "email")
+- Mixed languages OK: "guarda mi email" (ES verb + EN noun) → extract "email" as meta
 
 Respond with ONLY the SQL statement or "NO_ACTION". No explanation needed.
 """
