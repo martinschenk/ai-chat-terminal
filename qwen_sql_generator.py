@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Qwen 2.5 Coder SQL Generator (v11.0.9 - Pattern-Powered!)
-Generates SQL directly for mydata table with diverse examples for ANY data type
+Qwen 2.5 Coder SQL Generator (v11.2.0 - Pattern-Powered!)
+Generates SQL directly for mydata table with PATTERN-based examples
 
-v11.0.9: Pattern-based examples
-- Diverse examples show flexibility: email, phone, birthday, API key, wallet, etc.
-- Demonstrates that system works for ANY data type without updates
-- INSERT OR REPLACE prevents duplicates (same meta+content = update, not new row)
+v11.2.0: Pattern-based examples - ULTRA KISS!
+- Uses placeholders <ITEM> instead of concrete words
+- AI understands the PATTERN, not specific examples
+- Works for ANY data type without updates
+- Much shorter prompt, same power!
 """
 
 import subprocess
@@ -53,10 +54,10 @@ class QwenSQLGenerator:
                 'meta': extracted meta label (optional)
             }
 
-        Note: Qwen 2.5 Coder is multilingual! Prompt contains ALL language examples (EN/DE/ES).
+        Note: Qwen 2.5 Coder is multilingual! Prompt contains PATTERN examples.
               Language detection happens automatically - mixed inputs work too!
         """
-        # Build multilingual prompt for Qwen (shows ALL language examples)
+        # Build multilingual prompt for Qwen (shows PATTERN examples)
         prompt = self._build_prompt(user_input, action_hint)
 
         # Call Qwen
@@ -66,13 +67,13 @@ class QwenSQLGenerator:
         return self._parse_qwen_output(result_text, user_input)
 
     def _build_prompt(self, user_input: str, action_hint: str) -> str:
-        """Build multilingual Qwen prompt with ALL language examples"""
+        """Build multilingual Qwen prompt with PATTERN-based examples"""
         prompt = f"""You are a multilingual SQL generator for SQLite database 'mydata' with this schema:
 
 CREATE TABLE mydata (
     id INTEGER PRIMARY KEY,
     content TEXT NOT NULL,      -- The actual data
-    meta TEXT,                   -- Simple label: "email", "geburtstag", "koffercode hotel"
+    meta TEXT,                   -- Simple label: "email", "birthday", "API key"
     lang TEXT,                   -- Language: en, de, es
     timestamp INTEGER            -- Unix timestamp (auto-generated)
 );
@@ -80,191 +81,96 @@ CREATE TABLE mydata (
 Rules:
 1. Generate ONLY valid SQLite SQL
 2. Table name MUST be "mydata"
-3. For SAVE: Use INSERT OR REPLACE to prevent duplicates (same meta+content = update, not new row)
+3. For SAVE: Use INSERT OR REPLACE to prevent duplicates
 4. For SAVE: Extract description for meta field (keep original language!)
 5. For RETRIEVE: Use LIKE for flexible matching
 6. For DELETE: Use LIKE to match both meta and content
-7. **Multi-word meta labels are NORMAL and EXPECTED** (e.g., "favorite colour", "sisters birthday", "API key", "wifi password")
-8. **FALSE_POSITIVE only for**: tutorials about databases, questions ABOUT the database itself, completely unrelated queries
-9. **If RETRIEVE keywords detected**: ALWAYS generate SQL, even for complex multi-word meta labels!
+7. Multi-word meta labels are NORMAL (e.g., "API key", "wifi password")
+8. FALSE_POSITIVE only for: database tutorials, unrelated queries
+9. Mixed languages OK: "guarda mi email" → extract "email" as meta
 
-Examples:
+Pattern Examples:
 
-SAVE (Explicit - English):
-Input: "save my email address test@example.com"
-SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('test@example.com', 'email address', 'en');
+SAVE - English (verb synonyms: save, remember, store, keep):
+Input: "save my <ITEM> <VALUE>"
+SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('<VALUE>', '<ITEM>', 'en');
 
-Input: "remember my phone 234324987"
-SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('234324987', 'phone', 'en');
+Input: "remember my <ITEM> <VALUE>"
+SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('<VALUE>', '<ITEM>', 'en');
 
-Input: "save sisters birthday 02 July 1998"
-SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('02 July 1998', 'sisters birthday', 'en');
+Input: "my <ITEM> is <VALUE>"
+SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('<VALUE>', '<ITEM>', 'en');
 
-SAVE (Implicit - English - Shows pattern flexibility!):
-Input: "my main email is test@example.com"
-SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('test@example.com', 'main email', 'en');
+SAVE - German (verb synonyms: speichere, merke):
+Input: "speichere meine <ITEM> <WERT>"
+SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('<WERT>', '<ITEM>', 'de');
 
-Input: "my phone is 234324987"
-SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('234324987', 'phone', 'en');
+Input: "meine <ITEM> ist <WERT>"
+SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('<WERT>', '<ITEM>', 'de');
 
-Input: "my name is John Smith"
-SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('John Smith', 'name', 'en');
+SAVE - Spanish (verb synonyms: guarda, recuerda, almacena):
+Input: "guarda mi <ITEM> <VALOR>"
+SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('<VALOR>', '<ITEM>', 'es');
 
-Input: "my API key is sk-1234567890"
-SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('sk-1234567890', 'API key', 'en');
+Input: "recuerda mi <ITEM> <VALOR>"
+SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('<VALOR>', '<ITEM>', 'es');
 
-Input: "my birthday is March 15, 1990"
-SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('March 15, 1990', 'birthday', 'en');
+Input: "mi <ITEM> es <VALOR>"
+SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('<VALOR>', '<ITEM>', 'es');
 
-Input: "my crypto wallet is 0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb"
-SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb', 'crypto wallet', 'en');
+RETRIEVE - English (synonyms: show, what is, get, find, display):
+Input: "show my <ITEM>"
+SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%<ITEM>%' OR content LIKE '%<ITEM>%' ORDER BY timestamp DESC LIMIT 5;
 
-SAVE (Explicit - German):
-Input: "speichere meine Email test@test.de"
-SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('test@test.de', 'Email', 'de');
+Input: "what is my <ITEM>"
+SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%<ITEM>%' OR content LIKE '%<ITEM>%' ORDER BY timestamp DESC LIMIT 5;
 
-Input: "merke Omas Geburtstag 15.03.1950"
-SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('15.03.1950', 'Omas Geburtstag', 'de');
-
-Input: "speichere Koffercode Hotel 1234"
-SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('1234', 'Koffercode Hotel', 'de');
-
-SAVE (Implicit - German):
-Input: "meine Haupt-Email ist test@test.de"
-SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('test@test.de', 'Haupt-Email', 'de');
-
-Input: "mein Name ist Hans Müller"
-SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('Hans Müller', 'Name', 'de');
-
-Input: "meine Telefonnummer ist 0176-12345678"
-SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('0176-12345678', 'Telefonnummer', 'de');
-
-SAVE (Explicit - Spanish):
-Input: "guarda mi correo test@ejemplo.es"
-SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('test@ejemplo.es', 'correo', 'es');
-
-Input: "guarda cumpleaños hermana 02 Julio 1998"
-SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('02 Julio 1998', 'cumpleaños hermana', 'es');
-
-SAVE (Implicit - Spanish):
-Input: "mi correo principal es test@ejemplo.es"
-SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('test@ejemplo.es', 'correo principal', 'es');
-
-Input: "mi nombre es María García"
-SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('María García', 'nombre', 'es');
-
-Input: "mi teléfono es 612345678"
-SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('612345678', 'teléfono', 'es');
-
-Input: "recuerda código wifi CASA2024"
-SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('CASA2024', 'código wifi', 'es');
-
-RETRIEVE (specific item - Pattern "what is my {{x}}" works for ANY data type!):
-Input: "show my email"
-SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%email%' OR content LIKE '%email%' ORDER BY timestamp DESC LIMIT 5;
-
-Input: "which is my email?"
-SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%email%' OR content LIKE '%email%' ORDER BY timestamp DESC LIMIT 5;
-
-Input: "what is my email?"
-SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%email%' OR content LIKE '%email%' ORDER BY timestamp DESC LIMIT 5;
-
-Input: "what's my phone number?"
-SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%phone%' OR content LIKE '%phone%' OR meta LIKE '%number%' ORDER BY timestamp DESC LIMIT 5;
-
-Input: "what is my API key?"
-SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%API%' OR meta LIKE '%key%' OR content LIKE '%API%' ORDER BY timestamp DESC LIMIT 5;
-
-Input: "what is my crypto wallet?"
-SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%crypto%' OR meta LIKE '%wallet%' OR content LIKE '%crypto%' ORDER BY timestamp DESC LIMIT 5;
-
-Input: "what is my birthday?"
-SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%birthday%' OR content LIKE '%birthday%' ORDER BY timestamp DESC LIMIT 5;
-
-Input: "zeig Omas Geburtstag"
-SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%Geburtstag%' OR content LIKE '%Geburtstag%' ORDER BY timestamp DESC LIMIT 5;
-
-Input: "welche ist meine Email?"
-SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%Email%' OR content LIKE '%Email%' ORDER BY timestamp DESC LIMIT 5;
-
-Input: "was ist meine Email?"
-SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%Email%' OR content LIKE '%Email%' ORDER BY timestamp DESC LIMIT 5;
-
-Input: "wie lautet meine Telefonnummer?"
-SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%Telefonnummer%' OR content LIKE '%Telefonnummer%' OR meta LIKE '%Telefon%' ORDER BY timestamp DESC LIMIT 5;
-
-Input: "muestra mi teléfono"
-SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%teléfono%' OR meta LIKE '%telefono%' OR content LIKE '%teléfono%' ORDER BY timestamp DESC LIMIT 5;
-
-Input: "cuál es mi correo?"
-SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%correo%' OR content LIKE '%correo%' ORDER BY timestamp DESC LIMIT 5;
-
-Input: "qué es mi correo?"
-SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%correo%' OR content LIKE '%correo%' ORDER BY timestamp DESC LIMIT 5;
-
-Input: "cuál es mi número de teléfono?"
-SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%teléfono%' OR meta LIKE '%telefono%' OR meta LIKE '%número%' ORDER BY timestamp DESC LIMIT 5;
-
-RETRIEVE (multi-word meta labels - THESE ARE NORMAL!):
-Input: "show my favorite colour"
-SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%favorite%' OR meta LIKE '%colour%' OR meta LIKE '%favorite colour%' ORDER BY timestamp DESC LIMIT 5;
-
-Input: "what is my sisters birthday?"
-SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%sisters%' OR meta LIKE '%birthday%' OR meta LIKE '%sisters birthday%' ORDER BY timestamp DESC LIMIT 5;
-
-Input: "show my wifi password"
-SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%wifi%' OR meta LIKE '%password%' OR meta LIKE '%wifi password%' ORDER BY timestamp DESC LIMIT 5;
-
-Input: "zeig meine Lieblings-Farbe"
-SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%Lieblings%' OR meta LIKE '%Farbe%' OR meta LIKE '%Lieblings-Farbe%' ORDER BY timestamp DESC LIMIT 5;
-
-Input: "muestra mi color favorito"
-SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%color%' OR meta LIKE '%favorito%' OR meta LIKE '%color favorito%' ORDER BY timestamp DESC LIMIT 5;
-
-RETRIEVE (all data):
-Input: "list all my data"
+Input: "list all"
 SQL: SELECT id, content, meta, timestamp FROM mydata ORDER BY timestamp DESC;
 
-Input: "zeig alle Daten"
-SQL: SELECT id, content, meta, timestamp FROM mydata ORDER BY timestamp DESC;
+RETRIEVE - German (synonyms: zeig, was ist, hole, finde):
+Input: "zeig meine <ITEM>"
+SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%<ITEM>%' OR content LIKE '%<ITEM>%' ORDER BY timestamp DESC LIMIT 5;
 
-Input: "lista todo"
-SQL: SELECT id, content, meta, timestamp FROM mydata ORDER BY timestamp DESC;
+Input: "was ist meine <ITEM>"
+SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%<ITEM>%' OR content LIKE '%<ITEM>%' ORDER BY timestamp DESC LIMIT 5;
 
-DELETE:
-Input: "delete my email"
-SQL: DELETE FROM mydata WHERE meta LIKE '%email%' OR content LIKE '%email%';
+RETRIEVE - Spanish (synonyms: muestra, qué es, cuál es):
+Input: "muestra mi <ITEM>"
+SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%<ITEM>%' OR content LIKE '%<ITEM>%' ORDER BY timestamp DESC LIMIT 5;
 
-Input: "remove my phone number"
-SQL: DELETE FROM mydata WHERE meta LIKE '%phone%' OR content LIKE '%phone%' OR meta LIKE '%number%';
+Input: "qué es mi <ITEM>"
+SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%<ITEM>%' OR content LIKE '%<ITEM>%' ORDER BY timestamp DESC LIMIT 5;
 
-Input: "lösche Omas Geburtstag"
-SQL: DELETE FROM mydata WHERE meta LIKE '%Geburtstag%' OR content LIKE '%Geburtstag%';
+DELETE - English (synonyms: delete, remove, forget):
+Input: "delete my <ITEM>"
+SQL: DELETE FROM mydata WHERE meta LIKE '%<ITEM>%' OR content LIKE '%<ITEM>%';
 
-Input: "entferne meine Email"
-SQL: DELETE FROM mydata WHERE meta LIKE '%Email%' OR content LIKE '%Email%';
+Input: "delete all"
+SQL: DELETE FROM mydata;
 
-Input: "borra mi teléfono"
-SQL: DELETE FROM mydata WHERE meta LIKE '%teléfono%' OR meta LIKE '%telefono%';
+DELETE - German (synonyms: lösche, entferne, vergiss):
+Input: "lösche meine <ITEM>"
+SQL: DELETE FROM mydata WHERE meta LIKE '%<ITEM>%' OR content LIKE '%<ITEM>%';
 
-Input: "elimina mi correo"
-SQL: DELETE FROM mydata WHERE meta LIKE '%correo%' OR content LIKE '%correo%';
+DELETE - Spanish (synonyms: borra, elimina, olvida):
+Input: "borra mi <ITEM>"
+SQL: DELETE FROM mydata WHERE meta LIKE '%<ITEM>%' OR content LIKE '%<ITEM>%';
 
-FALSE POSITIVE (not a DB operation):
-Input: "how do I save a file in Python?"
-SQL: NO_ACTION
-
-Input: "show me a tutorial on databases"
-SQL: NO_ACTION
-
-Input: "what does delete mean?"
+FALSE POSITIVE:
+Input: "how do I save a file?"
 SQL: NO_ACTION
 
 Now generate SQL for:
 Action: {action_hint}
 Input: "{user_input}"
 
-IMPORTANT: Detect language automatically from input! Mixed languages OK (e.g., "my email ist..." → extract "email", not "email ist")!
+IMPORTANT:
+- Detect language automatically from verb
+- Extract <ITEM> from input (any word(s) between verb and value)
+- <ITEM> can be ANY word: email, correo, Email, teléfono, API key, etc.
+- Mixed languages OK: "guarda mi email" → use "email" as meta
+
 Respond with ONLY the SQL statement or "NO_ACTION". No explanation needed.
 """
         return prompt
@@ -409,11 +315,12 @@ Respond with ONLY the SQL statement or "NO_ACTION". No explanation needed.
 if __name__ == '__main__':
     generator = QwenSQLGenerator()
 
-    print("🧪 Testing Qwen 2.5 Coder SQL Generator\n")
+    print("🧪 Testing Qwen 2.5 Coder SQL Generator (Pattern-Based!)\n")
 
     # Test cases
     tests = [
-        ("save my email address test@test.com", "SAVE", "en"),
+        ("save my email test@test.com", "SAVE", "en"),
+        ("guarda mi email mschenk.pda@gmail.com", "SAVE", "es"),  # Mixed ES+EN!
         ("speichere meine Email test@test.de", "SAVE", "de"),
         ("guarda mi correo test@test.es", "SAVE", "es"),
         ("show my email", "RETRIEVE", "en"),
