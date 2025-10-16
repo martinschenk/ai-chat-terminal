@@ -194,7 +194,10 @@ Extract SEARCH TERM from text after verb:
 - Can be "all"/"todo"/"alle" for complete list
 
 STEP 2 - DETERMINE QUERY TYPE:
-Case A: "list all" / "show all" / "muestra todo" / "zeig alle"
+Case A: "show all" / "list all" variations (VALID - not false positives!)
+→ English: "show all", "list all"
+→ Spanish: "muestra todo", "lista todo"
+→ German: "zeig alles", "zeige alles", "liste alles", "liste alle Daten"
 → Return ALL records, ordered by newest first
 
 Case B: Specific search term
@@ -228,12 +231,32 @@ Input: "show all"
 Analysis: Special case - list everything
 SQL: SELECT id, content, meta, timestamp FROM mydata ORDER BY timestamp DESC;
 
-Input: "muestra todo"
+Input: "list all"
 Analysis: Special case - list everything
 SQL: SELECT id, content, meta, timestamp FROM mydata ORDER BY timestamp DESC;
 
+Input: "muestra todo"
+Analysis: Special case - list everything (Spanish - VALID, not false positive!)
+SQL: SELECT id, content, meta, timestamp FROM mydata ORDER BY timestamp DESC;
+
+Input: "lista todo"
+Analysis: Special case - list everything (Spanish)
+SQL: SELECT id, content, meta, timestamp FROM mydata ORDER BY timestamp DESC;
+
+Input: "zeig alles"
+Analysis: Special case - list everything (German - VALID, not false positive!)
+SQL: SELECT id, content, meta, timestamp FROM mydata ORDER BY timestamp DESC;
+
+Input: "zeige alles"
+Analysis: Special case - list everything (German)
+SQL: SELECT id, content, meta, timestamp FROM mydata ORDER BY timestamp DESC;
+
+Input: "liste alles"
+Analysis: Special case - list everything (German)
+SQL: SELECT id, content, meta, timestamp FROM mydata ORDER BY timestamp DESC;
+
 Input: "liste alle Daten"
-Analysis: Special case - list everything
+Analysis: Special case - list everything (German, verbose)
 SQL: SELECT id, content, meta, timestamp FROM mydata ORDER BY timestamp DESC;
 
 Input: "check if I have 669686832"
