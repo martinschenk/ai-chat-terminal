@@ -22,4 +22,5 @@ config
 *.swo
 
 # Logs
-*.log
+*.logREDDIT_CREDENTIALS.txt
+reddit_campaign.log
