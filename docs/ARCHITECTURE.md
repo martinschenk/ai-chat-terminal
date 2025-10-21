@@ -4,7 +4,7 @@
 
 Privacy-focused AI terminal that routes sensitive data locally while using OpenAI for general queries.
 
-**Version:** 11.3.0
+**Version:** 11.6.0
 **Repository:** https://github.com/martinschenk/ai-chat-terminal
 
 ---
@@ -196,64 +196,90 @@ note phone 123456               ✅
 
 ---
 
-### 3. Chat History Management
+### 3. Chat History Management (v11.6.0 - Privacy First!)
 
 **File:** `chat_system.py`
 
 **Context window:** 20 messages (hardcoded)
-**Cleanup limit:** 100 messages (hardcoded)
+**Auto-delete:** On exit OR after 30 min inactivity
 
 **Lifecycle:**
-1. **On startup:** Cleanup chat_history (keep last 100)
-2. **Before OpenAI:** Load last 20 messages
-3. **After OpenAI:** Save user + assistant messages
+1. **On startup:** Check last activity time
+2. **Before OpenAI:** Load last 20 messages for context
+3. **After OpenAI:** Save user + assistant messages to `chat_history`
+4. **On exit OR 30 min inactive:** DELETE ALL chat_history
 
-**Why cleanup at 100?**
-- Prevents endless DB growth
-- 100 messages = ~50 conversation pairs
-- Still plenty of context for multi-day conversations
+**WHY auto-delete instead of cleanup at 100?**
+- **Privacy First:** No long-term storage of potentially sensitive conversations
+- **Transparency:** User knows exactly when history is deleted (exit or timeout)
+- **Simple:** No need to track limits, just delete everything on session end
+
+**What gets stored in `chat_history`:**
+- ✅ OpenAI conversations (general questions, NOT private data)
+- ❌ Qwen/SQL operations (NEVER stored in chat_history)
+- ❌ Data saved with keywords ("save my email..." → only in `mydata` table)
+
+**Code location:**
+- Save: `chat_system.py:1145-1146` (ONLY in OpenAI path!)
+- Delete: `chat_system.py:217-256` (`delete_all_chat_history()` method)
+- Exit handler: `chat_system.py:99-117` (`__del__()` destructor)
+- Inactivity check: `chat_system.py:789-804` (in `send_message()`)
 
 ---
 
 ## Configuration
 
-### Removed Config Parameters (v11.0.4)
+### Privacy Config Parameters (v11.6.0)
 
-- ❌ `AI_CHAT_CONTEXT_WINDOW` - Now hardcoded to 20
+- `AI_CHAT_HISTORY_AUTO_DELETE` - Delete chat history on exit (default: true)
+  - **WHY:** Privacy by default
+  - **REASON:** Prevents long-term storage of conversations
+- `AI_CHAT_HISTORY_TIMEOUT_MINUTES` - Auto-delete after X min inactive (default: 30)
+  - **WHY:** User might forget terminal open
+  - **REASON:** Automatic cleanup prevents data accumulation
 
 ### Current Config Parameters
 
 - `AI_CHAT_MODEL` - OpenAI model (default: gpt-4o-mini)
 - `AI_CHAT_LANGUAGE` - User language (en, de, es, etc.)
 - `AI_CHAT_MARKDOWN_RENDER` - Rich markdown rendering (true/false)
+- `AI_CHAT_CONTEXT_WINDOW` - Hardcoded to 20 (not configurable)
 
 ---
 
 ## Database Maintenance
 
-### chat_history Cleanup
+### chat_history Auto-Delete (v11.6.0 - Privacy First!)
 
-**When:** On every ChatSystem initialization (when terminal starts)
-**What:** Keep only last 100 messages
-**Why:** Prevent endless growth
+**When:**
+- User exits chat (explicit command)
+- After 30 minutes of inactivity (automatic)
+- Daemon shutdown (graceful cleanup)
+
+**What:** Delete ALL chat_history
+
+**Why:** Privacy by default - no long-term conversation storage
 
 **Implementation:**
 ```python
-def _cleanup_chat_history(self):
-    # Count total messages
-    total = cursor.execute("SELECT COUNT(*) FROM chat_history").fetchone()[0]
+def delete_all_chat_history(self):
+    """Delete ALL chat_history - Privacy First!"""
+    cursor.execute("DELETE FROM chat_history")
+    conn.commit()
+    print("🧹 Chat history deleted (privacy mode)")
 
-    if total > 100:
-        # Delete old, keep last 100
-        cursor.execute("""
-            DELETE FROM chat_history
-            WHERE id NOT IN (
-                SELECT id FROM chat_history
-                ORDER BY timestamp DESC
-                LIMIT 100
-            )
-        """)
+# Called from:
+# 1. __del__() destructor (exit/shutdown)
+# 2. send_message() after 30 min inactivity
 ```
+
+**Old behavior (v11.0.4):** Kept last 100 messages, cleaned on startup
+**New behavior (v11.6.0):** Delete ALL on exit/timeout
+
+**WHY this change:**
+- Privacy First philosophy
+- User might forget about old conversations
+- No need for long-term history (only needed during active session)
 
 ---
 
@@ -284,7 +310,16 @@ if metadata.get('privacy_category'):
 
 ## Version History
 
-### v11.3.0 (Current) - Ultra-Flexible Keywords
+### v11.6.0 (Current) - Privacy First: Auto-Delete Chat History
+- ✅ Chat history deleted on exit (explicit command or ESC key)
+- ✅ Auto-delete after 30 min inactivity
+- ✅ No exceptions - Privacy by default
+- ✅ Comprehensive documentation with WHY/REASON comments
+- ✅ `cleanup_history` action in daemon
+- ✅ Exit handlers in shell functions
+- ✅ Localized messages (EN/DE/ES)
+
+### v11.3.0 - Ultra-Flexible Keywords
 - ✅ Pattern-based keywords: `verb {x}` matches ANY text
 - ✅ No possessive requirements: "my/the/his/meine/die/mi/la" all work OR omit entirely
 - ✅ 30+ verb synonyms per language (12 SAVE, 14 RETRIEVE, 12 DELETE for EN)
@@ -371,5 +406,5 @@ sqlite3 ~/.aichat/memory.db "SELECT COUNT(*) FROM chat_history;"
 
 ---
 
-**Last Updated:** 2025-10-16
+**Last Updated:** 2025-10-21
 **Maintainer:** Martin Schenk

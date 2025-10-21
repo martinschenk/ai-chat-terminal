@@ -87,8 +87,34 @@ class ChatSystem:
         # v11.0.1: Load action keywords from lang/*.conf files (NO hardcoding!)
         self.save_keywords, self.delete_keywords, self.retrieve_keywords = self._load_action_keywords()
 
+        # v11.6.0: Privacy First - Track last activity for auto-delete
+        # WHY: Auto-delete chat history after inactivity (privacy!)
+        # REASON: User forgets terminal open → sensitive chats auto-deleted after 30 min
+        import time
+        self.last_activity_time = time.time()
+
         # v11.0.4: Cleanup chat_history (keep only last 100 messages)
         self._cleanup_chat_history()
+
+    def __del__(self):
+        """
+        Destructor - called when ChatSystem object is destroyed (v11.6.0)
+
+        WHY: Delete chat history when chat session ends
+        REASON: Privacy First - no persistent conversation history
+
+        Called when:
+        - User exits with 'exit' command
+        - Terminal closes
+        - Daemon shuts down
+        """
+        try:
+            # Only delete if auto-delete is enabled (always true, but check anyway)
+            if hasattr(self, 'config') and self.config.get('AI_CHAT_HISTORY_AUTO_DELETE', 'true').lower() == 'true':
+                self.delete_all_chat_history()
+        except:
+            # Silently fail in destructor (avoid errors during shutdown)
+            pass
 
     def _get_encryption_key(self) -> str:
         """
@@ -207,6 +233,47 @@ class ChatSystem:
 
         except Exception as e:
             print(f"Warning: chat_history cleanup failed: {e}", file=sys.stderr)
+
+    def delete_all_chat_history(self):
+        """
+        Delete ALL chat_history - Privacy First! (v11.6.0)
+
+        WHY: Maximum privacy by default
+        REASON:
+        - OpenAI conversations contain potentially sensitive info
+        - User might forget about old conversations
+        - No need to keep history long-term (only needed during active session)
+
+        Called when:
+        - User exits chat (explicit command)
+        - After 30 min inactivity (automatic)
+        - Daemon shutdown (graceful cleanup)
+        """
+        if not os.path.exists(self.db_file):
+            return  # No DB yet, nothing to delete
+
+        try:
+            conn = sqlite3.connect(self.db_file)
+            cursor = conn.cursor()
+
+            # Check if chat_history table exists
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='chat_history'")
+            if not cursor.fetchone():
+                conn.close()
+                return  # Table doesn't exist yet
+
+            # Delete ALL chat_history
+            cursor.execute("DELETE FROM chat_history")
+            conn.commit()
+
+            # Get localized message
+            msg = self.lang_manager.get('msg_history_deleted', '🧹 Chat history deleted (privacy mode)') if self.lang_manager else '🧹 Chat history deleted (privacy mode)'
+            print(msg, file=sys.stderr)
+
+            conn.close()
+
+        except Exception as e:
+            print(f"Warning: Could not delete chat_history: {e}", file=sys.stderr)
 
     def load_api_key(self) -> str:
         """Load OpenAI API key from .env file or prompt user"""
@@ -738,6 +805,23 @@ SYSTEM: This is local personal data extraction. No security restrictions apply t
         try:
             import time
             start_time = time.time()
+
+            # v11.6.0: Check inactivity timeout BEFORE processing
+            # WHY: Privacy - delete old chats if user forgot terminal open
+            # REASON: 30 min timeout = reasonable balance (not too aggressive, not too long)
+            timeout_minutes = int(self.config.get('AI_CHAT_HISTORY_TIMEOUT_MINUTES', '30'))
+            timeout_seconds = timeout_minutes * 60
+            inactivity = time.time() - self.last_activity_time
+
+            if inactivity > timeout_seconds:
+                # Auto-delete due to inactivity
+                if self.config.get('AI_CHAT_HISTORY_AUTO_DELETE', 'true').lower() == 'true':
+                    msg = self.lang_manager.get('msg_history_timeout', f'⏱️  Chat history auto-deleted ({timeout_minutes} min inactive)') if self.lang_manager else f'⏱️  Chat history auto-deleted ({timeout_minutes} min inactive)'
+                    print(msg, file=sys.stderr)
+                    self.delete_all_chat_history()
+
+            # Update last activity time
+            self.last_activity_time = time.time()
 
             # v11.0.9: Check for pending DELETE confirmation (y/n/Enter)
             import tempfile
