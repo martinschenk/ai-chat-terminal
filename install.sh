@@ -653,6 +653,12 @@ AI_CHAT_ESC_EXIT="true"
 AI_CHAT_CONTEXT_WINDOW="20"
 AI_CHAT_MARKDOWN_RENDER="true"
 OLLAMA_ALWAYS_ON="false"
+
+# Chat History Privacy Settings (v11.6.0 - Privacy First!)
+# WHY: Maximum privacy by default - chat history deleted automatically
+# REASON: Prevents long-term storage of conversations on your Mac
+AI_CHAT_HISTORY_AUTO_DELETE="true"
+AI_CHAT_HISTORY_TIMEOUT_MINUTES="30"
 EOF
 
 # Step 8: Configure OpenAI API Key

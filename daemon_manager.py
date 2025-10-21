@@ -199,6 +199,36 @@ class DaemonManager:
 
         return success
 
+    def cleanup_chat_history(self) -> bool:
+        """
+        Request chat daemon to delete chat history (v11.6.0 - Privacy First!)
+
+        WHY: User exits chat → history should be deleted
+        REASON: Privacy by default - no persistent conversations
+
+        Returns:
+            True if cleanup successful
+        """
+        try:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.settimeout(2.0)
+            sock.connect(('127.0.0.1', self.chat_port))
+
+            request = {
+                'action': 'cleanup_history'
+            }
+            sock.sendall(json.dumps(request).encode('utf-8') + b'\n\n')
+
+            response = sock.recv(4096).decode('utf-8').strip()
+            sock.close()
+
+            response_data = json.loads(response)
+            return response_data.get('success', False)
+
+        except Exception as e:
+            # Daemon might not be running - that's OK
+            return False
+
     def ensure_daemons_running(self) -> bool:
         """
         Ensure both daemons are running, start if needed

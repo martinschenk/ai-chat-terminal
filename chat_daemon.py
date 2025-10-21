@@ -209,6 +209,22 @@ class ChatDaemon:
                 'response': 'pong'
             }
 
+        elif action == 'cleanup_history':
+            # v11.6.0: Delete chat history (called on user exit)
+            # WHY: Privacy First - delete history when user exits chat
+            # REASON: User typed "exit" → cleanup conversations
+            try:
+                self.chat_system.delete_all_chat_history()
+                return {
+                    'success': True,
+                    'response': 'Chat history deleted'
+                }
+            except Exception as e:
+                return {
+                    'success': False,
+                    'error': f'Failed to delete history: {e}'
+                }
+
         elif action == 'shutdown':
             # Graceful shutdown request
             print("🛑 Shutdown requested by client", file=sys.stderr)
@@ -231,6 +247,15 @@ class ChatDaemon:
 
     def cleanup(self):
         """Clean up resources"""
+        # v11.6.0: Delete chat history on daemon shutdown (Privacy First!)
+        # WHY: User exits chat → history should be deleted
+        # REASON: Privacy by default - no persistent conversations
+        try:
+            if hasattr(self, 'chat_system') and self.chat_system:
+                self.chat_system.delete_all_chat_history()
+        except Exception as e:
+            print(f"Warning: Could not delete chat history: {e}", file=sys.stderr)
+
         if self.socket:
             try:
                 self.socket.close()

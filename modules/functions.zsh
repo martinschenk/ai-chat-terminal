@@ -102,6 +102,8 @@ chat_loop() {
                         # Pure ESC (no following bytes) - EXIT
                         stty "$OLD_STTY" 2>/dev/null
                         echo -e "\n\n${YELLOW}👋 ${LANG_MSG_GOODBYE}${RESET}\n"
+                        # v11.6.0: Delete chat history on exit (Privacy First!)
+                        python3 -c "import sys; sys.path.insert(0, '$SCRIPT_DIR'); from daemon_manager import DaemonManager; DaemonManager().cleanup_chat_history()" 2>/dev/null
                         return
                     elif [[ "$next_chars" == "[A" ]]; then
                         # UP ARROW - navigate to older message
@@ -249,6 +251,8 @@ chat_loop() {
 
             exit|quit|bye|/exit|/quit)
                 echo -e "\n${YELLOW}👋 ${LANG_MSG_GOODBYE}${RESET}\n"
+                # v11.6.0: Delete chat history on exit (Privacy First!)
+                python3 -c "import sys; sys.path.insert(0, '$SCRIPT_DIR'); from daemon_manager import DaemonManager; DaemonManager().cleanup_chat_history()" 2>/dev/null
                 return
                 ;;
         esac

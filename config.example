@@ -1,0 +1,16 @@
+PHI3_ENABLED=true
+RESPONSE_MODE=natural
+PRIVACY_LEVEL=basic
+AI_CHAT_LANGUAGE="en"
+AI_CHAT_COMMAND="chat"
+AI_CHAT_MODEL="gpt-4o-mini"
+AI_CHAT_ESC_EXIT="true"
+AI_CHAT_CONTEXT_WINDOW="20"
+OLLAMA_ALWAYS_ON="false"
+AI_CHAT_MARKDOWN_RENDER="true"
+
+# Chat History Privacy Settings
+# WHY: Maximum privacy by default - chat history deleted automatically
+# REASON: Prevents long-term storage of conversations on your Mac
+AI_CHAT_HISTORY_AUTO_DELETE="true"           # Delete chat history on exit (Privacy First!)
+AI_CHAT_HISTORY_TIMEOUT_MINUTES="30"         # Auto-delete after X minutes of inactivity

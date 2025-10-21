@@ -10,7 +10,7 @@ User's sensitive data NEVER leaves their Mac.
 
 ## Current Version
 
-v11.3.0 - Ultra-flexible keywords with 30+ verb synonyms per language
+v11.6.0 - Privacy First: Auto-delete chat history on exit and after inactivity
 
 ## Key Architecture
 
