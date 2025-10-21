@@ -11,6 +11,10 @@ Use simple keywords like `save`, `store`, or `remember` to keep your sensitive d
 [![Platform](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](https://github.com/martinschenk/ai-chat-terminal)
 [![Encryption](https://img.shields.io/badge/encryption-AES--256-green.svg)](https://github.com/martinschenk/ai-chat-terminal#encryption)
 [![AI](https://img.shields.io/badge/AI-Qwen--2.5--Coder-orange.svg)](https://github.com/martinschenk/ai-chat-terminal)
+[![Stars](https://img.shields.io/github/stars/martinschenk/ai-chat-terminal)](https://github.com/martinschenk/ai-chat-terminal/stargazers)
+[![Forks](https://img.shields.io/github/forks/martinschenk/ai-chat-terminal)](https://github.com/martinschenk/ai-chat-terminal/network/members)
+[![Last Commit](https://img.shields.io/github/last-commit/martinschenk/ai-chat-terminal)](https://github.com/martinschenk/ai-chat-terminal/commits/main)
+[![Commit Activity](https://img.shields.io/github/commit-activity/m/martinschenk/ai-chat-terminal)](https://github.com/martinschenk/ai-chat-terminal/graphs/commit-activity)
 
 ## Why AI Chat Terminal?
 
