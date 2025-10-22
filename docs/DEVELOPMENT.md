@@ -111,3 +111,55 @@ python3 local_storage_detector.py
 - SQLite is encrypted with AES-256 via SQLCipher
 - All 3 languages (EN/DE/ES) must stay in sync
 - Never remove DB visibility icons from responses
+
+## Marketing & Privacy Policy
+
+**CRITICAL: Separation of Concerns**
+
+### Public Repo (ai-chat-terminal)
+✅ **Allowed:**
+- Product code (Python, Shell scripts)
+- Product documentation (ARCHITECTURE.md, DEVELOPMENT.md)
+- Landing page (docs/index.html, docs/styles.css, docs/script.js)
+- Installation instructions
+- Technical README
+
+❌ **NEVER Commit:**
+- Marketing campaign materials (social media posts, launch plans)
+- Personal accounts (Twitter usernames, Reddit accounts)
+- Campaign tracking (STATUS.md for launches)
+- Marketing strategies or templates
+
+### Private Repo (ai-chat-terminal-marketing)
+**Location:** `/Users/martin/Development/ai-chat-terminal-marketing/`
+
+✅ **Store here:**
+- Social media content (TWITTER_THREAD.txt, REDDIT_POSTS.txt)
+- Campaign tracking (STATUS.md)
+- Marketing templates (MARKETING.md)
+- Launch strategies
+- Analytics and metrics
+
+### Credentials Policy
+🔐 **ALWAYS store sensitive data in macOS Keychain:**
+- Twitter credentials
+- Reddit API keys
+- Any personal account passwords
+- API tokens
+
+**NEVER hardcode credentials in:**
+- Python scripts
+- Shell scripts
+- Markdown files
+- Git commits
+
+**Use Keychain Helper:**
+```python
+from keychain_helper import get_api_key
+twitter_pass = get_api_key("Twitter Password", "ma8nk")
+```
+
+Or via command line:
+```bash
+security find-generic-password -s "Service Name" -a "account" -w
+```
