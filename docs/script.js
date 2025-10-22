@@ -33,28 +33,6 @@ async function fetchGitHubStats() {
             animateNumber(starsEl, data.stargazers_count);
         }
 
-        // Fetch download count from releases
-        try {
-            const releasesResponse = await fetch('https://api.github.com/repos/martinschenk/ai-chat-terminal/releases');
-            const releases = await releasesResponse.json();
-
-            let totalDownloads = 0;
-            releases.forEach(release => {
-                if (release.assets) {
-                    release.assets.forEach(asset => {
-                        totalDownloads += asset.download_count || 0;
-                    });
-                }
-            });
-
-            const downloadsEl = document.getElementById('downloads-count');
-            if (downloadsEl && totalDownloads > 0) {
-                animateNumber(downloadsEl, totalDownloads);
-            }
-        } catch (e) {
-            console.log('Could not fetch download stats:', e);
-        }
-
     } catch (error) {
         console.log('Could not fetch GitHub stats:', error);
     }
