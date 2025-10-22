@@ -215,37 +215,15 @@ first_run_setup() {
         echo ""
         echo "  [1] 🇬🇧 English (default)"
         echo "  [2] 🇩🇪 Deutsch"
-        echo "  [3] 🇫🇷 Français"
-        echo "  [4] 🇮🇹 Italiano"
-        echo "  [5] 🇪🇸 Español"
-        echo "  [6] 🇨🇳 中文 (Mandarin)"
-        echo "  [7] 🇮🇳 हिन्दी (Hindi)"
-        echo "  [8] 🏴 Euskera (Basque)"
-        echo "  [9] 🏴 Català (Catalan)"
-        echo "  [10] 🏴 Galego (Galician)"
+        echo "  [3] 🇪🇸 Español"
         echo ""
-        echo -n "Select [1-10] (default: 1): "
+        echo -n "Select [1-3] (default: 1): "
         read -r lang_choice
 
         local language="en"
         case "$lang_choice" in
-            2)
-                language="de"
-                handle_german_selection
-                language="$selected_lang"
-                ;;
-            3) language="fr" ;;
-            4) language="it" ;;
-            5)
-                language="es"
-                handle_spanish_selection
-                language="$selected_lang"
-                ;;
-            6) language="zh" ;;
-            7) language="hi" ;;
-            8) language="eu" ;;
-            9) language="ca" ;;
-            10) language="gl" ;;
+            2) language="de" ;;
+            3) language="es" ;;
             *) language="en" ;;
         esac
         echo -e "\033[0;32m✓ Language set to: $language\033[0m\n"
@@ -366,49 +344,6 @@ EOF
 
     echo -e "\033[2m${LANG_SETUP_STARTING}\033[0m"
     sleep 2
-}
-
-# Helper functions for language selection
-handle_german_selection() {
-    echo ""
-    echo "Möchten Sie einen Dialekt?"
-    echo "  [1] Hochdeutsch (Standard)"
-    echo "  [2] Schwäbisch"
-    echo "  [3] Bayerisch"
-    echo "  [4] Sächsisch"
-    echo -n "Auswahl [1-4]: "
-    read -r dialect
-
-    case "$dialect" in
-        2) selected_lang="de-schwaebisch" ;;
-        3) selected_lang="de-bayerisch" ;;
-        4) selected_lang="de-saechsisch" ;;
-        *) selected_lang="de" ;;
-    esac
-}
-
-handle_spanish_selection() {
-    echo ""
-    echo "¿Qué variante de español prefieres?"
-    echo "  [1] 🇪🇸 Español (Estándar)"
-    echo "  [2] 🇲🇽 Mexicano"
-    echo "  [3] 🇦🇷 Argentino"
-    echo "  [4] 🇨🇴 Colombiano"
-    echo "  [5] 🇻🇪 Venezolano"
-    echo "  [6] 🇨🇱 Chileno"
-    echo "  [7] 🇪🇸 Andaluz"
-    echo -n "Selección [1-7]: "
-    read -r variant
-
-    case "$variant" in
-        2) selected_lang="es-mexicano" ;;
-        3) selected_lang="es-argentino" ;;
-        4) selected_lang="es-colombiano" ;;
-        5) selected_lang="es-venezolano" ;;
-        6) selected_lang="es-chileno" ;;
-        7) selected_lang="es-andaluz" ;;
-        *) selected_lang="es" ;;
-    esac
 }
 
 # Function to check if query needs web search

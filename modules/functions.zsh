@@ -334,53 +334,11 @@ get_dialect_prompt() {
         de)
             DIALECT_PROMPT="[SYSTEM: Antworte auf Deutsch] "
             ;;
-        de-schwaebisch)
-            DIALECT_PROMPT="[SYSTEM: Antworte auf Schwäbisch mit typischen schwäbischen Ausdrücken] "
+        es)
+            DIALECT_PROMPT="[SYSTEM: Responde en español] "
             ;;
-        de-bayerisch)
-            DIALECT_PROMPT="[SYSTEM: Antworte auf Bayerisch mit typischen bayerischen Ausdrücken] "
-            ;;
-        de-saechsisch)
-            DIALECT_PROMPT="[SYSTEM: Antworte auf Sächsisch mit typischen sächsischen Ausdrücken] "
-            ;;
-        es-mexicano)
-            DIALECT_PROMPT="[SYSTEM: Responde en español mexicano] "
-            ;;
-        es-argentino)
-            DIALECT_PROMPT="[SYSTEM: Respondé en español argentino con voseo] "
-            ;;
-        es-colombiano)
-            DIALECT_PROMPT="[SYSTEM: Responde en español colombiano] "
-            ;;
-        es-venezolano)
-            DIALECT_PROMPT="[SYSTEM: Responde en español venezolano] "
-            ;;
-        es-chileno)
-            DIALECT_PROMPT="[SYSTEM: Responde en español chileno] "
-            ;;
-        es-andaluz)
-            DIALECT_PROMPT="[SYSTEM: Responde en andaluz] "
-            ;;
-        ca)
-            DIALECT_PROMPT="[SYSTEM: Respon en català] "
-            ;;
-        eu)
-            DIALECT_PROMPT="[SYSTEM: Erantzun euskeraz] "
-            ;;
-        gl)
-            DIALECT_PROMPT="[SYSTEM: Responde en galego] "
-            ;;
-        zh)
-            DIALECT_PROMPT="[SYSTEM: 请用中文回答] "
-            ;;
-        hi)
-            DIALECT_PROMPT="[SYSTEM: कृपया हिंदी में उत्तर दें] "
-            ;;
-        fr)
-            DIALECT_PROMPT="[SYSTEM: Réponds en français] "
-            ;;
-        it)
-            DIALECT_PROMPT="[SYSTEM: Rispondi in italiano] "
+        en)
+            DIALECT_PROMPT="[SYSTEM: Respond in English] "
             ;;
     esac
 }
