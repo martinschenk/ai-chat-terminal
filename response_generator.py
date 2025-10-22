@@ -556,8 +556,6 @@ Your SHORT phrase (2-4 words max):"""
             'de': "Antworte auf Deutsch.",
             'en': "Respond in English.",
             'es': "Responde en español.",
-            'fr': "Répondez en français.",
-            'it': "Rispondi in italiano.",
         }
 
         return instructions.get(base_lang, "Respond in English.")

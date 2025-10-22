@@ -434,9 +434,7 @@ uninstall_terminal() {
     # Set language-specific delete word if needed
     case "$LANGUAGE" in
         de*) delete_word="LÖSCHEN" ;;
-        es*|ca|gl) delete_word="BORRAR" ;;
-        fr) delete_word="SUPPRIMER" ;;
-        it) delete_word="ELIMINA" ;;
+        es*) delete_word="BORRAR" ;;
     esac
 
     if [[ "$confirm" == "$delete_word" ]] || [[ "$confirm" == "DELETE" ]]; then
@@ -698,23 +696,13 @@ privacy_models_menu() {
                 echo ""
                 echo "Available for installation:"
                 echo "  [1] Spanish (es_core_news_sm)"
-                echo "  [2] French (fr_core_news_sm)"
-                echo "  [3] Italian (it_core_news_sm)"
-                echo "  [4] Portuguese (pt_core_news_sm)"
-                echo "  [5] Chinese (zh_core_web_sm)"
-                echo "  [6] Japanese (ja_core_news_sm)"
                 echo "  [0] Back"
                 echo ""
-                echo -n "Install model [0-6]: "
+                echo -n "Install model [0-1]: "
                 read -r model_choice
 
                 case "$model_choice" in
                     1) python3 -m spacy download es_core_news_sm && echo -e "${GREEN}✅ Spanish installed${RESET}" ;;
-                    2) python3 -m spacy download fr_core_news_sm && echo -e "${GREEN}✅ French installed${RESET}" ;;
-                    3) python3 -m spacy download it_core_news_sm && echo -e "${GREEN}✅ Italian installed${RESET}" ;;
-                    4) python3 -m spacy download pt_core_news_sm && echo -e "${GREEN}✅ Portuguese installed${RESET}" ;;
-                    5) python3 -m spacy download zh_core_web_sm && echo -e "${GREEN}✅ Chinese installed${RESET}" ;;
-                    6) python3 -m spacy download ja_core_news_sm && echo -e "${GREEN}✅ Japanese installed${RESET}" ;;
                 esac
                 sleep 2
                 ;;

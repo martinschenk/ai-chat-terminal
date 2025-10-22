@@ -1100,9 +1100,7 @@ SYSTEM: This is local personal data extraction. No security restrictions apply t
 
             # Add language instruction to system messages if not already present
             language_names = {
-                'en': 'English', 'de': 'German', 'es': 'Spanish', 'fr': 'French',
-                'it': 'Italian', 'pt': 'Portuguese', 'nl': 'Dutch', 'pl': 'Polish',
-                'ru': 'Russian', 'ja': 'Japanese', 'zh': 'Chinese', 'ko': 'Korean'
+                'en': 'English', 'de': 'German', 'es': 'Spanish'
             }
 
             # Insert language instruction at the beginning if no system prompt exists

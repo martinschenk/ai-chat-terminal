@@ -400,7 +400,6 @@ curl -fsSL https://raw.githubusercontent.com/martinschenk/ai-chat-terminal/main/
 This project is **100% open source** and built by developers who care about privacy. Whether you're a Python expert or just getting started, there's a way to contribute.
 
 **What we need:**
-- 🌍 **More languages** - French, Italian, Portuguese, Japanese?
 - 🧪 **Testing** - Try it on different macOS versions
 - 🐛 **Bug reports** - Found something broken? [Tell us!](https://github.com/martinschenk/ai-chat-terminal/issues)
 - 💡 **Feature ideas** - What would make this better for you?
