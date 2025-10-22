@@ -48,8 +48,8 @@ async function fetchGitHubStats() {
             });
 
             const downloadsEl = document.getElementById('downloads-count');
-            if (downloadsEl) {
-                animateNumber(downloadsEl, totalDownloads > 0 ? totalDownloads : 130);
+            if (downloadsEl && totalDownloads > 0) {
+                animateNumber(downloadsEl, totalDownloads);
             }
         } catch (e) {
             console.log('Could not fetch download stats:', e);
