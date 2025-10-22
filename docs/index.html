@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- SEO Meta Tags -->
+    <title>AI Chat Terminal - Privacy-First AI for macOS</title>
+    <meta name="description" content="Get the power of GPT-4o cloud AI with a privacy escape hatch. Use keywords to keep sensitive data local, encrypted, and 100% private.">
+    <meta name="keywords" content="AI terminal, privacy, macOS, GPT-4, local encryption, Qwen, chat, terminal, CLI">
+    <meta name="author" content="Martin Schenk">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://ai-chat-terminal.martin-schenk.es/">
+    <meta property="og:title" content="AI Chat Terminal - Privacy-First AI for macOS">
+    <meta property="og:description" content="Get the power of GPT-4o cloud AI with a privacy escape hatch. Use keywords to keep sensitive data local, encrypted, and 100% private.">
+    <meta property="og:image" content="https://ai-chat-terminal.martin-schenk.es/images/og-image.png">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://ai-chat-terminal.martin-schenk.es/">
+    <meta property="twitter:title" content="AI Chat Terminal - Privacy-First AI for macOS">
+    <meta property="twitter:description" content="Get the power of GPT-4o cloud AI with a privacy escape hatch. Use keywords to keep sensitive data local, encrypted, and 100% private.">
+    <meta property="twitter:image" content="https://ai-chat-terminal.martin-schenk.es/images/og-image.png">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔒</text></svg>">
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="styles.css">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="nav">
+        <div class="container">
+            <div class="nav-content">
+                <div class="nav-logo">
+                    <span class="logo-icon">🔒</span>
+                    <span class="logo-text">AI Chat Terminal</span>
+                </div>
+                <div class="nav-links">
+                    <a href="#features">Features</a>
+                    <a href="#how-it-works">How It Works</a>
+                    <a href="#install">Install</a>
+                    <a href="https://github.com/martinschenk/ai-chat-terminal" target="_blank" class="github-link">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                        </svg>
+                        GitHub
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <div class="hero-content">
+                <div class="hero-badge">
+                    <span class="badge-dot"></span>
+                    v11.6.0 - Privacy First
+                </div>
+                <h1 class="hero-title">
+                    Get the power of GPT-4o<br>
+                    <span class="gradient-text">with a privacy escape hatch</span>
+                </h1>
+                <p class="hero-description">
+                    Use simple keywords like <code>save</code>, <code>store</code>, or <code>remember</code> to keep your sensitive data local, encrypted, and 100% private. No cloud exposure for passwords, emails, or personal info when you choose to protect them.
+                </p>
+
+                <!-- Install Command -->
+                <div class="install-box">
+                    <div class="install-command" id="install-cmd">
+                        curl -fsSL https://raw.githubusercontent.com/martinschenk/ai-chat-terminal/main/install.sh | zsh
+                    </div>
+                    <button class="copy-btn" id="copy-btn" onclick="copyInstall()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- GitHub Stats -->
+                <div class="stats" id="github-stats">
+                    <div class="stat">
+                        <span class="stat-value" id="stars-count">5</span>
+                        <span class="stat-label">Stars</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value" id="downloads-count">130</span>
+                        <span class="stat-label">Downloads</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value">v11.6.0</span>
+                        <span class="stat-label">Latest</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Grid -->
+    <section class="features" id="features">
+        <div class="container">
+            <h2 class="section-title">Why AI Chat Terminal?</h2>
+            <p class="section-subtitle">
+                We love powerful cloud AI like GPT-4o. But sometimes you need privacy.
+            </p>
+
+            <div class="features-grid">
+                <!-- Feature 1 -->
+                <div class="feature-card">
+                    <div class="feature-icon">🔒</div>
+                    <h3 class="feature-title">Privacy by Choice</h3>
+                    <p class="feature-description">
+                        Use keywords to trigger local AI processing. Your sensitive data stays on your Mac, encrypted with AES-256.
+                    </p>
+                    <div class="feature-example">
+                        <code>save my password Secret123</code>
+                        <span class="example-result">→ 🗄️ Stored 🔒 (local only)</span>
+                    </div>
+                </div>
+
+                <!-- Feature 2 -->
+                <div class="feature-card">
+                    <div class="feature-icon">⚡</div>
+                    <h3 class="feature-title">Blazing Fast</h3>
+                    <p class="feature-description">
+                        Daemon architecture keeps AI loaded in RAM. 95% faster than restarting Python on every query.
+                    </p>
+                    <div class="feature-example">
+                        <code>chat</code>
+                        <span class="example-result">→ Ready in <50ms</span>
+                    </div>
+                </div>
+
+                <!-- Feature 3 -->
+                <div class="feature-card">
+                    <div class="feature-icon">🌐</div>
+                    <h3 class="feature-title">Best of Both Worlds</h3>
+                    <p class="feature-description">
+                        General questions use GPT-4o's power. Private data uses local Qwen 2.5 Coder (7B). You decide with keywords.
+                    </p>
+                    <div class="feature-example">
+                        <code>capital of france?</code>
+                        <span class="example-result">→ ☁️ GPT-4o</span>
+                    </div>
+                </div>
+
+                <!-- Feature 4 -->
+                <div class="feature-card">
+                    <div class="feature-icon">🧹</div>
+                    <h3 class="feature-title">Auto-Delete History</h3>
+                    <p class="feature-description">
+                        Chat history auto-deleted on exit and after 30min inactivity. Privacy First - no long-term storage.
+                    </p>
+                    <div class="feature-example">
+                        <code>exit</code>
+                        <span class="example-result">→ 🧹 History deleted</span>
+                    </div>
+                </div>
+
+                <!-- Feature 5 -->
+                <div class="feature-card">
+                    <div class="feature-icon">🌍</div>
+                    <h3 class="feature-title">Multilingual</h3>
+                    <p class="feature-description">
+                        Works in English, German, Spanish, French, Italian, Chinese, Hindi, and more. 30+ keyword synonyms per language.
+                    </p>
+                    <div class="feature-example">
+                        <code>guarda mi email</code>
+                        <span class="example-result">→ ✅ Works!</span>
+                    </div>
+                </div>
+
+                <!-- Feature 6 -->
+                <div class="feature-card">
+                    <div class="feature-icon">🔓</div>
+                    <h3 class="feature-title">Open Source</h3>
+                    <p class="feature-description">
+                        MIT licensed. Audit the code, verify privacy claims, contribute features. Transparent by design.
+                    </p>
+                    <div class="feature-example">
+                        <code>git clone</code>
+                        <span class="example-result">→ See the code</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works -->
+    <section class="how-it-works" id="how-it-works">
+        <div class="container">
+            <h2 class="section-title">How Privacy Works</h2>
+            <p class="section-subtitle">
+                Two-stage intent detection decides where your data goes
+            </p>
+
+            <div class="workflow">
+                <div class="workflow-step">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <h3 class="step-title">Keyword Scan (&lt;1ms)</h3>
+                        <p class="step-description">
+                            Fast check for keywords: save, store, remember, show, delete (30+ synonyms in 10 languages)
+                        </p>
+                    </div>
+                </div>
+
+                <div class="workflow-arrow">→</div>
+
+                <div class="workflow-step">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <h3 class="step-title">Intent Analysis (Local AI)</h3>
+                        <p class="step-description">
+                            Qwen 2.5 Coder (5GB, runs on your Mac) analyzes: "Does user want to save/retrieve/delete?"
+                        </p>
+                    </div>
+                </div>
+
+                <div class="workflow-arrow">→</div>
+
+                <div class="workflow-step">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <h3 class="step-title">Route Decision</h3>
+                        <p class="step-description">
+                            Save intent → Local encrypted DB (AES-256)<br>
+                            Question → OpenAI GPT-4o
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="comparison">
+                <div class="comparison-col cloud">
+                    <div class="comparison-header">
+                        <span class="comparison-icon">☁️</span>
+                        <h3>Without Keywords</h3>
+                    </div>
+                    <div class="comparison-example">
+                        <code>My email is test@example.com</code>
+                        <span class="comparison-result danger">⚠️ Sent to OpenAI</span>
+                    </div>
+                </div>
+
+                <div class="comparison-col local">
+                    <div class="comparison-header">
+                        <span class="comparison-icon">🔒</span>
+                        <h3>With Keywords</h3>
+                    </div>
+                    <div class="comparison-example">
+                        <code>save my email test@example.com</code>
+                        <span class="comparison-result success">✅ Stored locally (encrypted)</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Installation -->
+    <section class="installation" id="install">
+        <div class="container">
+            <h2 class="section-title">Ready to Take Control?</h2>
+            <p class="section-subtitle">
+                Install in one command. Works on macOS 12.0+
+            </p>
+
+            <div class="install-steps">
+                <div class="install-step">
+                    <div class="install-step-number">1</div>
+                    <div class="install-step-content">
+                        <h3>Run installer</h3>
+                        <div class="code-block">
+                            <code>curl -fsSL https://raw.githubusercontent.com/martinschenk/ai-chat-terminal/main/install.sh | zsh</code>
+                            <button class="copy-btn-small" onclick="copyInstall()">Copy</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="install-step">
+                    <div class="install-step-number">2</div>
+                    <div class="install-step-content">
+                        <h3>Add OpenAI API key</h3>
+                        <p>Get your key at <a href="https://platform.openai.com/api-keys" target="_blank">platform.openai.com/api-keys</a></p>
+                    </div>
+                </div>
+
+                <div class="install-step">
+                    <div class="install-step-number">3</div>
+                    <div class="install-step-content">
+                        <h3>Start chatting!</h3>
+                        <div class="code-block">
+                            <code>chat</code>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="requirements">
+                <h4>Requirements</h4>
+                <ul>
+                    <li>macOS 12.0+ with Zsh</li>
+                    <li>Python 3.9+</li>
+                    <li>8GB RAM (16GB recommended)</li>
+                    <li>~5GB disk space</li>
+                    <li>OpenAI API key</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-left">
+                    <div class="footer-logo">
+                        <span class="logo-icon">🔒</span>
+                        <span class="logo-text">AI Chat Terminal</span>
+                    </div>
+                    <p class="footer-tagline">Privacy-first AI for macOS</p>
+                </div>
+
+                <div class="footer-links">
+                    <div class="footer-col">
+                        <h4>Product</h4>
+                        <a href="#features">Features</a>
+                        <a href="#how-it-works">How It Works</a>
+                        <a href="#install">Install</a>
+                        <a href="https://github.com/martinschenk/ai-chat-terminal/releases">Releases</a>
+                    </div>
+
+                    <div class="footer-col">
+                        <h4>Documentation</h4>
+                        <a href="https://github.com/martinschenk/ai-chat-terminal/blob/main/README.md">README</a>
+                        <a href="https://github.com/martinschenk/ai-chat-terminal/blob/main/docs/ARCHITECTURE.md">Architecture</a>
+                        <a href="https://github.com/martinschenk/ai-chat-terminal/blob/main/SECURITY.md">Security</a>
+                        <a href="https://github.com/martinschenk/ai-chat-terminal/blob/main/CONTRIBUTING.md">Contributing</a>
+                    </div>
+
+                    <div class="footer-col">
+                        <h4>Community</h4>
+                        <a href="https://github.com/martinschenk/ai-chat-terminal">GitHub</a>
+                        <a href="https://github.com/martinschenk/ai-chat-terminal/issues">Issues</a>
+                        <a href="https://github.com/martinschenk/ai-chat-terminal/discussions">Discussions</a>
+                        <a href="https://github.com/martinschenk">@martinschenk</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="footer-bottom">
+                <p>&copy; 2025 Martin Schenk. MIT License.</p>
+                <p>Made with ❤️ for privacy-conscious developers</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="script.js"></script>
+</body>
+</html>
