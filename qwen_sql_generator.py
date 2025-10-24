@@ -128,108 +128,345 @@ YOUR JOB: If {operation.lower()} intent detected → Generate SQL
         return self._parse_qwen_output(result_text, user_input)
 
     def _build_prompt_save(self, user_input: str) -> str:
-        """Focused SAVE prompt - KISS approach (v12.1.0)"""
-        prompt = f"""Generate SQL INSERT for local database 'mydata'.
+        """Specialized prompt for SAVE - intent-based detection (v11.5.1)"""
+        prompt = f"""You are a SQL INSERT specialist for SQLite database 'mydata'.
 
-Schema: mydata(content TEXT, meta TEXT, lang TEXT)
+DATABASE SCHEMA:
+CREATE TABLE mydata (
+    id INTEGER PRIMARY KEY,
+    content TEXT NOT NULL,      -- The actual VALUE (email address, phone, etc.)
+    meta TEXT,                   -- The LABEL/description (email, phone, API key, etc.)
+    lang TEXT,                   -- Language: en, de, es
+    timestamp INTEGER            -- Auto-generated
+);
+{self._get_intent_principle('SAVE')}
 
-Task: Extract VALUE and LABEL from user input, generate SQL.
+YOUR JOB: Extract VALUE and LABEL from user input, then generate INSERT statement.
 
-Examples (VALUE can be at END of sentence!):
+STEP 1 - ANALYZE INPUT:
+Detect language from VERB:
+- English verbs: save, note, record, add, log, write, register, put, set
+- German verbs: speichere, merke, notiere, trag ein, schreib auf
+- Spanish verbs: guarda, recuerda, anota, registra, apunta, graba
 
-"save my email test@test.com"
-→ INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('test@test.com', 'email', 'en');
+Extract TWO things from text after verb:
+1. VALUE (content): The actual data - email address, phone number, password, API key, date, name, etc.
+2. LABEL (meta): The type/description - can be single word OR multi-word like "API key", "wifi password"
 
-"speichere den name meiner mutter irene"
-→ INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('irene', 'name meiner mutter', 'de');
+STEP 2 - HANDLE FLEXIBLE STRUCTURE:
+Text can have ANY of these structures:
+- "save my email test@test.com" → VALUE: test@test.com, LABEL: email
+- "save email test@test.com" → VALUE: test@test.com, LABEL: email
+- "save the email test@test.com" → VALUE: test@test.com, LABEL: email
+- "save test@test.com" → VALUE: test@test.com, LABEL: email (infer from format!)
+- "add API key abc123" → VALUE: abc123, LABEL: API key (multi-word!)
 
-"guarda el nombre de mi madre maria"
-→ INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('maria', 'nombre de mi madre', 'es');
+Possessives (my/the/his/meine/die/mi/la) are OPTIONAL - ignore or use for LABEL extraction.
 
-"save my mothers name irene"
-→ INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('irene', 'mothers name', 'en');
+STEP 3 - GENERATE SQL:
+Always use: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES (...);
 
-"note my boss's email boss@test.com"
-→ INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('boss@test.com', 'boss\\'s email', 'en');
+EXAMPLES:
 
-"don't forget my birthday is 01/01/1990"
-→ INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('01/01/1990', 'birthday', 'en');
+Input: "save my email test@test.com"
+Analysis: Verb=save (EN), VALUE=test@test.com, LABEL=email
+SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('test@test.com', 'email', 'en');
 
-False positives (respond NO_ACTION):
-- "how do I save?" (tutorial)
-- "save money" (idiom)
-- "save a file" (filesystem)
+Input: "speichere meine Email test@test.de"
+Analysis: Verb=speichere (DE), VALUE=test@test.de, LABEL=Email
+SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('test@test.de', 'Email', 'de');
 
-Analyze: "{user_input}"
+Input: "guarda mi email mschenk.pda@gmail.com"
+Analysis: Verb=guarda (ES), VALUE=mschenk.pda@gmail.com, LABEL=email (mixed ES+EN!)
+SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('mschenk.pda@gmail.com', 'email', 'es');
 
-Respond with SQL or NO_ACTION:
+Input: "note phone 669686832"
+Analysis: Verb=note (EN), VALUE=669686832, LABEL=phone
+SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('669686832', 'phone', 'en');
+
+Input: "add my API key sk-abc123xyz"
+Analysis: Verb=add (EN), VALUE=sk-abc123xyz, LABEL=API key (multi-word!)
+SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('sk-abc123xyz', 'API key', 'en');
+
+Input: "registra el teléfono de María 123456789"
+Analysis: Verb=registra (ES), VALUE=123456789, LABEL=teléfono de María (context!)
+SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('123456789', 'teléfono de María', 'es');
+
+Input: "save my address Hiruela 3, 7-5"
+Analysis: Verb=save (EN), VALUE=Hiruela 3, 7-5, LABEL=address
+SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('Hiruela 3, 7-5', 'address', 'en');
+
+Input: "guarda mi cumpleaños 15/03/1990"
+Analysis: Verb=guarda (ES), VALUE=15/03/1990, LABEL=cumpleaños
+SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('15/03/1990', 'cumpleaños', 'es');
+
+Input: "note my wifi password MyWifi123"
+Analysis: Verb=note (EN), VALUE=MyWifi123, LABEL=wifi password (multi-word!)
+SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('MyWifi123', 'wifi password', 'en');
+
+Input: "speichere den name meiner mutter irene"
+Analysis: Verb=speichere (DE), VALUE=irene, LABEL=name meiner mutter (Genitiv!)
+SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('irene', 'name meiner mutter', 'de');
+
+Input: "save my mothers name irene"
+Analysis: Verb=save (EN), VALUE=irene, LABEL=mothers name (possessive!)
+SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('irene', 'mothers name', 'en');
+
+Input: "guarda el nombre de mi madre maria"
+Analysis: Verb=guarda (ES), VALUE=maria, LABEL=nombre de mi madre (de-Konstruktion!)
+SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('maria', 'nombre de mi madre', 'es');
+
+FALSE POSITIVES (respond with NO_ACTION):
+
+Input: "how do I save a file in Python?"
+Reason: Tutorial question, no actual data to save
+SQL: NO_ACTION
+
+Input: "save money for vacation"
+Reason: Idiom/phrase, no data type detected
+SQL: NO_ACTION
+
+Input: "remember to call mom"
+Reason: Todo/reminder, no extractable VALUE
+SQL: NO_ACTION
+
+Now analyze this input:
+"{user_input}"
+
+Think step-by-step:
+1. What is the VERB and language?
+2. What is the VALUE (actual data)?
+3. What is the LABEL (description)?
+4. Is this a false positive?
+
+Respond with ONLY the SQL statement or "NO_ACTION". No explanation needed.
 """
         return prompt
 
     def _build_prompt_retrieve(self, user_input: str) -> str:
-        """Focused RETRIEVE prompt - KISS approach (v12.1.0)"""
-        prompt = f"""Generate SQL SELECT for local database 'mydata'.
+        """Specialized prompt for RETRIEVE - intent-based, no LIMIT (v11.5.1)"""
+        prompt = f"""You are a SQL SELECT specialist for SQLite database 'mydata'.
 
-Schema: mydata(id, content, meta, timestamp)
+DATABASE SCHEMA:
+CREATE TABLE mydata (
+    id INTEGER PRIMARY KEY,
+    content TEXT NOT NULL,      -- The actual data
+    meta TEXT,                   -- The label/description
+    lang TEXT,                   -- Language: en, de, es
+    timestamp INTEGER            -- Unix timestamp
+);
+{self._get_intent_principle('RETRIEVE')}
 
-Task: Find stored data, return ALL matches (no LIMIT).
+YOUR JOB: Generate SELECT query to find data. Always return ALL matching records (no LIMIT).
 
-Examples:
+STEP 1 - ANALYZE INPUT:
+Detect language from VERB:
+- English verbs: show, get, find, display, tell, check, lookup, retrieve, fetch, read, view, see, list
+- German verbs: zeige, zeig, hole, finde, sag, schau, prüf, lies, gib aus, ruf ab, such, liste
+- Spanish verbs: muestra, busca, encuentra, dame, dime, consulta, mira, ve, obtén, saca, lista
 
-"show all"
-→ SELECT id, content, meta, timestamp FROM mydata ORDER BY timestamp DESC;
+Extract SEARCH TERM from text after verb:
+- Can be a LABEL: "email", "phone", "birthday", "address", etc.
+- Can be a VALUE: "test@test.com", "669686832"
+- Can be partial: "maria" should find "maria@test.com"
+- Can be "all"/"todo"/"alle" for complete list
 
-"show my email"
-→ SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%email%' OR content LIKE '%email%' ORDER BY timestamp DESC;
+STEP 2 - DETERMINE QUERY TYPE:
+Case A: "show all" / "list all" → SELECT ... ORDER BY timestamp DESC (no WHERE, no LIMIT)
+Case B: Specific search term → SELECT ... WHERE ... ORDER BY timestamp DESC (no LIMIT)
 
-"zeig meine Telefonnummer"
-→ SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%Telefonnummer%' OR content LIKE '%Telefonnummer%' ORDER BY timestamp DESC;
+STEP 3 - GENERATE SQL:
+Format: SELECT id, content, meta, timestamp FROM mydata WHERE ... ORDER BY timestamp DESC;
+Note: NEVER use LIMIT - always show ALL matching records!
 
-"muestra el nombre de mi madre"
-→ SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%nombre de mi madre%' OR content LIKE '%nombre de mi madre%' ORDER BY timestamp DESC;
+EXAMPLES:
 
-False positives (respond NO_ACTION):
-- "show me how to code" (tutorial)
-- "find nearest restaurant" (external search)
+Input: "show all"
+Analysis: Generic "show all" → Show entire database
+SQL: SELECT id, content, meta, timestamp FROM mydata ORDER BY timestamp DESC;
 
-Analyze: "{user_input}"
+Input: "list all"
+Analysis: Generic "list all" → Show entire database
+SQL: SELECT id, content, meta, timestamp FROM mydata ORDER BY timestamp DESC;
 
-Respond with SQL or NO_ACTION:
+Input: "show my email"
+Analysis: Search for "email" → Show all matching entries
+SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%email%' OR content LIKE '%email%' ORDER BY timestamp DESC;
+
+Input: "show all emails"
+Analysis: Search for "email" → Show all matching entries
+SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%email%' OR content LIKE '%email%' ORDER BY timestamp DESC;
+
+Input: "muestra todo"
+Analysis: Generic "muestra todo" (ES) → Show entire database
+SQL: SELECT id, content, meta, timestamp FROM mydata ORDER BY timestamp DESC;
+
+Input: "muestra mi dirección"
+Analysis: Search for "dirección" (ES) → Show all matching entries
+SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%dirección%' OR content LIKE '%dirección%' ORDER BY timestamp DESC;
+
+Input: "muestra mi cumpleaños"
+Analysis: Search for "cumpleaños" (ES) → Show all matching entries
+SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%cumpleaños%' OR content LIKE '%cumpleaños%' ORDER BY timestamp DESC;
+
+Input: "zeig alles"
+Analysis: Generic "zeig alles" (DE) → Show entire database
+SQL: SELECT id, content, meta, timestamp FROM mydata ORDER BY timestamp DESC;
+
+Input: "zeig meine Telefonnummer"
+Analysis: Search for "Telefonnummer" (DE) → Show all matching entries
+SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%Telefonnummer%' OR content LIKE '%Telefonnummer%' ORDER BY timestamp DESC;
+
+Input: "find maria"
+Analysis: Search for "maria" → Show all matching entries
+SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%maria%' OR content LIKE '%maria%' ORDER BY timestamp DESC;
+
+FALSE POSITIVES (respond with NO_ACTION):
+
+Input: "show me how to code in Python"
+Reason: Tutorial request, not database search
+SQL: NO_ACTION
+
+Input: "call my mom"
+Reason: Idiom/reminder (even though contains "call" - not a search verb!)
+SQL: NO_ACTION
+
+Input: "display system settings"
+Reason: UI/system command, not database query
+SQL: NO_ACTION
+
+Input: "find the nearest restaurant"
+Reason: Location search, not database query
+SQL: NO_ACTION
+
+Input: "remember to check email later"
+Reason: Reminder/todo, not retrieval query
+SQL: NO_ACTION
+
+Now analyze this input:
+"{user_input}"
+
+Think step-by-step:
+1. What is the VERB and language?
+2. What is the SEARCH TERM?
+3. Is this "show all" (no WHERE) or specific search (with WHERE)?
+4. Is this a false positive?
+
+Respond with ONLY the SQL statement or "NO_ACTION". No explanation needed.
 """
         return prompt
 
     def _build_prompt_delete(self, user_input: str) -> str:
-        """Focused DELETE prompt - KISS approach (v12.1.0)"""
-        prompt = f"""Generate SQL DELETE for local database 'mydata'.
+        """SMART DELETE Prompt - intent-based, VALUE vs LABEL (v11.5.1)"""
+        prompt = f"""You are a SMART SQL DELETE specialist for SQLite database 'mydata'.
 
-Schema: mydata(content, meta)
+DATABASE SCHEMA:
+CREATE TABLE mydata (
+    id INTEGER PRIMARY KEY,
+    content TEXT NOT NULL,      -- The actual data (email, phone, etc.)
+    meta TEXT,                   -- The label/description
+    lang TEXT,
+    timestamp INTEGER
+);
+{self._get_intent_principle('DELETE')}
 
-Task: Delete by VALUE (exact) or LABEL (category).
+YOUR JOB: Detect if user wants to delete by VALUE (specific data) or LABEL (category), then generate precise DELETE.
 
-Examples:
+⚠️ CRITICAL RULE: NEVER use OR in WHERE clause! Choose ONE field: either content or meta!
 
-"delete test@test.com"
-→ DELETE FROM mydata WHERE content = 'test@test.com';
+STEP 1 - ANALYZE INPUT:
+Detect language from VERB:
+- English: delete, remove, forget, clear, erase, drop, wipe, purge
+- German: lösche, entferne, vergiss, tilg, raum auf, wirf weg, streich
+- Spanish: borra, elimina, olvida, quita, suprime, limpia, remueve
 
-"delete my email"
-→ DELETE FROM mydata WHERE meta LIKE '%email%';
+Extract text after verb and DETECT TYPE:
 
-"borra mi contraseña"
-→ DELETE FROM mydata WHERE meta LIKE '%contraseña%';
+TYPE A - VALUE (specific data): Email format (@+domain), phone (digits 6+), date (/or-), API key (hyphens/long)
+TYPE B - LABEL (category): Generic words without specific format (email, phone, birthday, name, etc.)
 
-"lösche den name meiner mutter"
-→ DELETE FROM mydata WHERE meta LIKE '%name meiner mutter%';
+STEP 2 - DELETE STRATEGY:
+Strategy A (VALUE): DELETE FROM mydata WHERE content = '<exact_value>';  ← Use = for precision!
+Strategy B (LABEL): DELETE FROM mydata WHERE meta LIKE '%<label>%';     ← Use LIKE for variations
+Strategy C (BOTH mentioned): Prefer VALUE (more specific!)
 
-"delete all"
-→ DELETE FROM mydata;
+Special: "delete all"/"borra todo"/"lösche alle" → DELETE FROM mydata;
 
-False positives (respond NO_ACTION):
-- "how do I delete?" (tutorial)
-- "delete all files" (filesystem)
+EXAMPLES (VALUE - Delete specific data):
 
-Analyze: "{user_input}"
+Input: "borra test@test.com"
+SQL: DELETE FROM mydata WHERE content = 'test@test.com';
 
-Respond with SQL or NO_ACTION:
+Input: "delete 669686832"
+SQL: DELETE FROM mydata WHERE content = '669686832';
+
+Input: "elimina maria@test.com"
+SQL: DELETE FROM mydata WHERE content = 'maria@test.com';
+
+Input: "lösche sk-abc123xyz"
+SQL: DELETE FROM mydata WHERE content = 'sk-abc123xyz';
+
+Input: "borra el email test@test.com"
+Note: BOTH mentioned but VALUE is specific → prefer VALUE!
+SQL: DELETE FROM mydata WHERE content = 'test@test.com';
+
+Input: "borra mi email test@test.com"
+Note: BOTH mentioned but VALUE is specific → prefer VALUE!
+SQL: DELETE FROM mydata WHERE content = 'test@test.com';
+
+EXAMPLES (LABEL - Delete all of type):
+
+Input: "borra mi email"
+SQL: DELETE FROM mydata WHERE meta LIKE '%email%';
+
+Input: "delete my phone"
+SQL: DELETE FROM mydata WHERE meta LIKE '%phone%';
+
+Input: "elimina el teléfono"
+SQL: DELETE FROM mydata WHERE meta LIKE '%teléfono%';
+
+Input: "lösche alle Emails"
+SQL: DELETE FROM mydata WHERE meta LIKE '%Email%';
+
+Input: "delete my address"
+SQL: DELETE FROM mydata WHERE meta LIKE '%address%';
+
+Input: "borra mi cumpleaños"
+SQL: DELETE FROM mydata WHERE meta LIKE '%cumpleaños%';
+
+EXAMPLES (Special - Delete all):
+
+Input: "borra todo"
+SQL: DELETE FROM mydata;
+
+Input: "delete all"
+SQL: DELETE FROM mydata;
+
+Input: "lösche alle Daten"
+SQL: DELETE FROM mydata;
+
+FALSE POSITIVES:
+
+Input: "delete all files from desktop"
+SQL: NO_ACTION
+
+Input: "how do I delete a record?"
+SQL: NO_ACTION
+
+Input: "remove the background"
+SQL: NO_ACTION
+
+Now analyze this input:
+"{user_input}"
+
+Think step-by-step:
+1. What is the VERB and language?
+2. Is there a VALUE (specific format) or LABEL (generic category)?
+3. If BOTH: which is more specific?
+4. Is this a false positive?
+5. What SQL to generate?
+
+Respond with ONLY the SQL statement or "NO_ACTION". No explanation needed.
 """
         return prompt
 
@@ -258,14 +495,14 @@ Respond with SQL or NO_ACTION:
 
     def _parse_qwen_output(self, output: str, original_input: str) -> dict:
         """
-        Parse Qwen's output to extract SQL or INCOMPLETE request (v12.0.0)
+        Parse Qwen's output to extract SQL
 
         Args:
             output: Qwen's raw output
             original_input: Original user input
 
         Returns:
-            dict with sql, action, confidence, incomplete_msg (if INCOMPLETE)
+            dict with sql, action, confidence
         """
         # Clean output
         output = output.strip()
