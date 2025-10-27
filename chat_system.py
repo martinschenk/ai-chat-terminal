@@ -167,20 +167,21 @@ class ChatSystem:
                 with open(lang_file, 'r', encoding='utf-8') as f:
                     content = f.read()
 
-                # Extract KEYWORDS_SAVE
-                match = re.search(r'KEYWORDS_SAVE="([^"]+)"', content)
+                # Extract KEYWORDS_SAVE (NOT LANG_KEYWORDS_SAVE!)
+                # Use ^KEYWORDS_ to match only at line start, avoiding LANG_KEYWORDS_SAVE
+                match = re.search(r'^KEYWORDS_SAVE="([^"]+)"', content, re.MULTILINE)
                 if match:
                     keywords = [kw.strip().lower() for kw in match.group(1).split(',') if kw.strip()]
                     save_keywords.update(keywords)
 
-                # Extract KEYWORDS_DELETE
-                match = re.search(r'KEYWORDS_DELETE="([^"]+)"', content)
+                # Extract KEYWORDS_DELETE (NOT LANG_KEYWORDS_DELETE!)
+                match = re.search(r'^KEYWORDS_DELETE="([^"]+)"', content, re.MULTILINE)
                 if match:
                     keywords = [kw.strip().lower() for kw in match.group(1).split(',') if kw.strip()]
                     delete_keywords.update(keywords)
 
-                # Extract KEYWORDS_RETRIEVE
-                match = re.search(r'KEYWORDS_RETRIEVE="([^"]+)"', content)
+                # Extract KEYWORDS_RETRIEVE (NOT LANG_KEYWORDS_RETRIEVE!)
+                match = re.search(r'^KEYWORDS_RETRIEVE="([^"]+)"', content, re.MULTILINE)
                 if match:
                     keywords = [kw.strip().lower() for kw in match.group(1).split(',') if kw.strip()]
                     retrieve_keywords.update(keywords)
