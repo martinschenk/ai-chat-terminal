@@ -164,7 +164,9 @@ Text can have ANY of these structures:
 Possessives (my/the/his/meine/die/mi/la) are OPTIONAL - ignore or use for LABEL extraction.
 
 STEP 3 - GENERATE SQL:
-Always use: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES (...);
+🎯 CRITICAL: Table name is 'mydata' (NOT my_table, NOT data, NOT db)!
+ALWAYS use this exact format:
+INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES (...);
 
 EXAMPLES:
 
@@ -215,6 +217,54 @@ SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('irene', 'mothe
 Input: "guarda el nombre de mi madre maria"
 Analysis: Verb=guarda (ES), VALUE=maria, LABEL=nombre de mi madre (de-Konstruktion!)
 SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('maria', 'nombre de mi madre', 'es');
+
+Input: "remember my boss email boss@company.com"
+Analysis: Verb=remember (EN), VALUE=boss@company.com, LABEL=boss email
+SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('boss@company.com', 'boss email', 'en');
+
+Input: "keep my bank account DE89370400440532013000"
+Analysis: Verb=keep (EN), VALUE=DE89370400440532013000, LABEL=bank account
+SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('DE89370400440532013000', 'bank account', 'en');
+
+Input: "put my emergency contact john@email.com"
+Analysis: Verb=put (EN), VALUE=john@email.com, LABEL=emergency contact
+SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('john@email.com', 'emergency contact', 'en');
+
+Input: "record my passport number A12345678"
+Analysis: Verb=record (EN), VALUE=A12345678, LABEL=passport number
+SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('A12345678', 'passport number', 'en');
+
+Input: "merke dir die email meines chefs chef@firma.de"
+Analysis: Verb=merke (DE), VALUE=chef@firma.de, LABEL=email meines chefs (Genitiv!)
+SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('chef@firma.de', 'email meines chefs', 'de');
+
+Input: "notiere meine Kontonummer DE89370400440532013000"
+Analysis: Verb=notiere (DE), VALUE=DE89370400440532013000, LABEL=Kontonummer
+SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('DE89370400440532013000', 'Kontonummer', 'de');
+
+Input: "registriere meinen Notfallkontakt hans@email.de"
+Analysis: Verb=registriere (DE), VALUE=hans@email.de, LABEL=Notfallkontakt
+SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('hans@email.de', 'Notfallkontakt', 'de');
+
+Input: "mi correo es test@ejemplo.com"
+Analysis: Verb=implicit (ES), VALUE=test@ejemplo.com, LABEL=correo (NO verb - implicit save!)
+SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('test@ejemplo.com', 'correo', 'es');
+
+Input: "mi teléfono es 669686832"
+Analysis: Verb=implicit (ES), VALUE=669686832, LABEL=teléfono (NO verb - implicit save!)
+SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('669686832', 'teléfono', 'es');
+
+Input: "recuerda el correo de mi jefe jefe@empresa.es"
+Analysis: Verb=recuerda (ES), VALUE=jefe@empresa.es, LABEL=correo de mi jefe (de-Konstruktion!)
+SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('jefe@empresa.es', 'correo de mi jefe', 'es');
+
+Input: "anota mi cuenta bancaria ES9121000418450200051332"
+Analysis: Verb=anota (ES), VALUE=ES9121000418450200051332, LABEL=cuenta bancaria
+SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('ES9121000418450200051332', 'cuenta bancaria', 'es');
+
+Input: "pon mi contacto de emergencia juan@email.com"
+Analysis: Verb=pon (ES), VALUE=juan@email.com, LABEL=contacto de emergencia
+SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('juan@email.com', 'contacto de emergencia', 'es');
 
 FALSE POSITIVES (respond with NO_ACTION):
 
@@ -276,7 +326,9 @@ Case A: "show all" / "list all" → SELECT ... ORDER BY timestamp DESC (no WHERE
 Case B: Specific search term → SELECT ... WHERE ... ORDER BY timestamp DESC (no LIMIT)
 
 STEP 3 - GENERATE SQL:
-Format: SELECT id, content, meta, timestamp FROM mydata WHERE ... ORDER BY timestamp DESC;
+🎯 CRITICAL: Table name is 'mydata' (NOT my_table, NOT data, NOT db)!
+ALWAYS use this exact format:
+SELECT id, content, meta, timestamp FROM mydata WHERE ... ORDER BY timestamp DESC;
 Note: NEVER use LIMIT - always show ALL matching records!
 
 EXAMPLES:
@@ -320,6 +372,42 @@ SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%Telefonnu
 Input: "find maria"
 Analysis: Search for "maria" → Show all matching entries
 SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%maria%' OR content LIKE '%maria%' ORDER BY timestamp DESC;
+
+Input: "show my boss email"
+Analysis: Search for "boss email" → Show all matching entries
+SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%boss email%' OR content LIKE '%boss email%' ORDER BY timestamp DESC;
+
+Input: "get my wifi password"
+Analysis: Search for "wifi password" → Show all matching entries
+SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%wifi password%' OR content LIKE '%wifi password%' ORDER BY timestamp DESC;
+
+Input: "list everything"
+Analysis: Generic "list everything" → Show entire database
+SQL: SELECT id, content, meta, timestamp FROM mydata ORDER BY timestamp DESC;
+
+Input: "zeig die Email meines Chefs"
+Analysis: Search for "Email meines Chefs" (DE) → Show all matching entries
+SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%Email meines Chefs%' OR content LIKE '%Email meines Chefs%' ORDER BY timestamp DESC;
+
+Input: "hole das WLAN-Passwort"
+Analysis: Search for "WLAN-Passwort" (DE) → Show all matching entries
+SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%WLAN-Passwort%' OR content LIKE '%WLAN-Passwort%' ORDER BY timestamp DESC;
+
+Input: "liste alle Daten"
+Analysis: Generic "liste alle Daten" (DE) → Show entire database
+SQL: SELECT id, content, meta, timestamp FROM mydata ORDER BY timestamp DESC;
+
+Input: "cuál es mi correo"
+Analysis: Search for "correo" (ES - implicit question!) → Show all matching entries
+SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%correo%' OR content LIKE '%correo%' ORDER BY timestamp DESC;
+
+Input: "muestra el correo de mi jefe"
+Analysis: Search for "correo de mi jefe" (ES) → Show all matching entries
+SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%correo de mi jefe%' OR content LIKE '%correo de mi jefe%' ORDER BY timestamp DESC;
+
+Input: "busca la contraseña del wifi"
+Analysis: Search for "contraseña del wifi" (ES) → Show all matching entries
+SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%contraseña del wifi%' OR content LIKE '%contraseña del wifi%' ORDER BY timestamp DESC;
 
 FALSE POSITIVES (respond with NO_ACTION):
 
@@ -386,6 +474,8 @@ TYPE A - VALUE (specific data): Email format (@+domain), phone (digits 6+), date
 TYPE B - LABEL (category): Generic words without specific format (email, phone, birthday, name, etc.)
 
 STEP 2 - DELETE STRATEGY:
+🎯 CRITICAL: Table name is 'mydata' (NOT my_table, NOT data, NOT db)!
+
 Strategy A (VALUE): DELETE FROM mydata WHERE content = '<exact_value>';  ← Use = for precision!
 Strategy B (LABEL): DELETE FROM mydata WHERE meta LIKE '%<label>%';     ← Use LIKE for variations
 Strategy C (BOTH mentioned): Prefer VALUE (more specific!)
@@ -433,6 +523,18 @@ SQL: DELETE FROM mydata WHERE meta LIKE '%address%';
 
 Input: "borra mi cumpleaños"
 SQL: DELETE FROM mydata WHERE meta LIKE '%cumpleaños%';
+
+Input: "delete my wifi password"
+SQL: DELETE FROM mydata WHERE meta LIKE '%wifi password%';
+
+Input: "elimina el correo de mi jefe"
+SQL: DELETE FROM mydata WHERE meta LIKE '%correo de mi jefe%';
+
+Input: "lösche meine Kontonummer"
+SQL: DELETE FROM mydata WHERE meta LIKE '%Kontonummer%';
+
+Input: "borra mi contacto de emergencia"
+SQL: DELETE FROM mydata WHERE meta LIKE '%contacto de emergencia%';
 
 EXAMPLES (Special - Delete all):
 
