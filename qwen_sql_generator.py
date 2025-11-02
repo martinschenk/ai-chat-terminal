@@ -1,8 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Qwen 2.5 Coder SQL Generator (v11.6.1 - Intelligent Keyword Matching!)
+Qwen 2.5 Coder SQL Generator (v11.6.2 - Colon Separator Support!)
 Generates SQL directly for mydata table with SPECIALIZED prompts per action
+
+v11.6.2: Colon Separator Examples Added
+- SAVE: Added examples with `:` separator (label: value syntax)
+- Fixes FALSE_POSITIVE for "save my daughters favorite toy: teddy bear"
+- Shows Qwen that both syntaxes are valid: "save X Y" and "save X: Y"
+- One example per language (EN/DE/ES)
 
 v11.6.1: Multi-Keyword OR Search for Flexible Matching
 - RETRIEVE: Extract KEYWORDS (not exact phrases!) from user input
@@ -241,6 +247,10 @@ Input: "record my passport number A12345678"
 Analysis: Verb=record (EN), VALUE=A12345678, LABEL=passport number
 SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('A12345678', 'passport number', 'en');
 
+Input: "save my daughters favorite toy: teddy bear"
+Analysis: Verb=save (EN), VALUE=teddy bear, LABEL=daughters favorite toy (colon separator!)
+SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('teddy bear', 'daughters favorite toy', 'en');
+
 Input: "merke dir die email meines chefs chef@firma.de"
 Analysis: Verb=merke (DE), VALUE=chef@firma.de, LABEL=email meines chefs (Genitiv!)
 SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('chef@firma.de', 'email meines chefs', 'de');
@@ -252,6 +262,10 @@ SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('DE893704004405
 Input: "registriere meinen Notfallkontakt hans@email.de"
 Analysis: Verb=registriere (DE), VALUE=hans@email.de, LABEL=Notfallkontakt
 SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('hans@email.de', 'Notfallkontakt', 'de');
+
+Input: "speichere mein Bankkonto: DE89370400440532013000"
+Analysis: Verb=speichere (DE), VALUE=DE89370400440532013000, LABEL=Bankkonto (colon separator!)
+SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('DE89370400440532013000', 'Bankkonto', 'de');
 
 Input: "mi correo es test@ejemplo.com"
 Analysis: Verb=implicit (ES), VALUE=test@ejemplo.com, LABEL=correo (NO verb - implicit save!)
@@ -272,6 +286,10 @@ SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('ES912100041845
 Input: "pon mi contacto de emergencia juan@email.com"
 Analysis: Verb=pon (ES), VALUE=juan@email.com, LABEL=contacto de emergencia
 SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('juan@email.com', 'contacto de emergencia', 'es');
+
+Input: "guarda mi contraseña wifi: MyWifi123"
+Analysis: Verb=guarda (ES), VALUE=MyWifi123, LABEL=contraseña wifi (colon separator!)
+SQL: INSERT OR REPLACE INTO mydata (content, meta, lang) VALUES ('MyWifi123', 'contraseña wifi', 'es');
 
 FALSE POSITIVES (respond with NO_ACTION):
 
