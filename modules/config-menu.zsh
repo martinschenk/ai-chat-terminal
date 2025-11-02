@@ -419,63 +419,98 @@ EOF
 # Note: Web search is now included in ChatGPT - no separate configuration needed
 
 # Uninstall function with translations
+# Uninstall function (v11.6.0 - With backup and Ollama deletion prompts)
 uninstall_terminal() {
     clear
-    echo -e "${RED}${BOLD}⚠️  ${LANG_CONFIG_OPT9}${RESET}"
-    echo ""
-    echo -e "${YELLOW}${LANG_UNINSTALL_WARNING}${RESET}"
-    echo ""
-    echo "• AI Chat Terminal (~/.aichat)"
-    echo "• Shell configuration aliases"
-    echo "• Chat history & memory database"
-    echo "• All personal data and conversations"
-    echo ""
-    echo "${LANG_UNINSTALL_CONFIRM}"
-    echo -n "> "
-    read -r confirm
+    echo -e "${RED}${BOLD}${LANG_UNINSTALL_TITLE}${RESET}\n"
 
+    echo -e "${YELLOW}${LANG_UNINSTALL_WILL_REMOVE}${RESET}"
+    echo -e "${LANG_UNINSTALL_SHELL_CONFIG}"
+    echo -e "${LANG_UNINSTALL_CHAT_HISTORY}"
+    echo -e "${LANG_UNINSTALL_DATABASE}"
+    echo -e "${LANG_UNINSTALL_LANG_FILES}"
+    echo ""
+
+    # Offer backup before uninstall
+    echo -e "${CYAN}${LANG_UNINSTALL_BACKUP_PROMPT}${RESET}"
+    echo -e "${GREEN}${LANG_UNINSTALL_BACKUP_RECOMMEND}${RESET}"
+    echo -ne "${YELLOW}${LANG_UNINSTALL_BACKUP_CHOICE}${RESET} "
+    read -r backup_choice
+
+    local BACKUP_FILE=""
+    if [[ "$backup_choice" != "n" ]] && [[ "$backup_choice" != "N" ]]; then
+        echo -e "\n${YELLOW}${LANG_UNINSTALL_BACKUP_CREATING}${RESET}"
+        local BACKUP_DIR="$HOME/ai-chat-backups"
+        mkdir -p "$BACKUP_DIR"
+        local TIMESTAMP=$(date +"%Y-%m-%d_%H-%M-%S")
+        BACKUP_FILE="$BACKUP_DIR/backup_before_uninstall_$TIMESTAMP.zip"
+
+        if cd "$HOME/.aichat" && zip -r "$BACKUP_FILE" memory.db config lang/*.conf 2>/dev/null; then
+            echo -e "${GREEN}${LANG_UNINSTALL_BACKUP_SUCCESS} ${BACKUP_FILE}${RESET}"
+        fi
+    fi
+
+    # Ask about Ollama model deletion
+    echo ""
+    echo -e "${CYAN}${LANG_UNINSTALL_OLLAMA_PROMPT}${RESET}"
+    echo -e "${YELLOW}${LANG_UNINSTALL_OLLAMA_INFO}${RESET}"
+    echo -ne "${YELLOW}${LANG_UNINSTALL_OLLAMA_CHOICE}${RESET} "
+    read -r ollama_choice
+
+    local DELETE_OLLAMA=false
+    if [[ "$ollama_choice" == "y" ]] || [[ "$ollama_choice" == "Y" ]]; then
+        DELETE_OLLAMA=true
+    fi
+
+    # Final confirmation
+    echo ""
     local delete_word="DELETE"
-    # Set language-specific delete word if needed
     case "$LANGUAGE" in
         de*) delete_word="LÖSCHEN" ;;
         es*) delete_word="BORRAR" ;;
     esac
 
+    echo -e "${RED}${LANG_UNINSTALL_FINAL_CONFIRM}${RESET}"
+    echo -n "> "
+    read -r confirm
+
     if [[ "$confirm" == "$delete_word" ]] || [[ "$confirm" == "DELETE" ]]; then
         echo ""
-        echo "${LANG_UNINSTALL_PROGRESS}"
+        echo -e "${YELLOW}${LANG_UNINSTALL_PROGRESS}${RESET}"
 
-        # Remove from shell configs - smart detection approach
+        # Remove from shell configs
         local configs=("$HOME/.zshrc" "$HOME/.bashrc" "$HOME/.profile")
         for config in "${configs[@]}"; do
             if [[ -f "$config" ]]; then
-                # Remove source lines for aichat
                 grep -v "source.*/\.aichat/aichat\.zsh" "$config" > "$config.tmp" && mv "$config.tmp" "$config"
-                # Remove ANY alias that points to ai_chat_function (regardless of alias name)
                 grep -v "alias.*noglob.*ai_chat_function" "$config" > "$config.tmp" && mv "$config.tmp" "$config"
-                # Remove comments
                 grep -v "# AI Chat Terminal" "$config" > "$config.tmp" && mv "$config.tmp" "$config"
                 echo "  ✓ ${LANG_UNINSTALL_CLEANED} $config"
             fi
         done
 
-        # Remove chat cache and temporary files
+        # Remove chat cache
         if [[ -d "/tmp/chat_cache" ]]; then
             rm -rf "/tmp/chat_cache" 2>/dev/null
             echo "  ✓ ${LANG_UNINSTALL_CLEANED} /tmp/chat_cache"
         fi
 
-        # Remove main installation directory (deferred to avoid deleting ourselves)
         echo "  ✓ ${LANG_UNINSTALL_REMOVED} ~/.aichat (will be removed after exit)"
 
-        # Create cleanup script that runs after we exit
-        cat > "/tmp/aichat_cleanup.sh" << 'EOF'
+        # Create cleanup script
+        cat > "/tmp/aichat_cleanup.sh" << EOF
 #!/bin/bash
 sleep 1
-# Remove entire .aichat directory including memory database
 rm -rf "$HOME/.aichat" 2>/dev/null
-# Clean up any remaining temporary files
 rm -rf "/tmp/chat_cache" 2>/dev/null
+
+# Delete Ollama model if requested
+if [[ "$DELETE_OLLAMA" == "true" ]]; then
+    echo "${LANG_UNINSTALL_OLLAMA_DELETING}"
+    ollama rm qwen2.5-coder:7b 2>/dev/null
+    echo "${LANG_UNINSTALL_OLLAMA_SUCCESS}"
+fi
+
 rm -f "/tmp/aichat_cleanup.sh" 2>/dev/null
 EOF
         chmod +x "/tmp/aichat_cleanup.sh"
@@ -494,7 +529,7 @@ EOF
         cd "$HOME"
         exec "$SHELL"
     else
-        echo -e "${GREEN}Cancelled.${RESET}"
+        echo -e "${GREEN}${LANG_UNINSTALL_CANCELLED}${RESET}"
         sleep 2
     fi
 }
@@ -510,31 +545,35 @@ show_about_info() {
     local DIM='\033[2m'
 
     clear
-    echo -e "${CYAN}ℹ️  About AI Chat Terminal${RESET}\n"
+    echo -e "${BOLD}${CYAN}${LANG_ABOUT_TITLE}${RESET}\n"
 
     echo -e "${CYAN}${BOLD}AI Chat Terminal${RESET}"
-    echo -e "${DIM}Version: ${RESET}${AI_CHAT_VERSION}"
+    echo -e "${DIM}${LANG_ABOUT_VERSION} ${RESET}${AI_CHAT_VERSION}"
     echo ""
 
-    echo -e "${YELLOW}Author:${RESET} ${AI_CHAT_AUTHOR}"
-    echo -e "${YELLOW}License:${RESET} ${AI_CHAT_LICENSE}"
-    echo -e "${YELLOW}Repository:${RESET} ${DIM}${AI_CHAT_REPOSITORY}${RESET}"
+    echo -e "${YELLOW}${LANG_ABOUT_AUTHOR}${RESET} ${AI_CHAT_AUTHOR}"
+    echo -e "${YELLOW}${LANG_ABOUT_LICENSE}${RESET} ${AI_CHAT_LICENSE}"
+    echo -e "${YELLOW}${LANG_ABOUT_REPOSITORY}${RESET} ${DIM}${AI_CHAT_REPOSITORY}${RESET}"
     echo ""
 
-    echo -e "${GREEN}Features:${RESET}"
-    echo -e "  • ${GREEN}ChatGPT-powered terminal${RESET}"
-    echo -e "  • ${GREEN}AI Vector Database memory${RESET}"
-    echo -e "  • ${GREEN}19 languages + dialects${RESET}"
-    echo -e "  • ${GREEN}Function calling support${RESET}"
-    echo -e "  • ${GREEN}Hybrid daemon architecture${RESET}"
-    echo -e "  • ${GREEN}95% faster responses${RESET}"
+    echo -e "${GREEN}${LANG_ABOUT_FEATURES}${RESET}"
+    echo -e "  • ${LANG_ABOUT_HYBRID}"
+    echo -e "  • ${LANG_ABOUT_PRIVACY}"
+    echo -e "  • ${LANG_ABOUT_MULTILANG}"
+    echo -e "  • ${LANG_ABOUT_AUTO_DELETE}"
     echo ""
 
-    echo -e "${DIM}Powered by OpenAI GPT-4, Phi-3 & Ollama${RESET}"
-    echo -e "${DIM}Copyright © 2025 Martin Schenk${RESET}"
+    echo -e "${CYAN}${LANG_ABOUT_TECH_STACK}${RESET}"
+    echo -e "  • ${LANG_ABOUT_OPENAI}"
+    echo -e "  • ${LANG_ABOUT_QWEN}"
+    echo -e "  • ${LANG_ABOUT_SQLITE}"
+    echo -e "  • ${LANG_ABOUT_KEYWORDS}"
     echo ""
-    echo -e "${CYAN}Press any key to return...${RESET}"
-    read -r
+
+    echo -e "${DIM}${LANG_ABOUT_COPYRIGHT}${RESET}"
+    echo ""
+    echo -e "${CYAN}${LANG_ABOUT_PRESS_KEY}${RESET}"
+    read -n 1
 }
 
 # Privacy & AI Models Configuration Menu
