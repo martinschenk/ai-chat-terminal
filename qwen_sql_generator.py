@@ -1,8 +1,15 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Qwen 2.5 Coder SQL Generator (v11.5.1 - Intent-Based Detection!)
+Qwen 2.5 Coder SQL Generator (v11.6.1 - Intelligent Keyword Matching!)
 Generates SQL directly for mydata table with SPECIALIZED prompts per action
+
+v11.6.1: Multi-Keyword OR Search for Flexible Matching
+- RETRIEVE: Extract KEYWORDS (not exact phrases!) from user input
+- Break "show my mothers favorite meal" → [mother, favorite, meal]
+- Generate OR query for each keyword → finds "favorite meal of my mother"
+- Works with ANY phrasing (mother's meal, meal of mother, etc.)
+- Principle-based (not pattern-based!) → Qwen learns the strategy
 
 v11.5.1: Intent over Pattern Matching (KISS!)
 - Added _get_intent_principle() helper - DRY for all 3 prompts
@@ -294,7 +301,7 @@ Respond with ONLY the SQL statement or "NO_ACTION". No explanation needed.
         return prompt
 
     def _build_prompt_retrieve(self, user_input: str) -> str:
-        """Specialized prompt for RETRIEVE - intent-based, no LIMIT (v11.5.1)"""
+        """Specialized prompt for RETRIEVE - keyword extraction, multi-keyword OR (v11.6.1)"""
         prompt = f"""You are a SQL SELECT specialist for SQLite database 'mydata'.
 
 DATABASE SCHEMA:
@@ -315,20 +322,40 @@ Detect language from VERB:
 - German verbs: zeige, zeig, hole, finde, sag, schau, prüf, lies, gib aus, ruf ab, such, liste
 - Spanish verbs: muestra, busca, encuentra, dame, dime, consulta, mira, ve, obtén, saca, lista
 
-Extract SEARCH TERM from text after verb:
-- Can be a LABEL: "email", "phone", "birthday", "address", etc.
-- Can be a VALUE: "test@test.com", "669686832"
-- Can be partial: "maria" should find "maria@test.com"
-- Can be "all"/"todo"/"alle" for complete list
+Extract KEYWORDS (not exact phrase!) from text after verb:
+🎯 KEY PRINCIPLE: Break search into individual meaningful words for flexible matching!
+
+- Ignore filler words: my, the, a, an, of, is, are, mein, meine, meiner, meines, mi, mis, el, la, de, del, etc.
+- Extract only content keywords (nouns, adjectives describing data)
+- Each keyword becomes a separate search condition with OR logic
+- Can be "all"/"todo"/"alle" for complete list (no keywords)
+
+Examples of Keyword Extraction:
+"show my mothers favorite meal" → Keywords: [mother, favorite, meal]
+"muestra el correo de mi jefe" → Keywords: [correo, jefe]
+"zeig die Email meines Chefs" → Keywords: [Email, Chef]
+"show wifi password" → Keywords: [wifi, password]
+"find maria" → Keywords: [maria]
+"show email" → Keywords: [email]
 
 STEP 2 - DETERMINE QUERY TYPE:
 Case A: "show all" / "list all" → SELECT ... ORDER BY timestamp DESC (no WHERE, no LIMIT)
-Case B: Specific search term → SELECT ... WHERE ... ORDER BY timestamp DESC (no LIMIT)
+Case B: Single keyword → SELECT ... WHERE (meta LIKE '%keyword%' OR content LIKE '%keyword%')
+Case C: Multiple keywords → SELECT ... WHERE (meta LIKE '%kw1%' OR content LIKE '%kw1%')
+                                          OR (meta LIKE '%kw2%' OR content LIKE '%kw2%')
+                                          OR (meta LIKE '%kw3%' OR content LIKE '%kw3%')
 
 STEP 3 - GENERATE SQL:
 🎯 CRITICAL: Table name is 'mydata' (NOT my_table, NOT data, NOT db)!
 ALWAYS use this exact format:
 SELECT id, content, meta, timestamp FROM mydata WHERE ... ORDER BY timestamp DESC;
+
+For MULTI-KEYWORD searches, use OR for each keyword:
+WHERE (meta LIKE '%keyword1%' OR content LIKE '%keyword1%')
+   OR (meta LIKE '%keyword2%' OR content LIKE '%keyword2%')
+   OR ... etc
+
+This finds records matching ANY of the keywords (flexible matching!)
 Note: NEVER use LIMIT - always show ALL matching records!
 
 EXAMPLES:
@@ -342,72 +369,60 @@ Analysis: Generic "list all" → Show entire database
 SQL: SELECT id, content, meta, timestamp FROM mydata ORDER BY timestamp DESC;
 
 Input: "show my email"
-Analysis: Search for "email" → Show all matching entries
+Analysis: Keywords: [email] → Single keyword search
 SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%email%' OR content LIKE '%email%' ORDER BY timestamp DESC;
 
 Input: "show all emails"
-Analysis: Search for "email" → Show all matching entries
+Analysis: Keywords: [email] → Single keyword search
 SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%email%' OR content LIKE '%email%' ORDER BY timestamp DESC;
+
+Input: "show my mothers favorite meal"
+Analysis: Keywords: [mother, favorite, meal] → Multi-keyword OR search
+SQL: SELECT id, content, meta, timestamp FROM mydata WHERE (meta LIKE '%mother%' OR content LIKE '%mother%') OR (meta LIKE '%favorite%' OR content LIKE '%favorite%') OR (meta LIKE '%meal%' OR content LIKE '%meal%') ORDER BY timestamp DESC;
+
+Input: "show boss email"
+Analysis: Keywords: [boss, email] → Multi-keyword OR search
+SQL: SELECT id, content, meta, timestamp FROM mydata WHERE (meta LIKE '%boss%' OR content LIKE '%boss%') OR (meta LIKE '%email%' OR content LIKE '%email%') ORDER BY timestamp DESC;
+
+Input: "get wifi password"
+Analysis: Keywords: [wifi, password] → Multi-keyword OR search
+SQL: SELECT id, content, meta, timestamp FROM mydata WHERE (meta LIKE '%wifi%' OR content LIKE '%wifi%') OR (meta LIKE '%password%' OR content LIKE '%password%') ORDER BY timestamp DESC;
 
 Input: "muestra todo"
 Analysis: Generic "muestra todo" (ES) → Show entire database
 SQL: SELECT id, content, meta, timestamp FROM mydata ORDER BY timestamp DESC;
 
 Input: "muestra mi dirección"
-Analysis: Search for "dirección" (ES) → Show all matching entries
+Analysis: Keywords: [dirección] → Single keyword search
 SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%dirección%' OR content LIKE '%dirección%' ORDER BY timestamp DESC;
 
-Input: "muestra mi cumpleaños"
-Analysis: Search for "cumpleaños" (ES) → Show all matching entries
-SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%cumpleaños%' OR content LIKE '%cumpleaños%' ORDER BY timestamp DESC;
+Input: "muestra el correo de mi jefe"
+Analysis: Keywords: [correo, jefe] → Multi-keyword OR search
+SQL: SELECT id, content, meta, timestamp FROM mydata WHERE (meta LIKE '%correo%' OR content LIKE '%correo%') OR (meta LIKE '%jefe%' OR content LIKE '%jefe%') ORDER BY timestamp DESC;
+
+Input: "busca la contraseña del wifi"
+Analysis: Keywords: [contraseña, wifi] → Multi-keyword OR search
+SQL: SELECT id, content, meta, timestamp FROM mydata WHERE (meta LIKE '%contraseña%' OR content LIKE '%contraseña%') OR (meta LIKE '%wifi%' OR content LIKE '%wifi%') ORDER BY timestamp DESC;
 
 Input: "zeig alles"
 Analysis: Generic "zeig alles" (DE) → Show entire database
 SQL: SELECT id, content, meta, timestamp FROM mydata ORDER BY timestamp DESC;
 
 Input: "zeig meine Telefonnummer"
-Analysis: Search for "Telefonnummer" (DE) → Show all matching entries
+Analysis: Keywords: [Telefonnummer] → Single keyword search
 SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%Telefonnummer%' OR content LIKE '%Telefonnummer%' ORDER BY timestamp DESC;
 
-Input: "find maria"
-Analysis: Search for "maria" → Show all matching entries
-SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%maria%' OR content LIKE '%maria%' ORDER BY timestamp DESC;
-
-Input: "show my boss email"
-Analysis: Search for "boss email" → Show all matching entries
-SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%boss email%' OR content LIKE '%boss email%' ORDER BY timestamp DESC;
-
-Input: "get my wifi password"
-Analysis: Search for "wifi password" → Show all matching entries
-SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%wifi password%' OR content LIKE '%wifi password%' ORDER BY timestamp DESC;
-
-Input: "list everything"
-Analysis: Generic "list everything" → Show entire database
-SQL: SELECT id, content, meta, timestamp FROM mydata ORDER BY timestamp DESC;
-
 Input: "zeig die Email meines Chefs"
-Analysis: Search for "Email meines Chefs" (DE) → Show all matching entries
-SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%Email meines Chefs%' OR content LIKE '%Email meines Chefs%' ORDER BY timestamp DESC;
+Analysis: Keywords: [Email, Chef] → Multi-keyword OR search
+SQL: SELECT id, content, meta, timestamp FROM mydata WHERE (meta LIKE '%Email%' OR content LIKE '%Email%') OR (meta LIKE '%Chef%' OR content LIKE '%Chef%') ORDER BY timestamp DESC;
 
 Input: "hole das WLAN-Passwort"
-Analysis: Search for "WLAN-Passwort" (DE) → Show all matching entries
-SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%WLAN-Passwort%' OR content LIKE '%WLAN-Passwort%' ORDER BY timestamp DESC;
+Analysis: Keywords: [WLAN, Passwort] → Multi-keyword OR search
+SQL: SELECT id, content, meta, timestamp FROM mydata WHERE (meta LIKE '%WLAN%' OR content LIKE '%WLAN%') OR (meta LIKE '%Passwort%' OR content LIKE '%Passwort%') ORDER BY timestamp DESC;
 
-Input: "liste alle Daten"
-Analysis: Generic "liste alle Daten" (DE) → Show entire database
-SQL: SELECT id, content, meta, timestamp FROM mydata ORDER BY timestamp DESC;
-
-Input: "cuál es mi correo"
-Analysis: Search for "correo" (ES - implicit question!) → Show all matching entries
-SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%correo%' OR content LIKE '%correo%' ORDER BY timestamp DESC;
-
-Input: "muestra el correo de mi jefe"
-Analysis: Search for "correo de mi jefe" (ES) → Show all matching entries
-SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%correo de mi jefe%' OR content LIKE '%correo de mi jefe%' ORDER BY timestamp DESC;
-
-Input: "busca la contraseña del wifi"
-Analysis: Search for "contraseña del wifi" (ES) → Show all matching entries
-SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%contraseña del wifi%' OR content LIKE '%contraseña del wifi%' ORDER BY timestamp DESC;
+Input: "find maria"
+Analysis: Keywords: [maria] → Single keyword search
+SQL: SELECT id, content, meta, timestamp FROM mydata WHERE meta LIKE '%maria%' OR content LIKE '%maria%' ORDER BY timestamp DESC;
 
 FALSE POSITIVES (respond with NO_ACTION):
 
