@@ -75,26 +75,40 @@ We've often invested hours in optimizations. A "quick fix" can destroy this work
 
 ---
 
-## 🔄 Development Workflow
+## 🔄 Development Workflow - KRITISCH!
 
-### Directory Structure:
-- **Development:** `/Users/martin/Development/ai-chat-terminal/` (git repo)
-- **Production:** `/Users/martin/.aichat/` (where daemon runs from)
+### ⚠️ IMMER nach Code-Änderungen ausführen!
 
-### After Code Changes:
+Martin entwickelt in zwei Orten:
+1. **Development:** `/Users/martin/Development/ai-chat-terminal/` (git repo)
+2. **Testing:** `/Users/martin/.aichat/` (production - wie bei Endusern!)
+
+**WICHTIG:** Martin testet IMMER aus `~/.aichat/` - das simuliert echte User-Installation!
+
+### Nach JEDER Code-Änderung - Kompletter Workflow:
 ```bash
-# 1. Copy ALL Python files to production
+# 1. ALLE Python-Dateien nach .aichat kopieren
 cp /Users/martin/Development/ai-chat-terminal/*.py /Users/martin/.aichat/
 
-# 2. Clear Python cache (important!)
+# 2. ALLE Language-Dateien nach .aichat kopieren
+cp /Users/martin/Development/ai-chat-terminal/lang/*.conf /Users/martin/.aichat/lang/
+
+# 3. Python Cache löschen (wichtig für Reloads!)
 find /Users/martin/.aichat -name "*.pyc" -delete
 find /Users/martin/.aichat -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || true
 
-# 3. Stop daemon (if running)
+# 4. Daemon stoppen (falls läuft)
 pkill -f "python.*chat_system.py" || true
 
-# 4. Daemon auto-restarts on next `chat` command
+# 5. Martin informieren: "Daemon neu starten zum Testen"
+# Daemon startet automatisch beim nächsten `c` command
 ```
+
+### Warum das IMMER machen?
+- ❌ Development-Verzeichnis ist NUR für git commits
+- ✅ Testing-Verzeichnis ist wo der Code WIRKLICH läuft
+- ⚠️ Daemon cached Python-Module → muss neu starten!
+- 🎯 Simuliert echte User-Installation (curl → ~/.aichat/)
 
 ### Testing:
 ```bash
@@ -110,13 +124,23 @@ chat "save my email test@test.com"
 
 ## 🎯 Critical Features
 
-### 1. Keyword-Based Routing (v11.0.9)
-Pattern-based keywords with `{x}` placeholder:
-- `save {x}` matches: "save my email", "save the phone", "save email"
-- `guarda {x}` matches: "guarda mi email", "guarda el teléfono"
-- `zeig {x}` matches: "zeig meine Email", "zeig das Passwort"
+### 1. Keyword-Based Routing (v11.6.0 - Simplified!)
+**Action verbs only** - No {x} patterns, no possessives:
+- **EN:** save, store, remember, keep, note, show, display, delete, remove...
+- **DE:** speichere, merke, notiere, zeige, liste, lösche, vergiss...
+- **ES:** guarda, recuerda, almacena, muestra, lista, borra, olvida...
 
-30+ verb synonyms per language (SAVE/RETRIEVE/DELETE).
+**Simple rule:** User must explicitly use action verb → Qwen activated.
+
+**Examples:**
+- ✅ "save my email test@test.com" → Keyword "save" detected → Qwen activated
+- ✅ "guarda mi correo test@test.es" → Keyword "guarda" detected → Qwen activated
+- ❌ "my email is test@test.com" → No action verb → Goes to OpenAI
+
+**Why simplified?**
+- User must be explicit about intent (clearer)
+- Qwen does ALL intelligence work (intent analysis, FALSE_POSITIVE detection)
+- Easier to maintain (no complex regex patterns)
 
 ### 2. Qwen SQL Generation (v11.5.1)
 Three specialized prompts with emphasized table name:
