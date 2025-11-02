@@ -39,20 +39,24 @@ We don't try to guess what's sensitive (unreliable). Instead, **YOU decide** wit
 **Without keywords** → OpenAI sees everything:
 ```bash
 You: "My email is test@example.com"
+→ ⚠️ No keyword found (save/store/remember/etc.)
 → ⚠️ Sent to OpenAI! They see your email.
 
 You: "My birthday is 1990-03-15"
+→ ⚠️ No keyword found
 → ⚠️ Sent to OpenAI! They see your birthday.
 ```
 
-**With keywords** → Stays local (encrypted):
+**With keywords** → Local AI analyzes intent:
 ```bash
 You: "save my email test@example.com"
-→ ✅ Processed locally by Qwen 2.5 Coder
+→ ✅ Keyword "save" detected → Qwen 2.5 Coder activated
+→ ✅ Qwen analyzes intent → Confirms: Save to local DB
 → ✅ Stored in encrypted SQLite on your Mac
 → ✅ OpenAI NEVER sees this!
 
-You: "save my birthday 1990-03-15"
+You: "remember my birthday 1990-03-15"
+→ ✅ Keyword "remember" detected → Qwen activated
 → ✅ Local storage only, zero cloud exposure
 ```
 
@@ -115,12 +119,12 @@ You: "how safe is 4 digit pin code?"
 - Stage 2 is SMART (5GB AI) - understands context and intent
 - Result: Best of both worlds (speed + intelligence)
 
-**🌍 Works in 3 languages with 30+ keyword variants:**
-- **English:** save, store, remember, note, show, list, delete, forget...
+**🌍 Works in 3 languages with action verb keywords:**
+- **English:** save, store, remember, keep, note, show, display, delete, remove...
 - **German:** speichere, merke, notiere, zeige, liste, lösche, vergiss...
-- **Spanish:** guarda, recuerda, anota, muestra, lista, borra, olvida...
+- **Spanish:** guarda, recuerda, almacena, muestra, lista, borra, olvida...
 
-**🎯 You control privacy. Keywords activate local AI. No keywords = cloud AI.**
+**🎯 Simple rule: Use an action verb (keyword) to activate local AI. No keyword = cloud AI.**
 
 ## Quick Start
 
@@ -141,17 +145,18 @@ chat
 
 **What happens internally:**
 1. You type message
-2. Keyword scan: NO keywords found (save/remember/guarda/merke)
-3. Local AI stays OFF
+2. Keyword scan: NO action verb found (save/remember/guarda/merke/show/delete)
+3. Local AI (Qwen) stays OFF - not activated
 4. Message sent directly to OpenAI API
 5. OpenAI processes and responds
 
 ```bash
 👤 You ▶ My email is test@example.com
-         🔍 Keyword scan: NO keywords found
-         ☁️  Sent to OpenAI API
+         🔍 Keyword scan: NO action verb found (save/store/remember/etc.)
+         ☁️  Sent directly to OpenAI API
 🤖 AI    I've noted that. Is there anything else you'd like to know?
          ⚠️ OpenAI saw and logged: "My email is test@example.com"
+         💡 Tip: Use "save my email test@example.com" to keep it private!
 ```
 
 ```bash
@@ -173,9 +178,9 @@ chat
 **What happens internally:**
 
 **STAGE 1: Fast Keyword Scan (<1ms)**
-1. You type message with keyword (save/store/remember/guarda/merke)
-2. Keyword scan: ✅ Keyword found!
-3. Decision: Activate Qwen AI for intent analysis
+1. You type message with action verb keyword (save/store/remember/show/delete)
+2. Keyword scan: ✅ Action verb detected!
+3. Decision: Activate Qwen AI for intelligent intent analysis
 
 **STAGE 2: Intelligent Intent Analysis (Qwen 2.5 Coder - 5GB)**
 4. Qwen AI reads your FULL message
@@ -267,10 +272,10 @@ chat
 ## What Makes This Special?
 
 ### 🔒 You're In Control
-- **Choose privacy on demand** - Use keywords when you need privacy
+- **Choose privacy on demand** - Use action verbs (keywords) when you need privacy
 - **No automatic guessing** - We don't try to detect sensitive data (unreliable!)
 - **Visual confirmation** - 🗄️ icon proves data stayed local
-- **30+ keyword variants** - Natural phrasing in English, German, Spanish
+- **Action verb keywords** - Natural phrasing in English, German, Spanish (save/speichere/guarda, show/zeige/muestra, delete/lösche/borra)
 
 ### 🧠 Best of Both Worlds
 - **Powerful cloud AI** - GPT-4o for complex questions and creativity
@@ -280,8 +285,8 @@ chat
 
 ### 🌍 Made for Everyone
 - **3 languages built-in** - English, German, Spanish (more coming!)
-- **Flexible phrasing** - "save my email" = "store email" = "remember email"
-- **Easy to extend** - Add your own keywords via simple config files
+- **Action verb keywords** - "save my email" = "store email" = "remember email"
+- **Easy to extend** - Add your own action verb keywords via simple config files
 
 ### ⚡ Fast & Secure
 - **Instant routing** - Keyword scan in <1ms
