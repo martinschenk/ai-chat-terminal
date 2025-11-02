@@ -43,32 +43,34 @@ show_config_menu() {
         clear
         echo -e "${BOLD}${CYAN}⚙️  ${LANG_CONFIG_TITLE}${RESET}\n"
 
+        # Check Ollama status
+        local OLLAMA_STATUS="${LANG_OLLAMA_STOPPED}"
+        if pgrep -x "ollama" > /dev/null 2>&1; then
+            OLLAMA_STATUS="${LANG_OLLAMA_RUNNING}"
+        fi
+
         echo -e "${PURPLE}┌─────────────────────────────────────${RESET}"
         echo -e "${PURPLE}│${RESET}  ${LANG_CONFIG_CURRENT}"
         echo -e "${PURPLE}│${RESET}  ├─ ${LANG_CONFIG_COMMAND}: ${YELLOW}$COMMAND_CHAR${RESET}"
         echo -e "${PURPLE}│${RESET}  ├─ ${LANG_CONFIG_LANGUAGE}: ${YELLOW}$LANGUAGE${RESET}"
-        echo -e "${PURPLE}│${RESET}  ├─ AI Model: ${YELLOW}${AI_CHAT_MODEL}${RESET}"
-        echo -e "${PURPLE}│${RESET}  ├─ ${LANG_CONFIG_CONTEXT_WINDOW:-Context Window}: ${YELLOW}$CONTEXT_WINDOW ${LANG_CONTEXT_MESSAGES:-messages}${RESET}"
-        echo -e "${PURPLE}│${RESET}  ├─ ${LANG_CONFIG_ESC}: ${YELLOW}$ENABLE_ESC${RESET}"
-        echo -e "${PURPLE}│${RESET}  └─ Ollama always-on: ${YELLOW}${OLLAMA_ALWAYS_ON:-false}${RESET}"
+        echo -e "${PURPLE}│${RESET}  ├─ ${LANG_CONFIG_CONTEXT}: ${YELLOW}$CONTEXT_WINDOW ${LANG_CONTEXT_MESSAGES:-messages}${RESET}"
+        echo -e "${PURPLE}│${RESET}  └─ ${LANG_CONFIG_OLLAMA_STATUS}: ${YELLOW}$OLLAMA_STATUS${RESET}"
         echo -e "${PURPLE}├─────────────────────────────────────${RESET}"
         echo -e "${PURPLE}│${RESET}  ${GREEN}[1]${RESET} ${LANG_CONFIG_OPT1}"
         echo -e "${PURPLE}│${RESET}  ${GREEN}[2]${RESET} ${LANG_CONFIG_OPT2}"
-        echo -e "${PURPLE}│${RESET}  ${GREEN}[3]${RESET} ${LANG_CONFIG_OPT4}"
-        echo -e "${PURPLE}│${RESET}  ${GREEN}[4]${RESET} ${LANG_CONFIG_OPT5}"
-        echo -e "${PURPLE}│${RESET}  ${GREEN}[5]${RESET} 💬 ${LANG_CONTEXT_SET:-Set context window}"
-        echo -e "${PURPLE}│${RESET}  ${GREEN}[6]${RESET} 🔑 Set OpenAI API key"
-        echo -e "${PURPLE}│${RESET}  ${GREEN}[7]${RESET} 🔒 Privacy & AI Models"
-        echo -e "${PURPLE}│${RESET}  ${GREEN}[8]${RESET} ⚡ Toggle Ollama always-on"
-        echo -e "${PURPLE}│${RESET}  ${GREEN}[9]${RESET} 🧹 ${LANG_CONFIG_OPT7}"
-        echo -e "${PURPLE}│${RESET}  ${GREEN}[10]${RESET} ℹ️  ${LANG_CONFIG_ABOUT:-About & Version}"
-        echo -e "${PURPLE}│${RESET}  ${GREEN}[11]${RESET} ${LANG_CONFIG_OPT6}"
+        echo -e "${PURPLE}│${RESET}  ${GREEN}[3]${RESET} ${LANG_CONFIG_OPT3}"
+        echo -e "${PURPLE}│${RESET}  ${GREEN}[4]${RESET} ${LANG_CONFIG_OPT4}"
+        echo -e "${PURPLE}│${RESET}  ${GREEN}[5]${RESET} ${LANG_CONFIG_OPT5}"
+        echo -e "${PURPLE}│${RESET}  ${GREEN}[6]${RESET} ${LANG_CONFIG_OPT6}"
+        echo -e "${PURPLE}│${RESET}  ${GREEN}[7]${RESET} ${LANG_CONFIG_OPT7}"
+        echo -e "${PURPLE}│${RESET}  ${GREEN}[8]${RESET} ${LANG_CONFIG_OPT8}"
         echo -e "${PURPLE}│${RESET}"
-        echo -e "${PURPLE}│${RESET}  ${RED}[12]${RESET} 🗑️  ${LANG_CONFIG_OPT9}"
+        echo -e "${PURPLE}│${RESET}  ${RED}[9]${RESET} ${LANG_CONFIG_OPT9}"
         echo -e "${PURPLE}└─────────────────────────────────────${RESET}"
-        echo ""
+        echo -e "${YELLOW}ℹ️  ${LANG_OLLAMA_AUTO_INFO}${RESET}"
+        echo -e "${YELLOW}💡 ${LANG_CONFIG_ESC_HINT}${RESET}\n"
 
-        echo -ne "${CYAN}${LANG_CONFIG_SELECT_OPTION:-Select [1-12]:} ${RESET}"
+        echo -ne "${CYAN}${LANG_CONFIG_SELECT} ${RESET}"
 
         # Handle ESC key detection in config menu
         local choice=""
@@ -81,9 +83,9 @@ show_config_menu() {
                 char=$(dd bs=1 count=1 2>/dev/null)
 
                 if [[ $char == $'\e' ]]; then
-                    # ESC pressed - return to terminal
+                    # ESC pressed - return to chat (not exit program)
                     stty "$OLD_STTY" 2>/dev/null
-                    echo -e "\n\n${YELLOW}👋 ${LANG_MSG_GOODBYE:-Goodbye!}${RESET}\n"
+                    echo ""
                     return
                 elif [[ $char == $'\r' ]] || [[ $char == $'\n' ]]; then
                     # Enter pressed
@@ -114,40 +116,31 @@ show_config_menu() {
             2)  # Change language
                 change_language
                 ;;
-            3)  # Toggle ESC
-                toggle_esc
-                ;;
-            4)  # Change AI model
-                change_ai_model
-                ;;
-            5)  # Set context window
+            3)  # Set context window
                 change_context_window
                 ;;
-            6)  # Set OpenAI API key
+            4)  # Set OpenAI API key
                 change_openai_api_key
                 ;;
-            7)  # Privacy & AI Models
-                privacy_models_menu
+            5)  # Backup & Restore
+                backup_restore_menu
                 ;;
-            8)  # Toggle Ollama always-on
-                toggle_ollama_always_on
+            6)  # Clear chat history
+                clear_chat_history
                 ;;
-            9)  # Clear cache
-                clear_chat_cache
-                ;;
-            10)  # About & Version
+            7)  # About & Version
                 show_about_info
                 ;;
-            11)  # Back to chat
+            8)  # Back to chat
                 return
                 ;;
-            12)  # Uninstall
+            9)  # Uninstall
                 uninstall_terminal
                 # If uninstall was cancelled, we continue the loop
                 # If uninstall succeeded, the script will have exited
                 ;;
             *)  # Invalid option
-                echo -e "${RED}${LANG_CONFIG_INVALID:-Invalid option. Please try again.}${RESET}"
+                echo -e "${RED}${LANG_CONFIG_INVALID}${RESET}"
                 sleep 1
                 ;;
         esac
@@ -369,47 +362,58 @@ change_command() {
 }
 
 # Clear chat cache function
-clear_chat_cache() {
-    echo -e "${YELLOW}${LANG_CONFIG_OPT7}...${RESET}"
+# Clear Chat History (v11.6.0 - Only deletes chat_history table, keeps mydata!)
+clear_chat_history() {
+    # Colors
+    local CYAN='\033[0;36m'
+    local GREEN='\033[0;32m'
+    local YELLOW='\033[1;33m'
+    local RED='\033[0;31m'
+    local RESET='\033[0m'
+    local BOLD='\033[1m'
 
-    local cache_cleared=false
+    clear
+    echo -e "${BOLD}${CYAN}${LANG_HISTORY_TITLE}${RESET}\n"
 
-    # Clear AI Chat Terminal memory database (v9.0.0+)
-    if [[ -f "$SCRIPT_DIR/memory.db" ]]; then
-        rm -f "$SCRIPT_DIR/memory.db" 2>/dev/null
-        echo -e "  ${GREEN}✓${RESET} Cleared memory.db (chat history)"
-        cache_cleared=true
+    echo -e "${RED}${LANG_HISTORY_WARNING}${RESET}"
+    echo -e "${GREEN}${LANG_HISTORY_SAFE}${RESET}\n"
+
+    echo -ne "${YELLOW}${LANG_HISTORY_CONFIRM}${RESET} "
+    read -r confirm
+
+    if [[ "$confirm" != "y" ]] && [[ "$confirm" != "Y" ]]; then
+        echo -e "${YELLOW}${LANG_HISTORY_CANCELLED}${RESET}"
+        sleep 1
+        return
     fi
 
-    # Clear any session-specific DB files
-    local session_dbs=$(find "$SCRIPT_DIR" -name "chat_history_*.db" 2>/dev/null | wc -l)
-    if [[ $session_dbs -gt 0 ]]; then
-        rm -f "$SCRIPT_DIR"/chat_history_*.db 2>/dev/null
-        echo -e "  ${GREEN}✓${RESET} Cleared $session_dbs session databases"
-        cache_cleared=true
+    echo -e "\n${YELLOW}${LANG_HISTORY_CLEARING}${RESET}"
+
+    # Only delete chat_history table, keep mydata intact
+    if [[ -f "$SCRIPT_DIR/memory.db" ]]; then
+        python3 <<EOF
+import sqlite3
+try:
+    conn = sqlite3.connect('$SCRIPT_DIR/memory.db')
+    cursor = conn.cursor()
+    cursor.execute('DELETE FROM chat_history')
+    conn.commit()
+    conn.close()
+    print("✓ Chat history cleared")
+except Exception as e:
+    print(f"Error: {e}")
+EOF
     fi
 
     # Restart daemon to reload fresh state
     pkill -f chat_daemon.py 2>/dev/null
     echo -e "  ${GREEN}✓${RESET} Daemon restarted"
 
-    # Clear shell-gpt chat cache (legacy)
-    if [[ -d "/tmp/chat_cache" ]]; then
-        local count=$(find /tmp/chat_cache -name "${AI_CHAT_COMMAND:-chat}_*" -type f 2>/dev/null | wc -l)
-        if [[ $count -gt 0 ]]; then
-            find /tmp/chat_cache -name "${AI_CHAT_COMMAND:-chat}_*" -type f -delete 2>/dev/null
-            echo -e "  ${GREEN}✓${RESET} Cleared $count legacy chat sessions"
-            cache_cleared=true
-        fi
-    fi
+    echo -e "\n${GREEN}${LANG_HISTORY_SUCCESS}${RESET}"
+    echo -e "${CYAN}${LANG_HISTORY_FRESH}${RESET}"
 
-    if [[ "$cache_cleared" == "true" ]]; then
-        echo -e "\n${GREEN}✅ Cache cleared successfully!${RESET}"
-        echo -e "${CYAN}Next chat will start fresh with no memory.${RESET}"
-    else
-        echo -e "\n${YELLOW}No cache files found.${RESET}"
-    fi
-    sleep 2
+    echo -e "\n${YELLOW}${LANG_HISTORY_PRESS_KEY}${RESET}"
+    read -n 1
 }
 
 # Note: Web search is now included in ChatGPT - no separate configuration needed
@@ -728,6 +732,157 @@ privacy_models_menu() {
 
             *)
                 echo -e "${RED}Invalid option${RESET}"
+                sleep 1
+                ;;
+        esac
+    done
+}
+
+# Backup & Restore Menu (v11.6.0)
+backup_restore_menu() {
+    local CONFIG_DIR="$HOME/.aichat"
+    local BACKUP_DIR="$HOME/ai-chat-backups"
+
+    # Colors
+    local CYAN='\033[0;36m'
+    local GREEN='\033[0;32m'
+    local YELLOW='\033[1;33m'
+    local PURPLE='\033[0;35m'
+    local RED='\033[0;31m'
+    local RESET='\033[0m'
+    local BOLD='\033[1m'
+
+    while true; do
+        clear
+        echo -e "${BOLD}${CYAN}${LANG_BACKUP_TITLE}${RESET}\n"
+
+        echo -e "${PURPLE}┌─────────────────────────────────────${RESET}"
+        echo -e "${PURPLE}│${RESET}  ${GREEN}[1]${RESET} ${LANG_BACKUP_OPT1}"
+        echo -e "${PURPLE}│${RESET}  ${GREEN}[2]${RESET} ${LANG_BACKUP_OPT2}"
+        echo -e "${PURPLE}│${RESET}  ${GREEN}[3]${RESET} ${LANG_BACKUP_OPT3}"
+        echo -e "${PURPLE}│${RESET}  ${GREEN}[4]${RESET} ${LANG_BACKUP_OPT4}"
+        echo -e "${PURPLE}│${RESET}  ${GREEN}[5]${RESET} ${LANG_BACKUP_OPT5}"
+        echo -e "${PURPLE}└─────────────────────────────────────${RESET}\n"
+
+        echo -ne "${CYAN}${LANG_BACKUP_SELECT} ${RESET}"
+        read -r choice
+
+        case $choice in
+            1)  # Create backup
+                echo -e "\n${YELLOW}${LANG_BACKUP_CREATING}${RESET}"
+
+                # Create backup directory if it doesn't exist
+                mkdir -p "$BACKUP_DIR"
+
+                # Generate timestamp
+                local TIMESTAMP=$(date +"%Y-%m-%d_%H-%M-%S")
+                local BACKUP_FILE="$BACKUP_DIR/backup_$TIMESTAMP.zip"
+
+                # Create zip backup
+                if cd "$CONFIG_DIR" && zip -r "$BACKUP_FILE" memory.db config lang/*.conf 2>/dev/null; then
+                    echo -e "${GREEN}${LANG_BACKUP_SUCCESS}${RESET}"
+                    echo -e "${GREEN}${LANG_BACKUP_LOCATION} ${BACKUP_FILE}${RESET}"
+                    echo -e "${GREEN}${LANG_BACKUP_CONTAINS}${RESET}"
+                else
+                    echo -e "${RED}${LANG_BACKUP_FAILED}${RESET}"
+                fi
+
+                echo -e "\n${YELLOW}${LANG_BACKUP_PRESS_KEY}${RESET}"
+                read -n 1
+                ;;
+
+            2)  # Restore from backup
+                echo ""
+                # List available backups
+                if [[ ! -d "$BACKUP_DIR" ]] || [[ -z "$(ls -A "$BACKUP_DIR"/*.zip 2>/dev/null)" ]]; then
+                    echo -e "${RED}${LANG_BACKUP_NO_BACKUPS}${RESET}"
+                    echo -e "\n${YELLOW}${LANG_BACKUP_PRESS_KEY}${RESET}"
+                    read -n 1
+                    continue
+                fi
+
+                echo -e "${CYAN}${LANG_BACKUP_AVAILABLE}${RESET}\n"
+                local -a backups=("$BACKUP_DIR"/*.zip)
+                local i=1
+                for backup in "${backups[@]}"; do
+                    local filename=$(basename "$backup")
+                    local size=$(du -h "$backup" | cut -f1)
+                    echo -e "${GREEN}[$i]${RESET} $filename ($size)"
+                    ((i++))
+                done
+
+                echo -e "\n${CYAN}${LANG_BACKUP_SELECT_RESTORE}${RESET} "
+                read -r backup_choice
+
+                if [[ "$backup_choice" == "0" ]]; then
+                    echo -e "${YELLOW}${LANG_BACKUP_RESTORE_CANCELLED}${RESET}"
+                    sleep 1
+                    continue
+                fi
+
+                if [[ "$backup_choice" -ge 1 ]] && [[ "$backup_choice" -lt "$i" ]]; then
+                    local selected_backup="${backups[$((backup_choice))]}"
+
+                    echo -e "\n${YELLOW}${LANG_BACKUP_SAFETY_BACKUP}${RESET}"
+                    # Create safety backup first
+                    local SAFETY_TIMESTAMP=$(date +"%Y-%m-%d_%H-%M-%S")
+                    local SAFETY_FILE="$BACKUP_DIR/backup_before_restore_$SAFETY_TIMESTAMP.zip"
+                    cd "$CONFIG_DIR" && zip -r "$SAFETY_FILE" memory.db config lang/*.conf 2>/dev/null
+
+                    echo -e "${YELLOW}${LANG_BACKUP_RESTORING}${RESET}"
+
+                    # Restore
+                    if cd "$CONFIG_DIR" && unzip -o "$selected_backup" 2>/dev/null; then
+                        echo -e "${GREEN}${LANG_BACKUP_RESTORE_SUCCESS}${RESET}"
+                    else
+                        echo -e "${RED}${LANG_BACKUP_RESTORE_FAILED}${RESET}"
+                    fi
+                else
+                    echo -e "${RED}${LANG_CONFIG_INVALID}${RESET}"
+                fi
+
+                echo -e "\n${YELLOW}${LANG_BACKUP_PRESS_KEY}${RESET}"
+                read -n 1
+                ;;
+
+            3)  # List backups
+                echo ""
+                if [[ ! -d "$BACKUP_DIR" ]] || [[ -z "$(ls -A "$BACKUP_DIR"/*.zip 2>/dev/null)" ]]; then
+                    echo -e "${RED}${LANG_BACKUP_NO_BACKUPS}${RESET}"
+                else
+                    echo -e "${CYAN}${LANG_BACKUP_AVAILABLE}${RESET}\n"
+                    ls -lh "$BACKUP_DIR"/*.zip | awk '{print $9, "(" $5 ")"}'
+                fi
+
+                echo -e "\n${YELLOW}${LANG_BACKUP_PRESS_KEY}${RESET}"
+                read -n 1
+                ;;
+
+            4)  # Delete old backups (keep last 5)
+                echo -e "\n${YELLOW}${LANG_BACKUP_DELETE_OLD}${RESET}"
+
+                if [[ -d "$BACKUP_DIR" ]]; then
+                    local backup_count=$(ls -1 "$BACKUP_DIR"/*.zip 2>/dev/null | wc -l)
+                    if [[ $backup_count -gt 5 ]]; then
+                        cd "$BACKUP_DIR" && ls -t *.zip | tail -n +6 | xargs rm -f
+                        echo -e "${GREEN}${LANG_BACKUP_DELETE_SUCCESS}${RESET}"
+                    else
+                        echo -e "${GREEN}${LANG_BACKUP_DELETE_NONE}${RESET}"
+                    fi
+                else
+                    echo -e "${RED}${LANG_BACKUP_NO_BACKUPS}${RESET}"
+                fi
+
+                echo -e "\n${YELLOW}${LANG_BACKUP_PRESS_KEY}${RESET}"
+                read -n 1
+                ;;
+
+            5)  # Back to config
+                return
+                ;;
+
+            *)
+                echo -e "${RED}${LANG_CONFIG_INVALID}${RESET}"
                 sleep 1
                 ;;
         esac
