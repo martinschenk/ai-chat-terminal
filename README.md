@@ -208,11 +208,17 @@ chat
 🤖 AI    🗄️ Stored 🔒
          ✅ Encrypted locally on your Mac
 
+👤 You ▶ save my sons school: Lincoln Elementary
+         Stage 1: 🔍 Keyword "save" detected!
+         Stage 2: 🖥️  Qwen intent → SAVE confirmed
+🤖 AI    🗄️ Stored 🔒
+         ✅ Zero network calls, zero cloud exposure
+
 👤 You ▶ remember my birthday 1990-03-15
          Stage 1: 🔍 Keyword "remember" detected!
          Stage 2: 🖥️  Qwen intent → SAVE confirmed
 🤖 AI    🗄️ Stored 🔒
-         ✅ Zero network calls, zero cloud exposure
+         ✅ Keeps your private data local
 
 👤 You ▶ guarda mi dirección Calle Mayor 1
          Stage 1: 🔍 Keyword "guarda" detected (Spanish!)
@@ -233,22 +239,53 @@ chat
 
 ### Retrieve Your Data (Also Local!)
 
+**Intelligent Keyword Matching (v11.6.1):**
+AI Chat Terminal extracts keywords from your query for flexible matching - works with ANY phrasing!
+
 ```bash
 👤 You ▶ show my email
          🔍 Keyword scan: ✅ "show" detected!
-         🖥️  Local Qwen generates SQL: SELECT FROM mydata
+         🖥️  Qwen extracts keyword: [email]
+         🖥️  Generates SQL: SELECT ... WHERE meta LIKE '%email%'
          🚫 OpenAI NEVER contacted
 🤖 AI    🗄️🔍 test@example.com (email)
+
+👤 You ▶ save my daughters favorite toy: teddy bear
+         🔍 Keyword "save" detected → Qwen activated
+🤖 AI    🗄️ Stored 🔒
+
+👤 You ▶ show my daughters favorite toy
+         🔍 Keyword "show" detected → Qwen activated
+         🖥️  Qwen extracts keywords: [daughter, favorite, toy]
+         🖥️  Multi-keyword search: daughter OR favorite OR toy
+         ✅ Finds "favorite toy" even with different phrasing!
+🤖 AI    🗄️🔍 teddy bear (favorite toy)
+
+👤 You ▶ show favorite toy of my daughter
+         🖥️  Same keywords → Same result!
+🤖 AI    🗄️🔍 teddy bear (favorite toy)
+
+👤 You ▶ show my sons school
+         🖥️  Keywords: [son, school]
+🤖 AI    🗄️🔍 Lincoln Elementary (sons school)
+
+👤 You ▶ show school of my son
+         🖥️  Same keywords → Works with ANY phrasing!
+🤖 AI    🗄️🔍 Lincoln Elementary (sons school)
 
 👤 You ▶ list all
          🔍 Keyword scan: ✅ "list" detected!
          🖥️  Local query: SELECT * FROM mydata
-🤖 AI    🗄️🔍 Found 4 items:
+🤖 AI    🗄️🔍 Found 6 items:
            1. test@example.com (email)
            2. SecretPass123 (password)
-           3. 1990-03-15 (birthday)
-           4. Calle Mayor 1 (dirección)
+           3. Lincoln Elementary (sons school)
+           4. 1990-03-15 (birthday)
+           5. Calle Mayor 1 (dirección)
+           6. teddy bear (favorite toy)
 ```
+
+**🎯 Flexible Matching:** Notice how "show my daughters favorite toy" and "show favorite toy of my daughter" both work! The AI extracts keywords (daughter, favorite, toy) and finds matches regardless of phrasing.
 
 ### Delete Your Data (Also Local!)
 
