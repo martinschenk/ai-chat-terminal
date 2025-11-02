@@ -229,7 +229,8 @@ chat_loop() {
                 echo -e "  ${DIM}${LANG_HELP_EX2:-what is my email?}${RESET}"
                 echo -e "  ${DIM}${LANG_HELP_EX3:-delete my email}${RESET}"
                 echo ""
-                echo -e "${DIM}${LANG_HELP_FOOTER:-Type anything to ask AI, or use commands above}${RESET}\n"
+                echo -e "${DIM}${LANG_HELP_FOOTER:-Type anything to ask AI, or use commands above}${RESET}"
+                echo -e "${YELLOW}💡 ${LANG_HELP_ESC_HINT:-Press ESC to return to chat}${RESET}\n"
                 continue
                 ;;
 
