@@ -220,18 +220,6 @@ change_context_window() {
     fi
 }
 
-
-# Toggle ESC exit function
-toggle_esc() {
-    local current="${AI_CHAT_ESC_EXIT:-true}"
-    local new_val="false"
-    [[ "$current" == "false" ]] && new_val="true"
-
-    sed -i '' "s/AI_CHAT_ESC_EXIT=.*/AI_CHAT_ESC_EXIT=\"$new_val\"/" "$CONFIG_FILE"
-    echo -e "${GREEN}✅ ESC exit toggled to: $new_val${RESET}"
-    sleep 2
-}
-
 # Toggle Ollama always-on function
 toggle_ollama_always_on() {
     echo -e "\n${CYAN}⚡ Ollama Daemon Management${RESET}"
