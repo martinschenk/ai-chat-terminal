@@ -6,6 +6,8 @@ Use simple keywords like `save`, `store`, or `remember` to keep your sensitive d
 
 **Open source. Transparent. You're in control.**
 
+![AI Chat Terminal Demo](docs/images/demo-screenshot.png)
+
 [![Version](https://img.shields.io/badge/version-11.6.0-blue.svg)](https://github.com/martinschenk/ai-chat-terminal)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](https://github.com/martinschenk/ai-chat-terminal)
