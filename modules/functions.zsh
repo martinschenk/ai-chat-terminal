@@ -216,7 +216,7 @@ chat_loop() {
                 echo -e "${BOLD}${LANG_HELP_KEYS:-Keyboard Shortcuts:}${RESET}"
                 echo -e "  ${DIM}↑${RESET}  - ${LANG_HELP_ARROW_UP:-Previous message}"
                 echo -e "  ${DIM}↓${RESET}  - ${LANG_HELP_ARROW_DOWN:-Next message}"
-                echo -e "  ${YELLOW}ESC${RESET} - ${LANG_HELP_ESC:-Quick exit}"
+                echo -e "  ${YELLOW}ESC${RESET} - ${LANG_HELP_ESC:-Quick exit (from chat)}"
                 echo ""
                 echo -e "${BOLD}${LANG_HELP_DATABASE:-Database Operations:}${RESET}"
                 echo -e "  • ${LANG_HELP_SAVE:-save my X - Store data locally}"
@@ -229,8 +229,7 @@ chat_loop() {
                 echo -e "  ${DIM}${LANG_HELP_EX2:-what is my email?}${RESET}"
                 echo -e "  ${DIM}${LANG_HELP_EX3:-delete my email}${RESET}"
                 echo ""
-                echo -e "${DIM}${LANG_HELP_FOOTER:-Type anything to ask AI, or use commands above}${RESET}"
-                echo -e "${YELLOW}💡 ${LANG_HELP_ESC_HINT:-Press ESC to return to chat}${RESET}\n"
+                echo -e "${DIM}${LANG_HELP_FOOTER:-Type anything to ask AI, or use commands above}${RESET}\n"
                 continue
                 ;;
 
